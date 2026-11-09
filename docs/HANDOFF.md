@@ -55,3 +55,16 @@
 - **Pages 배포 자체는 성공 확인. 실제 브라우저 렌더링 및 클릭 테스트는 미실시.**
 - 예상 접속 URL: https://jkd04255.github.io/wifi/
 - **2026-11-09 사용자 웹 시연 정상 동작 확인으로 GATE 1 완료 처리.** HTTP 응답 별도 계측 및 자동 브라우저 E2E는 미실시. 다음은 GATE 2 독립 Python 최적화 API 구현.
+
+## GATE 2 최신 인수인계 (2026-11-09 KST)
+
+- **GATE 1 완료**: 사용자가 https://jkd04255.github.io/wifi/ 시연 정상 작동 확인.
+- **GATE 2 독립 백엔드 구현·테스트 완료 (main에는 아직 미병합)**.
+- 개발 브랜치: [feat/optimizer-stage2](https://github.com/jkd04255/wifi/tree/feat/optimizer-stage2)
+- PR: [#1 — GATE 2 independent optimizer](https://github.com/jkd04255/wifi/pull/1) (**open**, 통합 QA 전 병합 금지).
+- GitHub CI: [run #42629821844](https://github.com/jkd04255/wifi/actions/runs/42629821844), **completed / success**, unittest 21/21 성공.
+- 구현 API: `POST /candidate-locations` (물리적으로 가능한 좌표 탐색), `POST /optimize` (2번 예측 RSSI 입력→중요도/케이블 평가), `GET /health`. 실행은 [backend/README.md](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/backend/README.md).
+- 별도 QA 기록: [docs/GATE2_QA.md](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/docs/GATE2_QA.md).
+- **다음 진행 GATE 3:** 우선 PR #1 및 최신 CI 확인. 2번 /simulate 최신 JSON 계약과 3번 실측 보정 데이터 연동 방식 검증. 기존 v1.6의 `optimize()` 및 버튼은 보존하고 UI 최소 연동에 한정. Python API는 GitHub Pages에서 직접 실행할 수 없음. 계약이 불명확하면 모의연동과 실연동을 구분하고 사용자에게 요청.
+- 기존 원본 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 파일 직접 수정 금지.
+- 다음 단계 버튼 메시지: "jkd04255/wifi PR #1의 GATE 2 자동 테스트 상태를 재확인하고, docs/PLAN.md의 GATE 3을 진행해 주세요. 원본 v1.6과 1~3번 팀원 모듈을 보존하고 2/3번 최신 API 계약을 검증한 뒤 최소 UI 연동·통합 QA·PR 병합을 진행하세요. 실제 연동 미검증은 명시하세요."
