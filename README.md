@@ -5,6 +5,11 @@
 
 ## 현재 단계
 
+**GATE 2 — Python 최적 배치 알고리즘·백엔드 독립 구현 및 테스트 완료.** [PR #1](https://github.com/jkd04255/wifi/pull/1) `feat/optimizer-stage2` 브랜치에서 유지 중이며 **아직 main에 병합하지 않았습니다.** 최신 PR CI 21/21 성공: https://github.com/jkd04255/wifi/actions/runs/42629821844 . API 사용법은 [backend/README.md (개발 브랜치)](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/backend/README.md)을 참조하세요.
+
+**다음 단계 GATE 3:** 기존 UI와 API 최소 연동, 2번 예측/3번 보정 계약 확인, 전체 통합 QA 후 PR 병합. GitHub Pages는 Python API를 실행하지 않으며 현재 시연 사이트는 v1.6 그대로입니다.
+
+
 **GATE 1 — 완료 (2026-11-09 사용자 시연 정상 확인)**
 
 - [x] GitHub 저장소 `jkd04255/wifi` 생성
