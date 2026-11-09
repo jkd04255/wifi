@@ -44,3 +44,26 @@ CI: https://github.com/jkd04255/wifi/actions/runs/42633059037
 **로컬 동작 시연 구현 및 검증 통과. GATE 3의 정식 통합·main 병합·공개 Pages 재배포는 HOLD.**
 
 2번/3번 팀원의 최신 계약과 실제 외곽선 계약이 확인되면 별도 테스트를 추가하고 사용자 승인 범위 내에서 통합을 완료합니다.
+
+
+## GATE 3 추가 회귀 검증 — 2026-11-09
+
+테스트 코드 커밋: `fe544896cf6a47997f58ae318c688e21a4a5ca07`  
+GitHub Actions: https://github.com/jkd04255/wifi/actions/runs/42634218483
+상태: **completed / success**.
+
+| 신규 브라우저 테스트 | 결과 | 검증 내용 |
+|---|---|---|
+| `test_webkit_local_api_full_flow` | 통과 | Safari 엔진의 4번 로컬 API 모드 → 최적화 → 위치 적용 |
+| `test_24_and_5_ghz_send_different_predictions` | 통과 | 2.4/5 GHz 변경 후 `/optimize`로 전달되는 예측 RSSI 차이 및 주파수 반영 |
+| `test_imported_importance_brushes_all_three_priorities` | 통과 | 사용자 도면 JSON의 +100/0/-100 브러시가 `probes[].priorityPct`로 각각 전달 |
+| `test_wall_and_cable_restrict_browser_generated_candidates` | 통과 | 콘크리트 벽의 좌표 전송, 짧은 랜선에서 벽 건너 후보 배제, 긴 랜선에서 후보 증가 |
+| `test_api_errors_never_silently_fallback_or_reuse_stale_result` | 통과 | `/optimize` 네트워크 차단 및 `/candidate-locations` HTTP 503 처리, 과거 추천 제거, 자동 레거시 전환 금지 |
+
+기존 4개 브라우저 테스트도 모두 통과. **Python 21/21 + Chromium/WebKit 브라우저 9/9 = 전체 30/30 통과.**
+
+**실측/외부 계약 상태:** GitHub 기능 브랜치 파일 목록에는 2번 전파 예측 모듈의 확정 `/simulate` JSON 계약과 3번 실측 보정 출력/실제 데이터 파일, 1번 실제 `footprint` 계약이 없습니다. 팀원 승인 전의 제안 서식은 [TEAM_CONTRACT_TEMPLATE.md](TEAM_CONTRACT_TEMPLATE.md)에 따로 정리했습니다. 데이터 예시는 실제 신호 측정치가 아닌 합성 값입니다.
+
+**검증 한계:** 자동 테스트는 로컬 `dev_server` + v1.6 예측 RSSI 기반이며, 실제 2번/3번 신호 데이터 통합이나 실내 외곽선·배선 시공 적합성, 실서비스 공개 배포는 검증하지 않았습니다. WebKit은 Playwright 엔진 기반 시험이지 실제 iPhone Safari 실기기 QA는 아닙니다.
+
+**GATE 3 판정 유지: 정식 통합 HOLD.** 초안 PR #2 및 원본/Pages 보호. 실제 계약 확인 전 `main` 병합·GitHub Pages 배포 금지.
