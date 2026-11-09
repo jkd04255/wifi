@@ -156,12 +156,14 @@ class SyntheticContractTests(unittest.TestCase):
         ]
         self.fails("outside the floor footprint")
 
-    def test_rejects_invalid_router_position(self):
+    def test_outside_candidate_is_filtered_by_optimizer_not_moved_silently(self):
         self.payload["candidates"][0]["routerPosition"]["x"] = -1
-        # The core optimizer filters an exterior candidate rather than misreading its coordinates.
-        # Contract test uses the same validated coordinate frame; don't silently shift axes.
+        # Preserve original coordinates; the optimizer itself must reject an outdoor candidate.
         req = self.prepare()["optimizeRequest"]
         self.assertEqual(req["candidates"][0]["position"]["x"], -1.0)
+        response = TestClient(app).post("/optimize", json=req)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["feasibleCandidatesCount"], 1)
 
     def test_rejects_duplicate_candidate_positions(self):
         self.payload["candidates"][1]["routerPosition"] = copy.deepcopy(
