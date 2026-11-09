@@ -51,6 +51,7 @@
 ## GitHub Pages 배포 상태 (2026-11-09 KST)
 - GitHub API `has_pages=true`: 사용자가 Pages 활성화 설정을 완료한 것으로 확인됨.
 - Actions run: https://github.com/jkd04255/wifi/actions/runs/42626968444
-- `build` job은 성공, `deploy` job은 확인 당시 `in_progress`.
+- `build` 및 `deploy` 잡 모두 최종 완료: GitHub Actions run `completed / success` (2026-11-09 13:38:20 UTC).
+- **Pages 배포 자체는 성공 확인. 실제 브라우저 렌더링 및 클릭 테스트는 미실시.**
 - 예상 접속 URL: https://jkd04255.github.io/wifi/
 - **실제 HTTP 응답과 브라우저 동작은 별도 검증되지 않았음. GATE 1 미통과 상태 유지.**
