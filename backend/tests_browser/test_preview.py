@@ -59,7 +59,16 @@ class Stage3BrowserTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertTrue(page.locator("#editorScreen").is_visible())
         page.locator("#applyBottomBtn").click()
-        self.assertTrue(page.locator("#optimizeBtn").is_visible())
+        try:
+            page.wait_for_function("document.body.dataset.view === 'analysis' && !document.getElementById('resultScreen').hidden", timeout=5000)
+        except Exception as exc:
+            raise AssertionError(
+                "Did not enter analysis screen. JS pageerrors=" + repr(errors) +
+                " state=" + str(page.evaluate("document.body.dataset.view")) +
+                " analysisHidden=" + str(page.locator("#resultScreen").get_attribute("hidden")) +
+                " scripts=" + str(page.locator("script").count())
+            ) from exc
+        page.locator("#optimizeBtn").wait_for(state="visible", timeout=5000)
         return browser, page, errors
 
     def test_chromium_local_optimizer_api(self):
