@@ -79,6 +79,16 @@ class OptimizeRequest(StrictModel):
         return self
 
 
+class CandidateSearchRequest(StrictModel):
+    floor: Floor
+    lanPort: LanPort
+    routerY: float = Field(default=1.2, ge=0, le=10)
+    gridStepM: float = Field(default=0.75, ge=0.4, le=4)
+    routeGridStepM: float = Field(default=0.25, ge=0.15, le=1)
+    wallClearanceM: float = Field(default=0.15, ge=0, le=0.5)
+    maxCandidates: int = Field(default=250, ge=1, le=500)
+
+
 def _segment_distance(x: float, z: float, w: Wall) -> float:
     dx, dz = w.x2 - w.x1, w.z2 - w.z1
     t = max(0.0, min(1.0, ((x-w.x1)*dx + (z-w.z1)*dz) / (dx*dx + dz*dz))) if dx*dx + dz*dz > EPS else 0
@@ -127,13 +137,27 @@ def _valid_position(floor: Floor, pos: Position, clearance: float) -> bool:
             and all(_segment_distance(pos.x,pos.z,w) >= clearance-EPS for w in floor.walls))
 
 
-def _clear_segment(floor: Floor, a: tuple[float,float], b: tuple[float,float]) -> bool:
+def _clear_segment(floor: Floor, a: tuple[float,float], b: tuple[float,float], *, allow_origin_touch: bool = False) -> bool:
     if not (_within_floor(floor,*a) and _within_floor(floor,*b)):
         return False
-    # concave footprint에서 끝점이 내부라고 선분까지 내부인 것은 아님
-    if floor.footprint and any(not _within_floor(floor,a[0]+(b[0]-a[0])*t/10,a[1]+(b[1]-a[1])*t/10) for t in range(1,10)):
+    # 오목한 바닥의 외곽선을 넘는 직선은 금지한다.
+    if floor.footprint:
+        for i in range(1,41):
+            t=i/40
+            if not _within_floor(floor,a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t):
+                return False
+    for w in floor.walls:
+        c,d=(w.x1,w.z1),(w.x2,w.z2)
+        if not _segments_intersect(a,b,c,d):
+            continue
+        if allow_origin_touch and math.dist(a,b)>EPS and _segment_distance(a[0],a[1],w)<EPS:
+            # LAN 포트가 벽에 붙은 경우, 포트 출발점의 접촉만 허용.
+            t=min(1e-5/math.dist(a,b),0.1)
+            shifted=(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t)
+            if not _segments_intersect(shifted,b,c,d):
+                continue
         return False
-    return not any(_segments_intersect(a,b,(w.x1,w.z1),(w.x2,w.z2)) for w in floor.walls)
+    return True
 
 
 def _compute_routes(request: OptimizeRequest) -> dict[tuple[int,int],float]:
@@ -155,7 +179,7 @@ def _compute_routes(request: OptimizeRequest) -> dict[tuple[int,int],float]:
     # 포트는 벽에 달려 있을 수 있으므로 포트 자체는 clearance 검사하지 않음.
     for key, q in nodes.items():
         step = math.dist(start,q)
-        if step <= 1.6*h and _clear_segment(f,start,q):
+        if step <= 1.6*h and _clear_segment(f,start,q,allow_origin_touch=True):
             distances[key] = step
             heapq.heappush(heap,(step,key))
     while heap:
@@ -184,7 +208,7 @@ def _route_length(request: OptimizeRequest, pos: Position, distances: dict[tuple
     start=(p.x,p.z)
     end=(pos.x,pos.z)
     # 장애물 없는 직선이면 최단 거리 가능; 벽을 관통하는 유클리드 거리만으로 판정하지 않는다.
-    best = math.dist(start,end) if _clear_segment(f,start,end) else math.inf
+    best = math.dist(start,end) if _clear_segment(f,start,end,allow_origin_touch=True) else math.inf
     nx,nz=math.ceil(f.widthM/h),math.ceil(f.depthM/h)
     ix0,iz0=round(pos.x/h),round(pos.z/h)
     for ix in range(max(0,ix0-2),min(nx,ix0+2)+1):
@@ -199,6 +223,44 @@ def _route_length(request: OptimizeRequest, pos: Position, distances: dict[tuple
         return None
     # 수직 포트/공유기 높이 차이는 별도 가산(낙관적 일직선 3D 거리 금지)
     return best + abs(pos.y-p.y)
+
+
+def generate_candidate_positions(request: CandidateSearchRequest) -> dict:
+    """벽/실외/케이블 제약을 통과하는 점만 생성한다. RSSI 예측은 하지 않는다."""
+    f,p,step=request.floor,request.lanPort,request.gridStepM
+    if not _within_floor(f,p.x,p.z) or p.y>f.heightM:
+        raise ValueError("LAN port must be located inside the floor")
+    if request.routerY>f.heightM:
+        raise ValueError("routerY must be at or below floor heightM")
+    nx,nz=math.ceil(f.widthM/step),math.ceil(f.depthM/step)
+    if nx*nz>5000:
+        raise ValueError("candidate grid too dense; increase gridStepM")
+    # 동일한 케이블 탐색용 입력 형식 재사용, RSSI는 여기서 쓰지 않음
+    # 빈 후보를 넣지 않도록 경로 탐색에 필요한 필드만 가진 proxy로 전달.
+    class _RouteRequest:
+        floor=f
+        lanPort=p
+        routeGridStepM=request.routeGridStepM
+        wallClearanceM=request.wallClearanceM
+    route_req=_RouteRequest()
+    distances=_compute_routes(route_req)
+    positions=[]
+    for iz in range(nz):
+        z=min(f.depthM,(iz+0.5)*step)
+        for ix in range(nx):
+            x=min(f.widthM,(ix+0.5)*step)
+            position=Position(x=x,z=z,y=request.routerY)
+            cable=_route_length(route_req,position,distances)
+            if cable is None or cable>p.maxCableLengthM+EPS:
+                continue
+            positions.append({"x":round(x,3),"z":round(z,3),"y":request.routerY,
+                              "estimatedCableLengthM":round(cable,2)})
+    if len(positions)>request.maxCandidates:
+        raise ValueError("too many feasible positions; increase gridStepM or maxCandidates")
+    positions.sort(key=lambda t:(t["estimatedCableLengthM"],t["z"],t["x"]))
+    return {"status":"ok" if positions else "no_feasible_candidate",
+            "generatedPositionsCount":nx*nz,"feasiblePositionsCount":len(positions),
+            "positions":positions,"signalSource":"external_required"}
 
 
 def _quality(pred: Prediction, probes: list[Probe]) -> tuple[float,float,bool]:
