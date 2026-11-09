@@ -47,6 +47,8 @@ class GeometryTests(unittest.TestCase):
 
     def test_router_outside_building_excluded(self):
         self.data["candidates"][0]["position"]["x"] = -1
+        # 현재 공유기 위치가 더 좋으면 이동시키지 않는 것이 정상: 후보 필터만 검증
+        self.data.pop("current")
         a = self.run_opt()
         self.assertEqual(a["recommendedPosition"]["x"], 4)
         self.assertEqual(a["feasibleCandidatesCount"], 1)
@@ -106,6 +108,8 @@ class GeometryTests(unittest.TestCase):
         self.data["floor"]["footprint"] = [
             [0,0],[6,0],[6,2],[3,2],[3,4],[0,4]
         ]
+        # L자 바닥 내부의 측정 위치만 입력해야 함
+        self.data["probes"][1]["z"] = 1
         a = self.run_opt()
         self.assertEqual(a["recommendedPosition"]["x"], 1)
         self.assertEqual(a["feasibleCandidatesCount"], 1)
