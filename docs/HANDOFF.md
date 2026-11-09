@@ -106,3 +106,15 @@
 - 팀원 API 확정 계약은 여전히 없음. `docs/TEAM_CONTRACT_TEMPLATE.md`는 제안/요청 양식이므로 실제 2·3번 연동된 것으로 보고하지 말 것.
 - `main/index.html` 및 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 변경 금지, PR #1·#2는 보류. 정식 GATE 3 **HOLD**, GitHub Pages 재배포 금지.
 - **다음 액션:** 1·2·3번 팀원에게 계약 템플릿을 전달하고 소스·JSON 샘플·외곽선 좌표를 받은 뒤 검증·어댑터/통합 테스트. 미제공 시 HOLD 유지.
+
+
+## GATE 3 합성 계약 검증 최신 상황 / 팀 협업 (2026-11-09)
+
+- [GATE3_SYNTHETIC_QA.md](GATE3_SYNTHETIC_QA.md)에 두 합성 어댑터, fixtures, 95개 검증 및 한계를 기록.
+- [Actions #42635704295](https://github.com/jkd04255/wifi/actions/runs/42635704295): Python `unittest` 86/86 + Chromium/WebKit browser 9/9 = **95/95 PASS**.
+- `backend/optimizer/synthetic_adapter.py`: 합성 단일 그리드의 RSSI·좌표·보정 missing/provided/failed 시나리오 검증.
+- `backend/optimizer/synthetic_contract.py`: 여러 합성 후보의 row Z/column X→`/optimize` 변환, 보정 적용 주장 무조건 거부. 두 모듈은 실제 2·3번 시스템 어댑터가 아님.
+- **실제 1·2·3번 계약은 여전히 미확정**. `docs/TEAM_CONTRACT_TEMPLATE.md`를 담당자에게 공유하여 최신 코드/JSON 샘플/실내 외곽을 확보한 후에만 정식 연동.
+- GitHub `jkd04255/wifi`는 API `private=false`, `visibility=public`로 확인. 타인은 자유 열람·복제 가능. 직접 쓰기 권한은 협업자 초대가 필요하며 아직 초대하지 않음.
+- [Draft PR #2](https://github.com/jkd04255/wifi/pull/2) 유지, `main` 및 Pages 기존 v1.6 변경 금지, **GATE 3 HOLD**.
+- 다음 대화에서는 `docs/GATE3_SYNTHETIC_QA.md`와 위 CI 로그 먼저 확인. 실계약 확보 전 실제 보정/실측 연결 완료로 주장하지 말 것.
