@@ -16,6 +16,25 @@ cd backend
 python -m unittest discover -s tests -v
 ```
 
+## 2단계 API 사용 순서
+
+1. `POST /candidate-locations`에 실내 도면과 LAN 포트, 랜선 길이를 전달합니다. 응답의 `positions`는 물리적으로 설치할 수 있는 후보 좌표와 예측 케이블 길이이며 **RSSI는 포함되지 않습니다**.
+2. **2번 담당 전파 예측 엔진**에서 각 후보 좌표에 대한 수신점별 RSSI 값을 산출합니다. 현재 저장소에는 해당 엔진 코드/확정 API 계약이 없어 이 부분은 호출자 또는 팀 통합 코드가 제공해야 합니다.
+3. 후보별 `rssisDbm` 배열과 평가 지점(`probes`), 현재 공유기 예측값을 `POST /optimize`로 넘기면 추천 위치/개선 점수/AP 권고가 반환됩니다.
+
+### POST /candidate-locations 최소 예시
+
+```json
+{
+  "floor": {"widthM": 4, "depthM": 3, "walls": []},
+  "lanPort": {"x": 0.5, "z": 0.5, "y": 0.3, "maxCableLengthM": 10},
+  "routerY": 1.2,
+  "gridStepM": 0.75
+}
+```
+
+응답은 `positions:[{x,z,y,estimatedCableLengthM}]`, `feasiblePositionsCount`, `generatedPositionsCount`, `signalSource:"external_required"`를 포함합니다. 위치 개수가 너무 많으면 `maxCandidates` 제한에 따라 오류를 반환하므로 `gridStepM`을 늘려 다시 요청합니다.
+
 ## 계약 — POST /optimize
 
 요청은 다음 네 가지를 반드시 포함합니다.
