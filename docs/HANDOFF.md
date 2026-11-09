@@ -74,3 +74,47 @@
 - 검토용 [PR #1](https://github.com/jkd04255/wifi/pull/1)은 open이며, 통합 전 main에 코드를 병합하지 않음.
 - 새 CI는 `.github/workflows/optimizer-ci.yml` 한 개로 유지.
 - GATE 3는 실제 2번 RSSI 예측 데이터 계약을 검증해야 시작할 수 있음. 기존 웹 v1.6과 3번 실측 모듈을 임의로 고치지 않음.
+
+
+## GATE 3 진행 기록 (2026-11-09 · 로컬 시연 브랜치)
+
+- 브랜치: `feat/optimizer-stage3-integration`, Draft PR #2 (base=`feat/optimizer-stage2`): https://github.com/jkd04255/wifi/pull/2
+- **기존 index.html·legacy 원본은 수정하지 않음.** 별도 `preview/stage3.html`만 추가.
+- `backend/dev_server.py`: `127.0.0.1:8001` 동일 출처로 API+시연 HTML 실행. 실행법 `docs/GATE3_INTEGRATION.md`.
+- 기존 UI '최고의 위치 찾기'를 4번 `/candidate-locations` + `/optimize`와 연결하는 선택 모드 구현. 기본 모드는 원래 v1.6.
+- API 모드는 **v1.6 JavaScript 모델 예측값 (실측 미보정)**으로만 시연. 2번/3번 엔진이 실제 연동된 것은 아님.
+- 랜 포트 X/Z/Y, 케이블 길이 직접 입력. 직사각형 외곽 가정 등의 한계 경고 표시.
+- API 연결 실패 시 묵시적 JS fallback 금지.
+- 기존 백엔드 테스트 및 Chromium/WebKit E2E: `.github/workflows/stage3-ci.yml` 확인 필요.
+- **계약 미확정 HOLD**: 2번 /simulate 정확한 JSON, 3번 보정 출력, 1번 도면 외곽 footprint 미확정. 따라서 PR #2 Draft·main 병합 금지, GitHub Pages 변경 없음.
+- 다음 대화는 PR #2와 `docs/GATE3_INTEGRATION.md`를 먼저 읽고 CI 결과 확인. 팀원의 실제 계약이 확인될 때 정식 연결을 시도.
+
+## GATE 3 로컬 CI 확정 결과 (2026-11-09)
+
+- [GATE3 QA 보고서](docs/GATE3_QA.md): [GitHub Actions #42633059037](https://github.com/jkd04255/wifi/actions/runs/42633059037) `completed/success`; Python 21/21 + Chromium/WebKit 브라우저 4/4 = 총 25개 테스트 통과.
+- 실패했던 초기 HTML 삽입 오류는 본래 v1.6을 기준으로 재생성하여 해결. 인라인 JS 스크립트 4개 모두 구문 검사 통과.
+- 로컬 데모는 `python -m uvicorn dev_server:app --host 127.0.0.1 --port 8001` (backend 디렉터리에서) → `http://127.0.0.1:8001/preview/stage3.html`.
+- **GATE3 정식 통합 HOLD**, PR #2 Draft 및 2번/3번 계약 미확정 상태. 1번 실내 footprint도 공식 계약 필요. main/기존 Pages는 그대로 유지.
+
+
+## 최신 GATE 3 추가 회귀 결과 및 다음 대화 지시 (2026-11-09)
+
+- 개발 브랜치 `feat/optimizer-stage3-integration` / [Draft PR #2](https://github.com/jkd04255/wifi/pull/2).
+- 최신 검증: [Actions #42634218483](https://github.com/jkd04255/wifi/actions/runs/42634218483) Python 21/21, Playwright Chromium·WebKit 9/9, 합계 **30/30 성공**.
+- WebKit 신규 로컬 API, 2.4/5GHz, +100/0/-100 브러시, 콘크리트 벽과 케이블 제한, API 장애 시 묵시적 폴백 방지 모두 테스트.
+- 검증 로그와 한계는 `docs/GATE3_QA.md`, 실행 방법은 `docs/GATE3_INTEGRATION.md`.
+- 팀원 API 확정 계약은 여전히 없음. `docs/TEAM_CONTRACT_TEMPLATE.md`는 제안/요청 양식이므로 실제 2·3번 연동된 것으로 보고하지 말 것.
+- `main/index.html` 및 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 변경 금지, PR #1·#2는 보류. 정식 GATE 3 **HOLD**, GitHub Pages 재배포 금지.
+- **다음 액션:** 1·2·3번 팀원에게 계약 템플릿을 전달하고 소스·JSON 샘플·외곽선 좌표를 받은 뒤 검증·어댑터/통합 테스트. 미제공 시 HOLD 유지.
+
+
+## GATE 3 합성 계약 검증 최신 상황 / 팀 협업 (2026-11-09)
+
+- [GATE3_SYNTHETIC_QA.md](GATE3_SYNTHETIC_QA.md)에 두 합성 어댑터, fixtures, 95개 검증 및 한계를 기록.
+- [Actions #42635704295](https://github.com/jkd04255/wifi/actions/runs/42635704295): Python `unittest` 86/86 + Chromium/WebKit browser 9/9 = **95/95 PASS**.
+- `backend/optimizer/synthetic_adapter.py`: 합성 단일 그리드의 RSSI·좌표·보정 missing/provided/failed 시나리오 검증.
+- `backend/optimizer/synthetic_contract.py`: 여러 합성 후보의 row Z/column X→`/optimize` 변환, 보정 적용 주장 무조건 거부. 두 모듈은 실제 2·3번 시스템 어댑터가 아님.
+- **실제 1·2·3번 계약은 여전히 미확정**. `docs/TEAM_CONTRACT_TEMPLATE.md`를 담당자에게 공유하여 최신 코드/JSON 샘플/실내 외곽을 확보한 후에만 정식 연동.
+- GitHub `jkd04255/wifi`는 API `private=false`, `visibility=public`로 확인. 타인은 자유 열람·복제 가능. 직접 쓰기 권한은 협업자 초대가 필요하며 아직 초대하지 않음.
+- [Draft PR #2](https://github.com/jkd04255/wifi/pull/2) 유지, `main` 및 Pages 기존 v1.6 변경 금지, **GATE 3 HOLD**.
+- 다음 대화에서는 `docs/GATE3_SYNTHETIC_QA.md`와 위 CI 로그 먼저 확인. 실계약 확보 전 실제 보정/실측 연결 완료로 주장하지 말 것.

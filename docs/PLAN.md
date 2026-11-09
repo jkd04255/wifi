@@ -66,3 +66,46 @@
 ## 사용자 다음 행동
 - 즉시: GitHub Pages를 Settings → Pages → Deploy from a branch → main → /(root)로 설정 (자동 설정되지 않았을 경우).
 - GATE 2 전: 최신 2번/3번 팀원 데이터 계약 파일을 제공하거나 저장소에 업로드.
+
+
+## GATE 3 현재 진행 상태 (2026-11-09)
+
+- [x] 별도 `preview/stage3.html` (기존 UI 최소 변경) 및 로컬 동일 출처 Uvicorn 시연 서버 구현.
+- [x] 기존 v1.6 최적화 기본값 유지; 사용자 명시적 4번 API 시연 선택에 한해 후보/케이블/비교/AP 권고 표시.
+- [x] 2·3번 계약 미확정 확인, v1.6 예측값을 '실측 미보정 시연'으로 구분.
+- [ ] Chromium/WebKit 통합 자동 QA 통과 확인.
+- [ ] 2·3번 실제 팀원 계약 및 실제 예측/실측 보정 데이터로 교차 검증.
+- [ ] 1번 실제 집 외곽 footprint/LAN 포트 정보 계약 확보.
+- [ ] 통합 QA 후 PR review·main 병합·Pages 재배포 검증.
+
+**판정: GATE 3 HOLD** — 로컬 시연이 통과해도 확정 계약 없는 상태에서는 정식 통합 완료나 배포로 표현하지 않음. Draft PR #2: https://github.com/jkd04255/wifi/pull/2.
+
+### GATE 3 중간 QA 기록
+- [x] 코드로 검증된 로컬 API 시연 및 원본 v1.6 유지.
+- [x] Chromium API 모드 및 모바일, WebKit 기존 모드, 설정 누락 예외 확인.
+- [x] Python 21 + 브라우저 4 = 25개 자동 테스트 GitHub Actions 성공 ([run #42633059037](https://github.com/jkd04255/wifi/actions/runs/42633059037)).
+- [ ] **실제** 2·3번 팀원 데이터 계약 기반 연동 및 실내 외곽 지도 제약 최종 확인.
+- [ ] 정식 API WebKit 검증, 전 대역/브러시/벽/케이블 추가 회귀와 PR 리뷰.
+- [ ] PR 병합 및 Pages 배포 — **계약 미확정으로 HOLD**.
+
+
+### GATE 3 추가 테스트 검증 (2026-11-09)
+
+- [x] WebKit 로컬 API 최적화/추천 적용 E2E.
+- [x] 2.4/5GHz에서 예측 RSSI 페이로드가 달라짐을 E2E 확인.
+- [x] 중요도 +100/0/-100 브러시 JSON 도면 import → backend priority 배열 검증.
+- [x] 벽/랜선 제한에 따른 후보 탐색 차이 확인.
+- [x] API 장애 HTTP 503 및 네트워크 실패 시 명확한 오류와 기존 추천값 지우기 확인.
+- [x] Python 21개 + Chromium/WebKit 9개 = **30/30 자동 테스트 성공** ([Actions #42634218483](https://github.com/jkd04255/wifi/actions/runs/42634218483)).
+- [x] [1·2·3번 팀원 데이터 계약 요청 템플릿](TEAM_CONTRACT_TEMPLATE.md) 작성 (미확정으로 명시).
+- [ ] 실제 팀원 소스/계약 확보, 실제 데이터 기반 통합 및 실내 외곽선 검증; 정식 Gate 3 **HOLD**.
+
+
+### 합성 계약 준비 및 접근 검증 (2026-11-09)
+
+- [x] 기존 파일 트리와 Draft PR #2 확인 — 1·2·3번 최신 확정 계약 부재.
+- [x] 합성 전용 RSSI X-Z 좌표·주파수·배열·보정 상태 검증 및 API 요청 어댑터 작성, 테스트 fixture 추가.
+- [x] Python 86/86 및 browser 9/9 = **95/95 테스트 성공** ([CI](https://github.com/jkd04255/wifi/actions/runs/42635704295)).
+- [x] Public 저장소 `jkd04255/wifi` 확인, 열람과 push 권한 차이 기록.
+- [ ] 팀원 1·2·3 계약/데이터 수신 및 실데이터 교차검증.
+- [ ] GATE 3 정식 통합 판정 및 PR 병합·Pages 재배포 — **HOLD**.
