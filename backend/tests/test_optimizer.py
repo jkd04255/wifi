@@ -4,7 +4,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 from optimizer.api import app
-from optimizer.core import OptimizeRequest, optimize
+from optimizer.core import CandidateSearchRequest, OptimizeRequest, generate_candidate_positions, optimize
 
 
 def example():
@@ -98,6 +98,35 @@ class GeometryTests(unittest.TestCase):
         self.assertEqual(res["recommendedPosition"]["x"], 2)
         self.assertEqual(res["deltaScore"], 0)
 
+    def test_candidate_generator_enforces_cable_length(self):
+        req=CandidateSearchRequest.model_validate({
+            "floor": self.data["floor"],
+            "lanPort": {**self.data["lanPort"], "maxCableLengthM": 2},
+            "gridStepM": 1
+        })
+        result=generate_candidate_positions(req)
+        self.assertGreater(result["feasiblePositionsCount"], 0)
+        self.assertLess(result["feasiblePositionsCount"], result["generatedPositionsCount"])
+        self.assertTrue(all(p["estimatedCableLengthM"] <= 2 for p in result["positions"]))
+
+    def test_candidate_generator_respects_l_shape(self):
+        f=dict(self.data["floor"])
+        f["footprint"]=[[0,0],[6,0],[6,2],[3,2],[3,4],[0,4]]
+        result=generate_candidate_positions(CandidateSearchRequest.model_validate({
+            "floor": f, "lanPort": self.data["lanPort"], "gridStepM": 1
+        }))
+        self.assertGreater(result["feasiblePositionsCount"],0)
+        self.assertTrue(all(not (p["x"] > 3 and p["z"] > 2) for p in result["positions"]))
+
+    def test_lan_port_touching_wall_can_exit_room_side(self):
+        f=dict(self.data["floor"])
+        f["walls"]=[{"x1":0.5,"z1":0,"x2":0.5,"z2":2}]
+        results=generate_candidate_positions(CandidateSearchRequest.model_validate({
+            "floor": f, "lanPort": {**self.data["lanPort"],"x":0.5},
+            "gridStepM": 1
+        }))
+        self.assertGreater(results["feasiblePositionsCount"], 0)
+
     def test_without_current_no_invented_score(self):
         self.data.pop("current")
         result = self.run_opt()
@@ -148,6 +177,12 @@ class ApiTests(unittest.TestCase):
         for p in body["probes"]:
             p["priorityPct"]=-100
         self.assertEqual(self.client.post("/optimize",json=body).status_code,422)
+
+    def test_candidate_locations_endpoint(self):
+        body={"floor":example()["floor"],"lanPort":example()["lanPort"],"gridStepM":1}
+        r=self.client.post("/candidate-locations",json=body)
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertGreater(r.json()["feasiblePositionsCount"],0)
 
     def test_invalid_extra_fields_rejected(self):
         body=example()
