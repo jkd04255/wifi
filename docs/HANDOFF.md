@@ -54,4 +54,4 @@
 - `build` 및 `deploy` 잡 모두 최종 완료: GitHub Actions run `completed / success` (2026-11-09 13:38:20 UTC).
 - **Pages 배포 자체는 성공 확인. 실제 브라우저 렌더링 및 클릭 테스트는 미실시.**
 - 예상 접속 URL: https://jkd04255.github.io/wifi/
-- **실제 HTTP 응답과 브라우저 동작은 별도 검증되지 않았음. GATE 1 미통과 상태 유지.**
+- **2026-11-09 사용자 웹 시연 정상 동작 확인으로 GATE 1 완료 처리.** HTTP 응답 별도 계측 및 자동 브라우저 E2E는 미실시. 다음은 GATE 2 독립 Python 최적화 API 구현.
