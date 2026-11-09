@@ -42,3 +42,15 @@
 ## 다음 단계 진행 조건
 
 사용자가 GATE 3 진행을 누르면 먼저 최신 PR 및 CI 결과를 검토하고, 2번/3번 최신 계약을 확인한 뒤 기존 UI를 최소 변경하여 연결할 것. 계약이 확보되지 않으면 임의로 실제 연동 성공을 주장하지 말고 Mock/계약 미확인 상태로 분리하여 보고할 것.
+
+## 재검증: Python 다중 버전 CI (2026-11-09)
+
+- GitHub Actions: https://github.com/jkd04255/wifi/actions/runs/42629894652
+- Python 3.11: 컴파일 성공, **unittest 21/21 성공**.
+- Python 3.12: 컴파일 성공, **unittest 21/21 성공**.
+- GitHub Actions 종료 상태: `completed / success`. 두 버전 총 **42개 테스트 실행 통과**.
+- 중복 CI 정의를 정리하여 `.github/workflows/optimizer-ci.yml`의 3.11/3.12 매트릭스만 유지.
+- PR: https://github.com/jkd04255/wifi/pull/1
+- 기존 `index.html`, `legacy/WiFi_Placement_Studio_v1.6_offline.html`, 1~3번 역할 코드: **PR에서 변경 없음**.
+- **GATE 2 판정: 독립 백엔드 구현 및 테스트 완료.** PR #1은 검토 대상으로 유지하며 main 병합은 GATE 3 통합 시 판단.
+- 사용자 다음 행동: **GATE 3 진행** 버튼을 누르면 실제 2번 RSSI /simulate 출력 계약 확인 후 UI 최소 연동으로 진행. 계약 미확정이면 임시 어댑터 또는 독립 데모로 표시하고 실측 연동 완료로 주장하지 않음.
