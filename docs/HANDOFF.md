@@ -74,3 +74,17 @@
 - 검토용 [PR #1](https://github.com/jkd04255/wifi/pull/1)은 open이며, 통합 전 main에 코드를 병합하지 않음.
 - 새 CI는 `.github/workflows/optimizer-ci.yml` 한 개로 유지.
 - GATE 3는 실제 2번 RSSI 예측 데이터 계약을 검증해야 시작할 수 있음. 기존 웹 v1.6과 3번 실측 모듈을 임의로 고치지 않음.
+
+
+## GATE 3 진행 기록 (2026-11-09 · 로컬 시연 브랜치)
+
+- 브랜치: `feat/optimizer-stage3-integration`, Draft PR #2 (base=`feat/optimizer-stage2`): https://github.com/jkd04255/wifi/pull/2
+- **기존 index.html·legacy 원본은 수정하지 않음.** 별도 `preview/stage3.html`만 추가.
+- `backend/dev_server.py`: `127.0.0.1:8001` 동일 출처로 API+시연 HTML 실행. 실행법 `docs/GATE3_INTEGRATION.md`.
+- 기존 UI '최고의 위치 찾기'를 4번 `/candidate-locations` + `/optimize`와 연결하는 선택 모드 구현. 기본 모드는 원래 v1.6.
+- API 모드는 **v1.6 JavaScript 모델 예측값 (실측 미보정)**으로만 시연. 2번/3번 엔진이 실제 연동된 것은 아님.
+- 랜 포트 X/Z/Y, 케이블 길이 직접 입력. 직사각형 외곽 가정 등의 한계 경고 표시.
+- API 연결 실패 시 묵시적 JS fallback 금지.
+- 기존 백엔드 테스트 및 Chromium/WebKit E2E: `.github/workflows/stage3-ci.yml` 확인 필요.
+- **계약 미확정 HOLD**: 2번 /simulate 정확한 JSON, 3번 보정 출력, 1번 도면 외곽 footprint 미확정. 따라서 PR #2 Draft·main 병합 금지, GitHub Pages 변경 없음.
+- 다음 대화는 PR #2와 `docs/GATE3_INTEGRATION.md`를 먼저 읽고 CI 결과 확인. 팀원의 실제 계약이 확인될 때 정식 연결을 시도.
