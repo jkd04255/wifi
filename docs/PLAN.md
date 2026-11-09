@@ -14,11 +14,13 @@
 - [x] v1.6 HTML 원본을 legacy/에 보존, 같은 소스를 index.html에도 업로드
 - [x] README·PLAN·HANDOFF·AGENTS 등 작업 연속성 문서 커밋
 - [x] GitHub Pages 활성화 및 GitHub Actions 빌드·배포 성공 확인
-- [ ] 실제 URL HTTP 200/화면 출력 확인
-- [ ] 핵심 버튼·도면 편집·중요도·최적화·RSSI 히트맵·모바일 화면 회귀 체크
-- [ ] 정적 HTML 내부 계산과 실제 Python/실측 데이터 연동의 차이를 README에 기록
+- [x] 사용자 직접 URL 화면 및 시연 정상 작동 확인 (HTTP 200 독립 계측은 미실시)
+- [x] 사용자 직접 시연 정상 작동 확인 (세부 기능별 자동 회귀 및 모바일 별도 검증 미실시)
+- [x] 정적 HTML 내부 계산과 Python/실측 데이터 미연동 상태를 README에 기록
 
 **완료 조건:** GitHub URL + 실제 접속 가능한 GitHub Pages URL + 검증된 v1.6 기준 동작 목록. 중 하나라도 확인 안 되면 GATE 2로 넘어가지 않음.
+
+**GATE 1 판정: 완료 (2026-11-09) — 사용자 시연 정상 확인, Pages 배포 성공. 세부 자동 E2E는 수행하지 않음.**
 
 ## 2단계 (GATE 2): 독립 최적화 알고리즘 및 백엔드
 
