@@ -5,8 +5,8 @@
 ## GitHub 파일 검증
 - 저장소: https://github.com/jkd04255/wifi
 - 기본 브랜치: main, public
-- index.html과 legacy/WiFi_Placement_Studio_v1.6_offline.html의 Git blob SHA가 **완전히 일치**: `0c9c0a39a83d3e1f4bc3bc2c11091e4b3a184c4b`
-- HTML 텍스트 길이: 80,611자
+- index.html과 legacy/WiFi_Placement_Studio_v1.6_offline.html의 Git blob SHA가 **완전히 일치**: `d79ec31cbd9fa51f10ceb01675a5de72541f8b27`
+- HTML 텍스트 길이: 80,612 UTF-16 코드단위 / UTF-8 85,967바이트 (최종 줄바꿈 포함). 원본 파일 기록 크기 85,967바이트와 일치
 - README.md, AGENTS.md, docs/PLAN.md, docs/HANDOFF.md, docs/BASELINE_QA.md 업로드 성공
 
 ## GitHub에 게시된 HTML 코드 존재 확인 — 8/8
