@@ -60,3 +60,11 @@ GitHub Actions: `.github/workflows/stage3-ci.yml`에서 Python unittest와 Chrom
 ## 5. 현재 Gate 판정
 
 **GATE 3 로컬 시연 구현 및 QA 가능 단계. 정식 통합 GATE 3 HOLD / main 병합 금지.** 기존 GitHub Pages는 계속 v1.6 배포본을 유지합니다.
+
+
+## 6. 보강 테스트 및 팀원 계약 인수인계 (2026-11-09)
+
+- [브라우저/백엔드 30개 자동 테스트 통과](https://github.com/jkd04255/wifi/actions/runs/42634218483) — Python 21/21 + Chromium/WebKit 9/9.
+- 신규 테스트: WebKit 로컬 API 모드, 2.4/5GHz RSSI 입력 비교, 중요도 3종 전달, 벽·랜선 제약, API 네트워크/503 장애 복구.
+- [팀원 1·2·3 확정 계약 요청 템플릿](TEAM_CONTRACT_TEMPLATE.md) — **PROPOSED/UNVERIFIED**, 팀원의 실서명이나 실제 데이터 계약 아님.
+- 정식 연동 차단 요인: 1번 실내 외곽 footprint, 2번 최신 /simulate 입력·출력, 3번 보정 결과 스키마/실측 데이터. 이들을 확보하기 전에는 v1.6 예측값만 이용한 로컬 시연이며 공개 Pages 변경 없음.
