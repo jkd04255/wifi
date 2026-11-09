@@ -88,3 +88,10 @@
 - 기존 백엔드 테스트 및 Chromium/WebKit E2E: `.github/workflows/stage3-ci.yml` 확인 필요.
 - **계약 미확정 HOLD**: 2번 /simulate 정확한 JSON, 3번 보정 출력, 1번 도면 외곽 footprint 미확정. 따라서 PR #2 Draft·main 병합 금지, GitHub Pages 변경 없음.
 - 다음 대화는 PR #2와 `docs/GATE3_INTEGRATION.md`를 먼저 읽고 CI 결과 확인. 팀원의 실제 계약이 확인될 때 정식 연결을 시도.
+
+## GATE 3 로컬 CI 확정 결과 (2026-11-09)
+
+- [GATE3 QA 보고서](docs/GATE3_QA.md): [GitHub Actions #42633059037](https://github.com/jkd04255/wifi/actions/runs/42633059037) `completed/success`; Python 21/21 + Chromium/WebKit 브라우저 4/4 = 총 25개 테스트 통과.
+- 실패했던 초기 HTML 삽입 오류는 본래 v1.6을 기준으로 재생성하여 해결. 인라인 JS 스크립트 4개 모두 구문 검사 통과.
+- 로컬 데모는 `python -m uvicorn dev_server:app --host 127.0.0.1 --port 8001` (backend 디렉터리에서) → `http://127.0.0.1:8001/preview/stage3.html`.
+- **GATE3 정식 통합 HOLD**, PR #2 Draft 및 2번/3번 계약 미확정 상태. 1번 실내 footprint도 공식 계약 필요. main/기존 Pages는 그대로 유지.
