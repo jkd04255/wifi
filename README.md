@@ -5,14 +5,14 @@
 
 ## 현재 단계
 
-**GATE 1 — 기존 v1.6 보존 및 정적 시연 준비 (진행 중)**
+**GATE 1 — 완료 (2026-11-09 사용자 시연 정상 확인)**
 
 - [x] GitHub 저장소 `jkd04255/wifi` 생성
 - [x] ChatGPT GitHub 앱 쓰기 접근 권한 확인
 - [x] 기존 v1.6 HTML과 계획·인수인계 문서 업로드 및 원본/시연 SHA 일치 검증
 - [x] GitHub Pages 활성화 및 Actions 배포 성공
-- [ ] 시연 사이트 실제 브라우저 접속/기능 검증
-- [ ] 브라우저 핵심 동작 회귀 확인
+- [x] 사용자 직접 시연 사이트 접속 및 정상 작동 확인 (사용자 보고, 별도 자동 브라우저 검증 아님)
+- [x] 사용자 시연 정상 동작 확인 (세부 버튼별 자동 회귀 테스트는 미실시)
 
 **주의:** 정적 GitHub Pages는 Python 백엔드 API를 직접 실행할 수 없습니다. 현 HTML은 기존 오프라인 모델이 있는 프론트엔드 시연본이며, 2번 RSSI 서버와 4번 최적화 API의 라이브 통합본으로 주장하지 않습니다.
 
@@ -26,7 +26,7 @@
 
 ## GitHub Pages 설정 (필요한 경우 수동 1회)
 
-저장소 **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main → /(root) → Save**를 선택합니다. 배포되면 예상 주소는 https://jkd04255.github.io/wifi/ 입니다. **GitHub Actions 배포는 성공했으며 실제 화면 및 버튼 동작의 브라우저 검증은 아직 하지 않았습니다.**
+저장소 **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main → /(root) → Save**를 선택합니다. 배포되면 예상 주소는 https://jkd04255.github.io/wifi/ 입니다. **GitHub Actions 배포 성공 및 사용자 직접 웹 시연 정상 확인 (자동 브라우저 E2E는 별도 미실시).**
 
 ## 분담과 범위
 
