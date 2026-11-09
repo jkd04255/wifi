@@ -33,8 +33,7 @@
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
- <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="slider-group"><div><label for="routerY">공유기 높이 Y<small>X·Z 위치는 도면에서 설정</small></label><strong id="routerYValue">1.2 m</strong></div><input type="range" id="routerY" min="0" max="2.7" step="0.1" value="1.2"><div class="slider-hint"><span id="routerXValue">X = 5.0m · Z = 4.0m</span><span>Y = 높이 이동</span></div></div><div class="router-grid vertical-config"><label>수신기 높이 Y (m)<input id="receiverY" type="number" value="1.0" min="0" max="10" step="0.1"></label><label>천장·벽 높이 (m)<input id="roomHeightM" type="number" value="2.7" min="1" max="10" step="0.1"></label></div><p class="footnote">X·Z = 도면 평면, Y = 바닥에서 위쪽으로 잰 높이. 벽은 기본적으로 천장 높이까지 연장됩니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div>
-<details id="g3Settings" style="border:1px solid #dce5ef;border-radius:10px;padding:12px;margin-top:12px;background:#fff">
+ <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="slider-group"><div><label for="routerY">공유기 높이 Y<small>X·Z 위치는 도면에서 설정</small></label><strong id="routerYValue">1.2 m</strong></div><input type="range" id="routerY" min="0" max="2.7" step="0.1" value="1.2"><div class="slider-hint"><span id="routerXValue">X = 5.0m · Z = 4.0m</span><span>Y = 높이 이동</span></div></div><div class="router-grid vertical-config"><label>수신기 높이 Y (m)<input id="receiverY" type="number" value="1.0" min="0" max="10" step="0.1"></label><label>천장·벽 높이 (m)<input id="roomHeightM" type="number" value="2.7" min="1" max="10" step="0.1"></label></div><p class="footnote">X·Z = 도면 평면, Y = 바닥에서 위쪽으로 잰 높이. 벽은 기본적으로 천장 높이까지 연장됩니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><details id="g3Settings" style="border:1px solid #dce5ef;border-radius:10px;padding:12px;margin-top:12px;background:#fff">
  <summary style="cursor:pointer;font-size:12px;font-weight:650">4번 설치 제약 · 로컬 API 시연</summary>
  <p style="font-size:11px;color:#63788b;margin:10px 0">기본 모드는 기존 v1.6입니다. 로컬 API 모드는 2·3번 팀원 엔진이 아닌 <strong>v1.6 예측값</strong>을 입력으로 사용하며 실측 보정은 적용되지 않습니다.</p>
  <label style="display:block;font-size:11px">최적화 실행 방식
@@ -660,7 +659,20 @@ async function simulate(w){weighted=w;setBusy(true);$('statusLine').classList.re
  applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();$('statusLine').textContent=w?'중요도를 반영한 공간 품질 평가가 완료되었습니다. 반투명 표시로 가중치 영역을 확인할 수 있습니다.':'신호 계산이 완료되었습니다. 히트맵의 원하는 곳을 눌러 보세요.';
  }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
 }
-function renderS// GATE3_LOCAL_DEMO: this adapter alone is different from the immutable v1.6 source.
+function renderStats(){if(!result)return;const s=result.statistics;
+ $('meanStat').textContent=fmt(s.meanDbm)+' dBm';$('goodStat').textContent=fmt(s.coverageGoodPct)+'%';$('scoreStat').textContent=fmt(s.qualityScore)+' / 100';$('weakStat').textContent=fmt(s.coverageWeakPct)+'%';
+ $('scoreStat').style.color=s.qualityScore>=65?'#168b6d':s.qualityScore>=40?'#a6771a':'#d65b50';
+}
+function renderProbe(){if(!result)return;
+ const d=window.WifiEngine.value(L,probe.x,probe.z,undefined,true);
+ $('probeCoordinates').textContent=`X ${fmt(probe.x,2)} · Y ${fmt(L.receiverY,2)} · Z ${fmt(probe.z,2)} m`;
+ const items=[['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
+ ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
+ ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
+ const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
+}
+$('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
+// GATE3_LOCAL_DEMO: this adapter alone is different from the immutable v1.6 source.
 // Two/three team-member contracts are unavailable: use only the explicit v1.6 estimate demo.
 async function g3LocalOptimize(){
  const val=id=>{const raw=$(id).value.trim();if(!raw)throw Error('랜 포트 X/Z와 최대 랜선 길이를 직접 입력하세요.');return Number(raw);};
@@ -722,18 +734,6 @@ $('optimizeBtn').onclick=async()=>{
   best=null;$('recommendation').hidden=true;$('statusLine').classList.add('error');$('statusLine').textContent='최적화 실패: '+e.message;
   if($('g3Mode').value==='local')$('g3ModeInfo').textContent='로컬 API 실패 · 자동으로 기존 모델로 바꾸지 않았습니다: '+e.message;
  }finally{setBusy(false)}
-};
->simulate(false);
-$('optimizeBtn').onclick=async()=>{
- setBusy(true);$('statusLine').textContent='공유기 후보 위치를 탐색 중입니다…';await new Promise(resolve=>setTimeout(resolve,30));
- try{let resultBest;const objectiveWeighted=weighted||(L.zones||[]).length>0||(L.importanceStrokes||[]).length>0;try{resultBest=await api('/api/optimize',{layout:L,weighted:objectiveWeighted,gridStep:.35,searchStep:.75});$('engineMode').innerHTML='<span class="dot"></span>Python API 연결됨';}catch{resultBest=window.WifiEngine.optimize(L,.35,.75,objectiveWeighted);$('engineMode').innerHTML='<span class="dot"></span>독립 실행 엔진 (JS)';}
- best=resultBest;const b=best.best,box=$('recommendBody');box.replaceChildren();
- const p=document.createElement('div');p.innerHTML=`추천 좌표: <b>X ${fmt(b.x,2)} m · Y ${fmt(b.y,2)} m(높이) · Z ${fmt(b.z,2)} m</b>`;
- const p2=document.createElement('div');p2.innerHTML=`품질 지수: <b>${fmt(best.currentStats.qualityScore)} → ${fmt(best.bestStats.qualityScore)}</b> · 목적 점수 개선 <b>${fmt(best.improvementPoints)}점</b>`;
- const p3=document.createElement('div');p3.textContent=`후보 ${best.candidates}개 평가 · ${best.weightsUsed?'중요도 브러시 및 구역 반영':'전체 공간 동일 가중치'}`;
- box.append(p,p2,p3);$('recommendation').hidden=false;$('statusLine').textContent='추천 위치를 찾았습니다. 보라색 BEST 마커와 상세 값을 확인하세요.';renderHeat();
- if(!result)toast('최적 위치가 계산되었습니다. Apply를 눌러 히트맵도 확인하세요.');
- }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='최적화 실패: '+e.message}finally{setBusy(false)}
 };
 $('useBestBtn').onclick=async()=>{if(!best)return;pushUndo();L.router.x=best.best.x;L.router.z=best.best.z;best=null;changed('추천 위치를 적용했습니다. 히트맵을 갱신합니다.');await simulate(weighted)};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(L,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wifi-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('도면 JSON 파일을 저장했습니다.')};
