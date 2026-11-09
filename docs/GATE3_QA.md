@@ -67,3 +67,15 @@ GitHub Actions: https://github.com/jkd04255/wifi/actions/runs/42634218483
 **검증 한계:** 자동 테스트는 로컬 `dev_server` + v1.6 예측 RSSI 기반이며, 실제 2번/3번 신호 데이터 통합이나 실내 외곽선·배선 시공 적합성, 실서비스 공개 배포는 검증하지 않았습니다. WebKit은 Playwright 엔진 기반 시험이지 실제 iPhone Safari 실기기 QA는 아닙니다.
 
 **GATE 3 판정 유지: 정식 통합 HOLD.** 초안 PR #2 및 원본/Pages 보호. 실제 계약 확인 전 `main` 병합·GitHub Pages 배포 금지.
+
+
+## GATE 3 합성 계약 경계 추가 검증 (2026-11-09)
+
+최신 기능 코드 검증: [GitHub Actions #42635704295](https://github.com/jkd04255/wifi/actions/runs/42635704295) **성공**.
+Python unittest **86/86** + Chromium/WebKit browser **9/9** = **총 95/95 통과**.
+
+기능 범위: 두 합성 전용 어댑터(`synthetic_adapter.py` / `synthetic_contract.py`)의 X-Z 변환·셀 중심/row=Z,column=X·수직 Y 분리, RSSI 범위/배열 길이/2.4·5GHz·중요도, 합성 보정 누락/실패/잘못된 상태 거부, 외부 후보 API 경계 및 신호 출처 표시. **실제 팀원 2번/3번 실측 데이터는 사용하지 않았습니다.**
+
+상세 파일·실행 방법·남은 차단 조건: [GATE3_SYNTHETIC_QA.md](GATE3_SYNTHETIC_QA.md).
+
+외부 접근: GitHub `jkd04255/wifi`는 **Public**으로 확인됨 (누구나 열람·clone 가능). 직접 push하려면 팀원 계정별 Collaborator 초대 필요. **main/Pages 원본 보호와 정식 GATE 3 HOLD 유지.**
