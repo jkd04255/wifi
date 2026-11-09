@@ -55,3 +55,16 @@
 - **Pages 배포 자체는 성공 확인. 실제 브라우저 렌더링 및 클릭 테스트는 미실시.**
 - 예상 접속 URL: https://jkd04255.github.io/wifi/
 - **2026-11-09 사용자 웹 시연 정상 동작 확인으로 GATE 1 완료 처리.** HTTP 응답 별도 계측 및 자동 브라우저 E2E는 미실시. 다음은 GATE 2 독립 Python 최적화 API 구현.
+
+## GATE 2 확정 개발 상태 (2026-11-09)
+
+- `feat/optimizer-stage2` 기능 브랜치에서 **독립 최적화 엔진 완료**.
+- 코어: `backend/optimizer/core.py`. API: `backend/optimizer/api.py`.
+- 엔드포인트: `GET /health`, `POST /candidate-locations`, `POST /optimize`.
+- 후보 위치는 평면 X-Z/높이 Y, footprint/벽/케이블 길이 제약으로 거르며, 2번 엔진이 제공한 RSSI 배열만 평가함.
+- 중요도는 +100=2배, 0=1배, -100=0배(신호를 약화시키지는 않음), 목표 미달 시 추가 AP **검토 권고**.
+- 실행/계약/한계: `backend/README.md`. 테스트 증거: `docs/GATE2_QA.md`.
+- **최종 CI 검증**: https://github.com/jkd04255/wifi/actions/runs/42629894652 — Python 3.11·3.12 각 21/21 성공(총 42).
+- **PR #1**: https://github.com/jkd04255/wifi/pull/1 — 아직 main 병합 전.
+- 현재 main의 기존 v1.6 정적 시연은 그대로 유지. Python API는 GitHub Pages에 배포되지 않음.
+- **다음 GATE 3**: 실제 2번/3번 연동 계약 확인 → 화면에 최소한 연결 → 회귀 QA → PR 검토/병합/배포. 구체 계약 확보 전 실측·실시간 통합 완료로 표시하지 말 것.
