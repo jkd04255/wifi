@@ -82,3 +82,12 @@ python -m unittest discover -s tests -v
 5. 기존 v1.6 원본 유지, Python/브라우저 회귀 및 실제 예측/실측 통합 시험 통과.
 
 **정식 팀 계약 부재 시: PR #2 Draft·GATE 3 HOLD·main 병합 금지·GitHub Pages 변경 금지.**
+
+
+## 별도 합성 계약 전체 요청 어댑터와의 차이
+
+현재 저장소에는 `backend/optimizer/synthetic_contract.py`도 있습니다. 이 모듈은 **전체 합성 RSSI 격자와 중요도 배열을 함께 검증하고** 4번 `/optimize` 요청 전체를 구성하며, 보정이 적용됐다는 주장을 승인하지 않습니다. 검증 fixture는 `backend/fixtures/synthetic_gate3_case.json`입니다.
+
+반면 본 문서의 `synthetic_adapter.py`는 특정 수신 지점이 정확히 격자 셀 중심에 있는지 확인하고, 합성 보정 결과가 제공되었을 때 그 **이미 계산된** 값을 순서 검증 후 전달하기만 합니다. 서로 다른 테스트 목적의 **두 임시 모듈**이며 둘 다 실제 팀원 2·3번 API 연동이 아닙니다. 임의로 계약을 혼용하지 마세요.
+
+증거: [Python 86개 + Chromium/WebKit 9개 = 총 95개 성공](https://github.com/jkd04255/wifi/actions/runs/42635704295).
