@@ -68,3 +68,9 @@
 - **다음 진행 GATE 3:** 우선 PR #1 및 최신 CI 확인. 2번 /simulate 최신 JSON 계약과 3번 실측 보정 데이터 연동 방식 검증. 기존 v1.6의 `optimize()` 및 버튼은 보존하고 UI 최소 연동에 한정. Python API는 GitHub Pages에서 직접 실행할 수 없음. 계약이 불명확하면 모의연동과 실연동을 구분하고 사용자에게 요청.
 - 기존 원본 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 파일 직접 수정 금지.
 - 다음 단계 버튼 메시지: "jkd04255/wifi PR #1의 GATE 2 자동 테스트 상태를 재확인하고, docs/PLAN.md의 GATE 3을 진행해 주세요. 원본 v1.6과 1~3번 팀원 모듈을 보존하고 2/3번 최신 API 계약을 검증한 뒤 최소 UI 연동·통합 QA·PR 병합을 진행하세요. 실제 연동 미검증은 명시하세요."
+
+## GATE 2 재검증 및 충돌 해결 (2026-11-09)
+- [Python 3.11·3.12 CI](https://github.com/jkd04255/wifi/actions/runs/42629894652): 각 21/21, 총 42/42 통과.
+- 검토용 [PR #1](https://github.com/jkd04255/wifi/pull/1)은 open이며, 통합 전 main에 코드를 병합하지 않음.
+- 새 CI는 `.github/workflows/optimizer-ci.yml` 한 개로 유지.
+- GATE 3는 실제 2번 RSSI 예측 데이터 계약을 검증해야 시작할 수 있음. 기존 웹 v1.6과 3번 실측 모듈을 임의로 고치지 않음.

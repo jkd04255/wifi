@@ -41,7 +41,7 @@
 
 **완료 조건:** 정확한 API 계약 및 자동 테스트 통과. 임의 상수·예측 미검증을 실제 정확도로 표현하지 않음.
 
-**GATE 2 결과 (2026-11-09): 독립 알고리즘·API 구현 및 21개 자동 테스트 통과.** [PR #1](https://github.com/jkd04255/wifi/pull/1)에 기능 브랜치로 커밋 완료. Python /candidate-locations, /optimize 및 자동 CI 구현. 기존 main UI 및 1~3번 모듈은 변경하지 않았으며 **PR은 GATE 3 통합 QA까지 미병합**. 2번 엔진의 확정 예측 API 계약이 없어 실제 연동은 GATE 3에서 수행해야 합니다. 상세 [GATE2_QA.md(브랜치)](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/docs/GATE2_QA.md).
+**GATE 2 판정: 독립 Python 백엔드 구현 및 자동 테스트 완료 (2026-11-09).** `feat/optimizer-stage2` 기능 브랜치 및 PR #1에 반영. Python 3.11/3.12 각각 21개 테스트 통과(총 42개), [실행 기록](https://github.com/jkd04255/wifi/actions/runs/42629894652). 실제 2번/3번 데이터 연동과 웹 화면 연결은 3단계에서 수행하며, 이번 단계에서 완료로 표현하지 않음.
 
 ## 3단계 (GATE 3): UI 최소 연동, 비교 결과, 최종 시연
 
