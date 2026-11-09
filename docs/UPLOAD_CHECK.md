@@ -28,3 +28,9 @@
 - [ ] 기준본의 별도 백엔드/오프라인 계산 구분
 
 **결론: GATE 1 완료 아님.** Pages 및 브라우저 시연 검증을 완료한 후에만 GATE 2에 착수한다.
+
+## Pages 설정 이후 추가 확인 (2026-11-09 KST)
+- GitHub 저장소 메타데이터 `has_pages=true` 확인.
+- `pages build and deployment` Actions 실행: https://github.com/jkd04255/wifi/actions/runs/42626968444
+- build: `completed/success`; deploy: 확인 당시 `in_progress`.
+- 예상 시연 URL: https://jkd04255.github.io/wifi/ (실제 접속 및 브라우저 수동 QA 미확인)
