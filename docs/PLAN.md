@@ -79,3 +79,11 @@
 - [ ] 통합 QA 후 PR review·main 병합·Pages 재배포 검증.
 
 **판정: GATE 3 HOLD** — 로컬 시연이 통과해도 확정 계약 없는 상태에서는 정식 통합 완료나 배포로 표현하지 않음. Draft PR #2: https://github.com/jkd04255/wifi/pull/2.
+
+### GATE 3 중간 QA 기록
+- [x] 코드로 검증된 로컬 API 시연 및 원본 v1.6 유지.
+- [x] Chromium API 모드 및 모바일, WebKit 기존 모드, 설정 누락 예외 확인.
+- [x] Python 21 + 브라우저 4 = 25개 자동 테스트 GitHub Actions 성공 ([run #42633059037](https://github.com/jkd04255/wifi/actions/runs/42633059037)).
+- [ ] **실제** 2·3번 팀원 데이터 계약 기반 연동 및 실내 외곽 지도 제약 최종 확인.
+- [ ] 정식 API WebKit 검증, 전 대역/브러시/벽/케이블 추가 회귀와 PR 리뷰.
+- [ ] PR 병합 및 Pages 배포 — **계약 미확정으로 HOLD**.
