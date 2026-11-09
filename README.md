@@ -5,6 +5,11 @@
 
 ## 현재 단계
 
+**GATE 2 — Python 최적 배치 알고리즘·백엔드 독립 구현 및 테스트 완료.** [PR #1](https://github.com/jkd04255/wifi/pull/1) `feat/optimizer-stage2` 브랜치에서 유지 중이며 **아직 main에 병합하지 않았습니다.** 최신 PR CI 21/21 성공: https://github.com/jkd04255/wifi/actions/runs/42629821844 . API 사용법은 [backend/README.md (개발 브랜치)](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/backend/README.md)을 참조하세요.
+
+**다음 단계 GATE 3:** 기존 UI와 API 최소 연동, 2번 예측/3번 보정 계약 확인, 전체 통합 QA 후 PR 병합. GitHub Pages는 Python API를 실행하지 않으며 현재 시연 사이트는 v1.6 그대로입니다.
+
+
 **GATE 1 — 완료 (2026-11-09 사용자 시연 정상 확인)**
 
 - [x] GitHub 저장소 `jkd04255/wifi` 생성
@@ -52,3 +57,15 @@
 
 ---
 이 저장소에 **실제 커밋된 파일과 확인된 배포만** 완료로 표시합니다.
+
+
+## 최근 진행 현황 — GATE 2
+
+- **GATE 1 완료**: 기존 v1.6 GitHub Pages 배포 성공, 사용자가 정상 시연 확인.
+- **GATE 2 독립 최적화 백엔드 구현·검증 완료** (2026-11-09): `feat/optimizer-stage2` 브랜치, [PR #1](https://github.com/jkd04255/wifi/pull/1) **검토 대기 / main 미병합**.
+- **자동 CI 성공**: Python 3.11 및 3.12 각각 21/21, 총 42/42 테스트 성공. [실제 기록](https://github.com/jkd04255/wifi/actions/runs/42629894652).
+- 백엔드 코드: [backend/optimizer/core.py](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/backend/optimizer/core.py), [backend/optimizer/api.py](https://github.com/jkd04255/wifi/blob/feat/optimizer-stage2/backend/optimizer/api.py).
+- **GATE 3 대기**: 2번 RSSI 엔진과 3번 보정 결과 형식을 확인한 후 기존 1번 UI와 최소한으로 연동하고 회귀 테스트. 사용자 다음 단계 버튼 승인 시 진행.
+- 현 [GitHub Pages 시연](https://jkd04255.github.io/wifi/)은 **기존 v1.6 정적 버전**이며 2단계 Python API 연동본이 아닙니다.
+
+> 다음 대화에서는 먼저 PR #1과 그 브랜치의 `docs/GATE2_QA.md`, `docs/HANDOFF.md`를 읽으세요. GATE 2 백엔드를 다시 구현하지 말고, GATE 3 계약 확인과 최소 연동에 집중하세요. 원본 `legacy/` 파일은 수정 금지.
