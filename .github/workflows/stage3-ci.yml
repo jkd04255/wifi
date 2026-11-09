@@ -1,0 +1,47 @@
+name: Stage 3 local integration QA
+
+on:
+  push:
+    branches:
+      - feat/optimizer-stage3-integration
+    paths:
+      - backend/**
+      - preview/**
+      - .github/workflows/stage3-ci.yml
+  pull_request:
+    paths:
+      - backend/**
+      - preview/**
+      - .github/workflows/stage3-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r backend/requirements.txt
+      - run: python -m compileall -q backend/optimizer backend/dev_server.py
+      - name: Stage 2 regression unit tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -v
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r backend/requirements.txt playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium webkit
+      - name: Chromium/WebKit local integration smoke
+        run: python backend/tests_browser/test_preview.py
