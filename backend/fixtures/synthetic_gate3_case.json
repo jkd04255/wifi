@@ -1,0 +1,118 @@
+{
+  "schema": "synthetic-integration-v1",
+  "synthetic": true,
+  "floor": {
+    "widthM": 4,
+    "depthM": 3,
+    "heightM": 2.7,
+    "walls": []
+  },
+  "lanPort": {
+    "x": 0.5,
+    "z": 0.5,
+    "y": 0.3,
+    "maxCableLengthM": 12
+  },
+  "priorityGrid": [
+    [
+      100,
+      0,
+      -100
+    ],
+    [
+      0,
+      100,
+      0
+    ]
+  ],
+  "candidates": [
+    {
+      "schema": "synthetic-grid-v1",
+      "source": "synthetic-fixture",
+      "frequencyGHz": 5,
+      "routerPosition": {
+        "x": 1,
+        "z": 1,
+        "y": 1.2
+      },
+      "originXZ": [
+        0,
+        0
+      ],
+      "gridStepM": 1,
+      "sampling": "cell-center",
+      "values": [
+        [
+          -55,
+          -59,
+          -69
+        ],
+        [
+          -60,
+          -65,
+          -72
+        ]
+      ],
+      "correction": {
+        "status": "unavailable",
+        "reason": "synthetic_case_without_measurements"
+      }
+    },
+    {
+      "schema": "synthetic-grid-v1",
+      "source": "synthetic-fixture",
+      "frequencyGHz": 5,
+      "routerPosition": {
+        "x": 3,
+        "z": 2,
+        "y": 1.2
+      },
+      "originXZ": [
+        0,
+        0
+      ],
+      "gridStepM": 1,
+      "sampling": "cell-center",
+      "values": [
+        [
+          -72,
+          -65,
+          -55
+        ],
+        [
+          -75,
+          -62,
+          -50
+        ]
+      ]
+    }
+  ],
+  "current": {
+    "schema": "synthetic-grid-v1",
+    "source": "synthetic-fixture",
+    "frequencyGHz": 5,
+    "routerPosition": {
+      "x": 2,
+      "z": 1,
+      "y": 1.2
+    },
+    "originXZ": [
+      0,
+      0
+    ],
+    "gridStepM": 1,
+    "sampling": "cell-center",
+    "values": [
+      [
+        -67,
+        -67,
+        -67
+      ],
+      [
+        -67,
+        -70,
+        -65
+      ]
+    ]
+  }
+}
