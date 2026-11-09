@@ -66,3 +66,16 @@
 ## 사용자 다음 행동
 - 즉시: GitHub Pages를 Settings → Pages → Deploy from a branch → main → /(root)로 설정 (자동 설정되지 않았을 경우).
 - GATE 2 전: 최신 2번/3번 팀원 데이터 계약 파일을 제공하거나 저장소에 업로드.
+
+
+## GATE 3 현재 진행 상태 (2026-11-09)
+
+- [x] 별도 `preview/stage3.html` (기존 UI 최소 변경) 및 로컬 동일 출처 Uvicorn 시연 서버 구현.
+- [x] 기존 v1.6 최적화 기본값 유지; 사용자 명시적 4번 API 시연 선택에 한해 후보/케이블/비교/AP 권고 표시.
+- [x] 2·3번 계약 미확정 확인, v1.6 예측값을 '실측 미보정 시연'으로 구분.
+- [ ] Chromium/WebKit 통합 자동 QA 통과 확인.
+- [ ] 2·3번 실제 팀원 계약 및 실제 예측/실측 보정 데이터로 교차 검증.
+- [ ] 1번 실제 집 외곽 footprint/LAN 포트 정보 계약 확보.
+- [ ] 통합 QA 후 PR review·main 병합·Pages 재배포 검증.
+
+**판정: GATE 3 HOLD** — 로컬 시연이 통과해도 확정 계약 없는 상태에서는 정식 통합 완료나 배포로 표현하지 않음. Draft PR #2: https://github.com/jkd04255/wifi/pull/2.
