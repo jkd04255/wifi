@@ -13,7 +13,8 @@
 - [x] ChatGPT GitHub 앱의 저장소 쓰기 권한 확인
 - [x] v1.6 HTML 원본을 legacy/에 보존, 같은 소스를 index.html에도 업로드
 - [x] README·PLAN·HANDOFF·AGENTS 등 작업 연속성 문서 커밋
-- [ ] GitHub Pages를 main 브랜치 루트로 활성화하고, 실제 URL HTTP 200/화면 출력 확인
+- [x] GitHub Pages 활성화 및 GitHub Actions 빌드·배포 성공 확인
+- [ ] 실제 URL HTTP 200/화면 출력 확인
 - [ ] 핵심 버튼·도면 편집·중요도·최적화·RSSI 히트맵·모바일 화면 회귀 체크
 - [ ] 정적 HTML 내부 계산과 실제 Python/실측 데이터 연동의 차이를 README에 기록
 
