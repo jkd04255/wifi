@@ -99,3 +99,13 @@
 - [x] Python 21개 + Chromium/WebKit 9개 = **30/30 자동 테스트 성공** ([Actions #42634218483](https://github.com/jkd04255/wifi/actions/runs/42634218483)).
 - [x] [1·2·3번 팀원 데이터 계약 요청 템플릿](TEAM_CONTRACT_TEMPLATE.md) 작성 (미확정으로 명시).
 - [ ] 실제 팀원 소스/계약 확보, 실제 데이터 기반 통합 및 실내 외곽선 검증; 정식 Gate 3 **HOLD**.
+
+
+### 합성 계약 준비 및 접근 검증 (2026-11-09)
+
+- [x] 기존 파일 트리와 Draft PR #2 확인 — 1·2·3번 최신 확정 계약 부재.
+- [x] 합성 전용 RSSI X-Z 좌표·주파수·배열·보정 상태 검증 및 API 요청 어댑터 작성, 테스트 fixture 추가.
+- [x] Python 86/86 및 browser 9/9 = **95/95 테스트 성공** ([CI](https://github.com/jkd04255/wifi/actions/runs/42635704295)).
+- [x] Public 저장소 `jkd04255/wifi` 확인, 열람과 push 권한 차이 기록.
+- [ ] 팀원 1·2·3 계약/데이터 수신 및 실데이터 교차검증.
+- [ ] GATE 3 정식 통합 판정 및 PR 병합·Pages 재배포 — **HOLD**.
