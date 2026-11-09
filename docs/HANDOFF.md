@@ -95,3 +95,14 @@
 - 실패했던 초기 HTML 삽입 오류는 본래 v1.6을 기준으로 재생성하여 해결. 인라인 JS 스크립트 4개 모두 구문 검사 통과.
 - 로컬 데모는 `python -m uvicorn dev_server:app --host 127.0.0.1 --port 8001` (backend 디렉터리에서) → `http://127.0.0.1:8001/preview/stage3.html`.
 - **GATE3 정식 통합 HOLD**, PR #2 Draft 및 2번/3번 계약 미확정 상태. 1번 실내 footprint도 공식 계약 필요. main/기존 Pages는 그대로 유지.
+
+
+## 최신 GATE 3 추가 회귀 결과 및 다음 대화 지시 (2026-11-09)
+
+- 개발 브랜치 `feat/optimizer-stage3-integration` / [Draft PR #2](https://github.com/jkd04255/wifi/pull/2).
+- 최신 검증: [Actions #42634218483](https://github.com/jkd04255/wifi/actions/runs/42634218483) Python 21/21, Playwright Chromium·WebKit 9/9, 합계 **30/30 성공**.
+- WebKit 신규 로컬 API, 2.4/5GHz, +100/0/-100 브러시, 콘크리트 벽과 케이블 제한, API 장애 시 묵시적 폴백 방지 모두 테스트.
+- 검증 로그와 한계는 `docs/GATE3_QA.md`, 실행 방법은 `docs/GATE3_INTEGRATION.md`.
+- 팀원 API 확정 계약은 여전히 없음. `docs/TEAM_CONTRACT_TEMPLATE.md`는 제안/요청 양식이므로 실제 2·3번 연동된 것으로 보고하지 말 것.
+- `main/index.html` 및 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 변경 금지, PR #1·#2는 보류. 정식 GATE 3 **HOLD**, GitHub Pages 재배포 금지.
+- **다음 액션:** 1·2·3번 팀원에게 계약 템플릿을 전달하고 소스·JSON 샘플·외곽선 좌표를 받은 뒤 검증·어댑터/통합 테스트. 미제공 시 HOLD 유지.
