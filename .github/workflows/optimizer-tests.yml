@@ -1,0 +1,34 @@
+name: Optimizer Stage 2 Tests
+
+on:
+  push:
+    branches:
+      - "feat/optimizer-*"
+    paths:
+      - "backend/**"
+      - ".github/workflows/optimizer-tests.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+
+jobs:
+  unit-test:
+    name: Python optimizer tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Compile optimizer
+        run: python -m compileall -q backend/optimizer
+      - name: Run automated tests
+        env:
+          PYTHONPATH: backend
+        run: python -m unittest discover -s backend/tests -v
