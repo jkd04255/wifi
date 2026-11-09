@@ -9,7 +9,7 @@
 
 - [x] GitHub 저장소 `jkd04255/wifi` 생성
 - [x] ChatGPT GitHub 앱 쓰기 접근 권한 확인
-- [ ] 기존 v1.6 HTML과 계획·인수인계 문서 업로드 및 검증
+- [x] 기존 v1.6 HTML과 계획·인수인계 문서 업로드 및 원본/시연 SHA 일치 검증
 - [ ] GitHub Pages 활성화, 라이브 URL 접속 검증
 - [ ] 브라우저 핵심 동작 회귀 확인
 
@@ -22,6 +22,10 @@
 - [3단계 작업 계획](docs/PLAN.md) — GATE 1/2/3 및 범위 통제
 - [다음 대화 인수인계](docs/HANDOFF.md) — 기술/좌표/연동 계약 및 진행 방법
 - [개발 규칙](AGENTS.md) — 팀 영역 변경 금지와 QA 지침
+
+## GitHub Pages 설정 (필요한 경우 수동 1회)
+
+저장소 **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main → /(root) → Save**를 선택합니다. 배포되면 예상 주소는 https://jkd04255.github.io/wifi/ 입니다. **이 주소의 실제 운영 여부는 아직 검증하지 않았습니다.**
 
 ## 분담과 범위
 
