@@ -47,3 +47,10 @@
 
 ## 다음 대화에 그대로 붙여넣을 요청
 > GitHub jkd04255/wifi의 README.md, AGENTS.md, docs/HANDOFF.md, docs/PLAN.md와 최신 main 코드를 확인한 후 4번 최적 공유기 배치 알고리즘 개발을 이어 주세요. GATE 완료 여부를 먼저 검증하고, 기존 v1.6 원본을 보존하며 1~3번 팀원의 모듈을 임의로 재작성하지 마세요.
+
+## GitHub Pages 배포 상태 (2026-11-09 KST)
+- GitHub API `has_pages=true`: 사용자가 Pages 활성화 설정을 완료한 것으로 확인됨.
+- Actions run: https://github.com/jkd04255/wifi/actions/runs/42626968444
+- `build` job은 성공, `deploy` job은 확인 당시 `in_progress`.
+- 예상 접속 URL: https://jkd04255.github.io/wifi/
+- **실제 HTTP 응답과 브라우저 동작은 별도 검증되지 않았음. GATE 1 미통과 상태 유지.**
