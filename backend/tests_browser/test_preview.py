@@ -135,5 +135,178 @@ class Stage3BrowserTests(unittest.TestCase):
             browser.close()
 
 
+    # Extend only the opt-in preview tests. This fixture is synthetic, not a 2/3-team contract.
+    def _select_local(self, page, cable="20", lan_x="0.5", lan_z="0.5"):
+        page.locator("#g3Settings summary").click()
+        page.locator("#g3Mode").select_option("local")
+        page.locator("#g3LanX").fill(lan_x)
+        page.locator("#g3LanZ").fill(lan_z)
+        page.locator("#g3LanY").fill("0.3")
+        page.locator("#g3Cable").fill(cable)
+
+    def _run_local(self, page):
+        page.locator("#optimizeBtn").click()
+        page.wait_for_function(
+            "!document.getElementById('recommendation').hidden && !document.getElementById('optimizeBtn').disabled",
+            timeout=45000,
+        )
+        self.assertIn("4번 Python API", page.locator("#engineMode").inner_text())
+        self.assertIn("v1.6", page.locator("#recommendBody").inner_text())
+
+    def _import_layout(self, page, layout):
+        import json
+        page.locator("#importFile").set_input_files({
+            "name": "synthetic-stage3-layout.json",
+            "mimeType": "application/json",
+            "buffer": json.dumps(layout).encode("utf-8"),
+        })
+        page.wait_for_function(
+            "document.body.dataset.view === 'design' && document.getElementById('statusLine').textContent.includes('XZ')",
+            timeout=10000,
+        )
+        page.locator("#applyBottomBtn").click()
+        page.wait_for_function("document.body.dataset.view === 'analysis'", timeout=10000)
+        page.locator("#optimizeBtn").wait_for(state="visible", timeout=10000)
+
+    @staticmethod
+    def _fixture(walls=None, strokes=None):
+        return {
+            "schemaVersion": "1.1",
+            "width": 6.0, "depth": 4.0, "roomHeightM": 2.7, "receiverY": 1.0,
+            "router": {"x": 3.0, "z": 2.0, "y": 1.2, "frequency": 2.4,
+                       "txPowerDbm": 20, "antennaGainDbi": 0},
+            "walls": walls or [],
+            "zones": [], "sketches": [], "importanceStrokes": strokes or [],
+            "modelOverrides": {"pathLossExponent": 2.2, "wallScale": 1.0},
+        }
+
+    def test_webkit_local_api_full_flow(self):
+        """New API path works in Safari engine, not only the old fallback."""
+        browser, page, errors = self.open_page(engine="webkit")
+        try:
+            self._select_local(page, cable="30")
+            self._run_local(page)
+            self.assertIn("케이블 예상 길이", page.locator("#recommendBody").inner_text())
+            self.assertIn("미보정", page.locator("#engineMode").inner_text())
+            page.locator("#useBestBtn").click()
+            page.wait_for_function("document.getElementById('recommendation').hidden", timeout=30000)
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_24_and_5_ghz_send_different_predictions(self):
+        """Changing band must modify the v1.6 estimate passed into the API."""
+        browser, page, errors = self.open_page()
+        requests = []
+        page.on("request", lambda request: requests.append(request.post_data_json)
+                if request.url.endswith("/optimize") else None)
+        try:
+            self._select_local(page, cable="30")
+            page.locator("#frequencySelect").select_option("2.4")
+            self._run_local(page)
+            self.assertEqual(page.locator("#frequencySelect").input_value(), "2.4")
+            pred_24 = requests[-1]["candidates"][0]["rssisDbm"]
+            self.assertTrue(pred_24)
+            page.locator("#frequencySelect").select_option("5")
+            page.locator("#applyBtn").click()
+            page.wait_for_function(
+                "document.getElementById('heatmapBand').textContent.includes('5 GHz')",
+                timeout=10000,
+            )
+            self._run_local(page)
+            pred_5 = requests[-1]["candidates"][0]["rssisDbm"]
+            self.assertEqual(page.locator("#frequencySelect").input_value(), "5")
+            self.assertNotEqual(pred_24, pred_5)
+            self.assertLess(pred_5[0], pred_24[0])
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_imported_importance_brushes_all_three_priorities(self):
+        """Red +100, green 0, blue -100 are transferred to the optimizer request."""
+        strokes = [
+            {"id": "important", "points": [[1, 0.4], [1, 3.6]], "radiusM": 1.0, "weightPct": 100},
+            {"id": "neutral", "points": [[3, 0.4], [3, 3.6]], "radiusM": 0.9, "weightPct": 0},
+            {"id": "low", "points": [[5, 0.4], [5, 3.6]], "radiusM": 1.0, "weightPct": -100},
+        ]
+        browser, page, errors = self.open_page()
+        requests = []
+        page.on("request", lambda request: requests.append(request.post_data_json)
+                if request.url.endswith("/optimize") else None)
+        try:
+            self._import_layout(page, self._fixture(strokes=strokes))
+            self._select_local(page, cable="20")
+            self._run_local(page)
+            priorities = [p["priorityPct"] for p in requests[-1]["probes"]]
+            self.assertEqual(set(priorities), {-100, 0, 100})
+            self.assertGreater(priorities.count(100), 0)
+            self.assertGreater(priorities.count(-100), 0)
+            self.assertIn("미보정", page.locator("#engineMode").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_wall_and_cable_restrict_browser_generated_candidates(self):
+        """Candidate endpoint must receive the concrete wall and honor cable budget."""
+        wall = {"id": "barrier", "x1": 2, "z1": 0, "x2": 2, "z2": 3.1, "material": "concrete"}
+        browser, page, errors = self.open_page()
+        requests = []
+        page.on("request", lambda request: requests.append(
+            (request.url.split("/")[-1], request.post_data_json))
+                if request.url.endswith("/optimize") or request.url.endswith("/candidate-locations") else None)
+        try:
+            self._import_layout(page, self._fixture(walls=[wall]))
+            self._select_local(page, cable="3")
+            self._run_local(page)
+            first = [body for path, body in requests if path == "optimize"][-1]
+            candidate_request = [body for path, body in requests if path == "candidate-locations"][-1]
+            self.assertEqual(len(candidate_request["floor"]["walls"]), 1)
+            self.assertEqual(candidate_request["floor"]["walls"][0]["x1"], 2)
+            self.assertEqual(candidate_request["lanPort"]["maxCableLengthM"], 3)
+            self.assertGreater(len(first["candidates"]), 0)
+            self.assertTrue(all(c["position"]["x"] < 2 for c in first["candidates"]))
+            page.locator("#g3Cable").fill("20")
+            self._run_local(page)
+            second = [body for path, body in requests if path == "optimize"][-1]
+            self.assertGreater(len(second["candidates"]), len(first["candidates"]))
+            self.assertTrue(any(c["position"]["x"] > 2 for c in second["candidates"]))
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_api_errors_never_silently_fallback_or_reuse_stale_result(self):
+        browser, page, errors = self.open_page()
+        try:
+            self._select_local(page, cable="30")
+            self._run_local(page)
+            self.assertTrue(page.locator("#recommendation").is_visible())
+
+            page.route("**/optimize", lambda route: route.abort("failed"))
+            page.locator("#optimizeBtn").click()
+            page.wait_for_function(
+                "document.getElementById('statusLine').textContent.includes('최적화 실패')",
+                timeout=30000,
+            )
+            self.assertTrue(page.locator("#recommendation").is_hidden())
+            self.assertIn("자동으로 기존 모델로 바꾸지", page.locator("#g3ModeInfo").inner_text())
+            page.unroute("**/optimize")
+
+            page.route("**/candidate-locations", lambda route: route.fulfill(
+                status=503, content_type="application/json",
+                body='{"detail":"temporary unavailable"}'))
+            page.locator("#optimizeBtn").click()
+            page.wait_for_function(
+                "document.getElementById('statusLine').textContent.includes('최적화 실패')",
+                timeout=30000,
+            )
+            self.assertIn("temporary unavailable", page.locator("#statusLine").inner_text())
+            self.assertTrue(page.locator("#recommendation").is_hidden())
+            self.assertEqual(page.locator("#g3Mode").input_value(), "local")
+            # Aborted fetch is a network error, not a JavaScript page exception.
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
