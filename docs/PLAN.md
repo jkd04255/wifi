@@ -145,3 +145,14 @@
 - [x] 모바일 Chromium/WebKit 테스트 4종 추가; 전체 Python 94 + browser 21 = **115 PASS** ([Actions #42984403224](https://github.com/jkd04255/wifi/actions/runs/42984403224)).
 - [ ] 1/2/3팀 데이터 계약, 예측/실측 정합성, 실제 iPhone Safari 터치 동작 및 실내 외곽 정확성 검증.
 - [ ] GATE 3 완료, PR #2/#3 병합 및 Pages 재배포 — **HOLD**.
+
+
+### GATE 3 모바일 멀티터치·드래그 취소·키보드 접근성 검증 (2026-11-11)
+
+- [x] 현재 PR/브랜치/파일 점검: 정식 1/2/3번 계약 부재 재확인 (템플릿/합성 샘플만 존재).
+- [x] 보조 터치 간섭 차단, 터치 드래그 취소 시 원위치·Undo 복구.
+- [x] 겹친 핀의 선택 링을 가장 위에 표시, 삭제/불러오기 후 선택 목록 정합성 회복.
+- [x] 캔버스 키보드 접근: Enter/Space 새 필수 핀, 방향키 ±0.1m / Shift ±0.5m, 경계 제한 및 Undo.
+- [x] 신규 Chromium/WebKit 모바일 회귀 4개; Python 94/94 + 브라우저 25/25 = **119/119 PASS** ([Actions #42986058154](https://github.com/jkd04255/wifi/actions/runs/42986058154), code SHA `edd06870fe22c2b55945dd873f5a0e909c7b2017`).
+- [ ] 실제 iPhone Safari 및 VoiceOver, 팀 1/2/3 계약·보정 데이터 정합성, 실제 외곽, 70점 실측 검증.
+- [ ] PR #2/#3 정식 병합과 Pages 재배포 — **GATE 3 HOLD**.
