@@ -184,6 +184,90 @@ class OfflineDesktopSmoke(unittest.TestCase):
         pin = self.export()["requiredPins"][0]
         self.assertEqual((pin["signalBars"], pin["minQualityScore"]), (2, 27))
 
+    def test_one_tap_bar_buttons_and_delete_selected_pin(self):
+        self.pin()
+        self.page.locator("#editorCanvas").click(position={"x": 650, "y": 380})
+        self.page.locator("#paletteToggleBtn").click()
+        self.assertTrue(self.page.locator("#requiredDrawer").evaluate("(node) => node.open"))
+        buttons = self.page.locator("[data-signal-level]")
+        self.assertEqual(buttons.count(), 5)
+        self.page.locator('[data-signal-level="1"]').click()
+        pins = self.export()["requiredPins"]
+        self.assertEqual([p["minQualityScore"] for p in pins], [64, 9])
+        self.assertEqual(self.page.locator('[data-signal-level="1"]').get_attribute("aria-pressed"), "true")
+        self.page.locator("#requiredPinSelect").select_option(pins[0]["id"])
+        self.assertEqual(self.page.locator('[data-signal-level="4"]').get_attribute("aria-pressed"), "true")
+        self.page.locator("#requiredDeletePin").click()
+        remaining = self.export()["requiredPins"]
+        self.assertEqual(len(remaining), 1)
+        self.assertEqual(remaining[0]["minQualityScore"], 9)
+        self.page.locator("#undoBtn").click()
+        self.assertEqual(len(self.export()["requiredPins"]), 2)
+        self.page.locator("#requiredDeletePin").click()
+        self.page.locator("#requiredDeletePin").click()
+        self.assertTrue(self.page.locator("#requiredDeletePin").is_disabled())
+        self.assertEqual(self.export()["requiredPins"], [])
+
+    def test_export_import_roundtrip_keeps_independent_bars_and_positions(self):
+        self.pin()
+        self.change_bars(3)
+        self.page.locator("#editorCanvas").click(position={"x": 630, "y": 330})
+        self.page.locator('[data-signal-level="0"]').click()
+        original = self.export()
+        for pin in original["requiredPins"]:
+            self.assertEqual(set(pin), {"id", "x", "z", "signalBars", "minQualityScore"})
+            self.assertNotIn("radiusM", pin)
+        self.page.locator("#resetBtn").click()
+        self.assertEqual(self.export()["requiredPins"], [])
+        self.page.locator("#importFile").set_input_files({
+            "name": "roundtrip.json",
+            "mimeType": "application/json",
+            "buffer": json.dumps(original).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.querySelectorAll('#requiredPinSelect option').length===2")
+        self.assertEqual(self.export()["requiredPins"], original["requiredPins"])
+        self.page.locator("#paletteToggleBtn").click()
+        self.page.locator("#requiredPinSelect").select_option(original["requiredPins"][0]["id"])
+        self.assertEqual(self.page.locator('[data-signal-level="3"]').get_attribute("aria-pressed"), "true")
+        self.page.locator("#requiredPinSelect").select_option(original["requiredPins"][1]["id"])
+        self.assertEqual(self.page.locator('[data-signal-level="0"]').get_attribute("aria-pressed"), "true")
+
+    def test_import_empty_pin_layout_clears_previous_state(self):
+        self.pin()
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false")
+        self.page.locator("#designTab").click()
+        original = self.export()
+        original["requiredPins"] = []
+        self.page.locator("#importFile").set_input_files({
+            "name": "empty-pins.json",
+            "mimeType": "application/json",
+            "buffer": json.dumps(original).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('requiredPinPicker').hidden")
+        self.assertEqual(self.export()["requiredPins"], [])
+        self.assertTrue(self.page.locator("#requiredDeletePin").is_disabled())
+        self.assertIn("신호 세기 핀 없음", self.page.locator("#requiredStatus").inner_text())
+        self.assertEqual(self.page.locator("#heatmapEmpty").evaluate("(el) => getComputedStyle(el).display"), "flex")
+
+    def test_apply_optimized_position_satisfies_mixed_pin_thresholds(self):
+        self.pin()
+        self.change_bars(3)
+        self.page.locator("#editorCanvas").click(position={"x": 640, "y": 290})
+        self.change_bars(0)
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
+        self.page.locator("#useBestBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        rows = self.page.locator("#requiredResults > div")
+        self.assertGreaterEqual(rows.count(), 2)
+        self.assertIn("2/2곳 기준 충족", self.page.locator("#requiredStatus").inner_text())
+        after = self.export()["requiredPins"]
+        self.assertEqual([p["minQualityScore"] for p in after], [42, 0])
+        self.assertTrue(self.page.locator("#recommendation").is_hidden())
+
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
         self.assertIn("신호 세기", tool.inner_text())
