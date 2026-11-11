@@ -558,7 +558,7 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
  if(currentPath?.tool==='brush')paintBrush(eCtx,{points:currentPath.points,weightPct:currentPath.weightPct,radiusM:currentPath.radiusM},sx,sy);
  if(currentPath?.tool==='sketch')drawSketch(eCtx,currentPath,sx,sy);
  if(tool==='erase'&&hoverPoint){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('eraserSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.fillStyle='rgba(255,255,255,.50)';eCtx.fill();eCtx.setLineDash([4,3]);eCtx.strokeStyle='#e44e57';eCtx.lineWidth=1.7;eCtx.stroke();eCtx.restore();}
- if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
+ if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,signalBars:4,minQualityScore:PIN_MIN_QUALITY},sx,sy);
  if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
  drawWalls(eCtx,sx,sy);
  // Draw the selected pin last so an overlapping pin cannot cover its focus ring.
@@ -589,7 +589,7 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
  hCtx.beginPath();hCtx.setLineDash([5,4]);hCtx.lineWidth=1.5;hCtx.strokeStyle='#202c40bb';hCtx.moveTo(L.router.x*sx,L.router.z*sy);hCtx.lineTo(probe.x*sx,probe.z*sy);hCtx.stroke();hCtx.setLineDash([]);
  drawWalls(hCtx,sx,sy);drawRouter(hCtx,L.router.x*sx,L.router.z*sy,9);
- for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,requiredMinimum(pin)+1e-8>=PIN_MIN_QUALITY);
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,requiredMinimum(pin)+1e-8>=signalMinScore(pin));
  renderRequiredStatus();
  if(best){hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
  hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
@@ -599,7 +599,7 @@ function renderElements(){const box=$('elementList');box.replaceChildren();
  const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
  if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 신호 세기 핀을 추가해 주세요.';box.appendChild(n);return;}
  entries.forEach(item=>{const row=document.createElement('div');row.className='element';const left=document.createElement('div');left.className='element-text';
- left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 신호 세기 (예상 품질 ≥70)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
+ left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 신호 세기 '+signalBars(item)+'칸 (≥'+signalMinScore(item)+'점)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
  const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 단일 지점':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
  left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
  $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
@@ -678,7 +678,7 @@ editor.addEventListener('keydown',e=>{
  e.preventDefault();
  if(!(L.requiredPins||[]).length){
   const x=L.width/2,z=L.depth/2;
-  pushUndo();const pin={id:uid('required'),x,z,minQualityScore:PIN_MIN_QUALITY};
+  pushUndo();const pin=newSignalPin(x,z);
   L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
   changed('키보드로 신호 세기 핀을 도면 중앙에 추가했습니다.');
  }else{
@@ -704,7 +704,7 @@ editor.addEventListener('pointerdown',e=>{
    pointerId=null;const place=snapped(raw);
    if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('신호 세기은 최대 12개입니다.');return;}
    pushUndo();L.requiredPins=L.requiredPins||[];
-   const pin={id:uid('required'),x:place.x,z:place.y,minQualityScore:PIN_MIN_QUALITY};
+   const pin=newSignalPin(place.x,place.y);
    L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
    changed('신호 세기 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
  }
@@ -767,7 +767,7 @@ for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
  if(tool==='required'){togglePalette(true);$('requiredDrawer').open=true;}
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
- renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 해당 한 점의 예상 품질 70점 이상을 요구합니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
+ renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 기본 4칸(64점 이상) 핀이 추가됩니다. 팔레트에서 선택한 핀의 칸수를 변경할 수 있습니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
 };
 for(const button of document.querySelectorAll('.palette-choice'))button.onclick=()=>{
  selectedWeight=Number(button.dataset.weight);const color=brushInfo(selectedWeight);
@@ -781,16 +781,13 @@ $('requiredNextPin').onclick=()=>{
  const index=pins.findIndex(pin=>pin.id===selectedRequiredId);
  selectRequiredPin(pins[(index+1)%pins.length].id);
 };
-$('requiredRadius').oninput=e=>{$('requiredRadiusValue').textContent=fmt(e.target.value)+' m';renderEditor()};
-$('selectedRequiredRadius').oninput=e=>{$('selectedRequiredRadiusValue').textContent=fmt(e.target.value)+' m';e.target.setAttribute('aria-valuetext',fmt(e.target.value)+'미터')};
-$('selectedRequiredRadius').onchange=e=>{
+$('signalBarsSelect').onchange=e=>{
  const pin=getSelectedRequiredPin();if(!pin)return;
- const radius=Number(e.target.value),maxFit=Math.min(3,pin.x,L.width-pin.x,pin.z,L.depth-pin.z);
- if(!Number.isFinite(radius)||radius<.3||radius>3||radius>maxFit+1e-8){
-  toast('반경이 도면 밖으로 나갑니다. 핀 중심을 이동하거나 반경을 줄여주세요.');syncSelectedRequired();return;
- }
- if(Math.abs(pin.radiusM-radius)>.001){pushUndo();pin.radiusM=radius;changed('선택한 신호 세기 반경을 '+fmt(radius)+'m로 수정했습니다.');}
- else syncSelectedRequired();
+ const bars=Number(e.target.value);
+ if(!Number.isInteger(bars)||bars<0||bars>4){syncSelectedRequired();return;}
+ if(signalBars(pin)===bars)return;
+ pushUndo();pin.signalBars=bars;pin.minQualityScore=SIGNAL_LEVELS[bars];
+ changed('선택한 신호 세기 핀을 '+bars+'칸 이상 ('+SIGNAL_LEVELS[bars]+'점 이상)으로 변경했습니다.');
 };
 $('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
 $('eraserSize').oninput=e=>{$('eraserSizeValue').textContent=fmt(e.target.value,2)+' m';renderEditor()};
@@ -961,7 +958,7 @@ $('importFile').onchange=async e=>{
   if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기은 최대 12개까지입니다.');
   const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth);
    if(x<0||x>w||z<0||z>depth)throw Error('신호 세기 핀 좌표가 도면 밖입니다.');
-   return {id:String(pin.id||'required-'+i),x,z,minQualityScore:PIN_MIN_QUALITY};});
+   const bars=signalBars(pin);return {id:String(pin.id||'required-'+i),x,z,signalBars:bars,minQualityScore:SIGNAL_LEVELS[bars]};});
   // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
   const zones=[];
   const readPaths=(key,min,parse)=>{const arr=Array.isArray(converted[key])?converted[key]:[];
@@ -1020,13 +1017,13 @@ async function optimizeOfflinePins(){
  const before=score(L.router.x,L.router.z),valid=(x,z)=>(L.walls||[]).every(w=>{
    const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
  let bestPoint=null,candidates=0;
- const check=(x,z)=>{if(!valid(x,z))return;candidates++;if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<PIN_MIN_QUALITY-1e-8))return;
+ const check=(x,z)=>{if(!valid(x,z))return;candidates++;if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8))return;
   const current=score(x,z);if(!bestPoint||current.objective>bestPoint.score.objective)bestPoint={x,z,score:current};};
  const nx=Math.max(2,Math.ceil(L.width/search)),nz=Math.max(2,Math.ceil(L.depth/search));
  for(let z=0;z<=nz;z++)for(let x=0;x<=nx;x++)check(L.width*x/nx,L.depth*z/nz);
  check(L.router.x,L.router.z);
  if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
- if(!bestPoint)throw Error(pins.length?'필수 지정점의 예상 품질 70점 조건을 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.');
+ if(!bestPoint)throw Error(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.');
  const min=pins.length?Math.min(...pins.map(pin=>requiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
  return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+before.quality.toFixed(1)},bestStats:{qualityScore:+bestPoint.score.quality.toFixed(1)},improvementPoints:+(bestPoint.score.objective-before.objective).toFixed(1),stage3:true,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:min,requiredAreaSampleCount:pins.length,candidates,weightsUsed:isWeighted};
 }
@@ -1034,7 +1031,7 @@ $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
- const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m','품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점','후보 '+best.candidates+'개 검토 · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'필수 지정점 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 최소 예상 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점 (70 이상)':''),'LAN·케이블·천장·벽 높이 제한 미적용. RSSI 미보정 예측값'];
+ const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m','품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점','후보 '+best.candidates+'개 검토 · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · 최저 예상 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),'LAN·케이블·천장·벽 높이 제한 미적용. RSSI 미보정 예측값'];
  for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
  $('recommendation').hidden=false;$('statusLine').textContent='오프라인 공유기 추천 완료';$('engineMode').textContent='오프라인 JS · 미보정 예측';renderHeat();renderRequiredStatus();
  }catch(err){best=null;$('recommendation').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
