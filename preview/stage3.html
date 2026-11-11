@@ -385,7 +385,8 @@ const cleanNum=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
 const fmt=(x,p=1)=>Number(x).toFixed(p);
 const escapeHTML=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2900)}
-function pushUndo(){undoStack.push(JSON.stringify(L));if(undoStack.length>30)undoStack.shift()}
+function pushUndoSnapshot(snapshot){undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift()}
+function pushUndo(){pushUndoSnapshot(JSON.stringify(L))}
 function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
  dirty=true;best=null;$('recommendation').hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
  $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
@@ -667,7 +668,9 @@ function moveRequiredDrag(point,event){
  // Screen-pixel threshold prevents touch jitter from becoming a real move/Undo step.
  const distancePx=Math.hypot(event.clientX-drag.startClientX,event.clientY-drag.startClientY);
  if(!drag.moved&&distancePx>=(drag.pointerType==='touch'?10:5)){
-   pushUndo();drag.moved=true;
+   // Stage the pre-drag snapshot; commit it only on pointerup. A cancelled
+   // drag must never evict an older entry from the bounded 30-step history.
+   drag.undoSnapshot=JSON.stringify(L);drag.moved=true;
  }
  if(drag.moved){pin.x=+x.toFixed(3);pin.z=+z.toFixed(3);}
 }
@@ -747,7 +750,7 @@ editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointer
 function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);pointerId=null;
  if(requiredDrag){
   moveRequiredDrag(raw,e);const drag=requiredDrag;requiredDrag=null;
-  if(drag.moved){changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
+  if(drag.moved){pushUndoSnapshot(drag.undoSnapshot);changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
   else if(drag.overlappingIds.length>1){
     // Repeated taps rotate overlapping pins. A drag always moves the selected one.
     const oldIndex=drag.overlappingIds.indexOf(drag.selectedAtDown);
@@ -773,7 +776,7 @@ function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw
  }
 
  currentPath=null;renderEditor();}
-editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;undoStack.pop();}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
+editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;$('pointerLabel').textContent='필수영역 핀 드래그가 취소되어 원래 위치로 복원했습니다.';}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
 editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
 heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
 function togglePalette(open){
