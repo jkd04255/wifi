@@ -830,5 +830,80 @@ class Stage3BrowserTests(unittest.TestCase):
                     browser.close()
 
 
+    def test_cancelled_drag_preserves_full_undo_history(self):
+        """A cancelled drag must not evict the oldest entry from the 30-step history."""
+        for engine in ("chromium", "webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self._mobile_touch_editor(engine)
+                try:
+                    bounds = page.locator("#editorCanvas").bounding_box()
+                    page.touchscreen.tap(bounds["x"] + bounds["width"]*.5,
+                                         bounds["y"] + bounds["height"]*.5)
+                    canvas = page.locator("#editorCanvas")
+                    canvas.focus()
+                    initial = self._export_current_layout(page)["requiredPins"][0]
+                    # Fill the bounded history with 30 committed keyboard moves.
+                    for i in range(30):
+                        canvas.press("ArrowRight" if i % 2 == 0 else "ArrowLeft")
+                    before_cancel = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(before_cancel["x"], initial["x"], delta=.001)
+                    px = bounds["x"] + bounds["width"]*before_cancel["x"]/6.0
+                    py = bounds["y"] + bounds["height"]*before_cancel["z"]/4.0
+                    primary = {"pointerId":105,"pointerType":"touch",
+                               "isPrimary":True,"button":0,"buttons":1}
+                    canvas.dispatch_event("pointerdown",{**primary,"clientX":px,"clientY":py})
+                    canvas.dispatch_event("pointermove",{**primary,"clientX":px+44,"clientY":py+26})
+                    canvas.dispatch_event("pointercancel",{**primary,"buttons":0,
+                                                            "clientX":px+44,"clientY":py+26})
+                    cancelled = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertEqual(cancelled,before_cancel)
+                    # 29 undos must land after move 1; the 30th must still exist.
+                    for _ in range(29):
+                        page.locator("#undoBtn").click()
+                    after_29 = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(after_29["x"],initial["x"]+.1,delta=.001)
+                    page.locator("#undoBtn").click()
+                    after_30 = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(after_30["x"],initial["x"],delta=.001)
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+    def test_keyboard_nudge_stops_at_pin_radius_and_noop_keeps_undo(self):
+        """X/Z keyboard movement clamps to the pin radius, and edge no-ops add no Undo."""
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser,page,errors=self._mobile_touch_editor(engine)
+                try:
+                    canvas=page.locator("#editorCanvas")
+                    canvas.focus()
+                    canvas.press("Enter")
+                    initial=self._export_current_layout(page)
+                    pin=initial["requiredPins"][0]
+                    for _ in range(40):
+                        canvas.press("ArrowRight")
+                    at_right=self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(at_right["x"],initial["width"]-pin["radiusM"],delta=.001)
+                    canvas.press("ArrowRight")
+                    self.assertIn("도면 경계",page.locator("#pointerLabel").inner_text())
+                    page.locator("#undoBtn").click()
+                    after_right_undo=self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(after_right_undo["x"],at_right["x"]-.1,delta=.001)
+                    canvas.focus()
+                    for _ in range(20):
+                        canvas.press("Shift+ArrowDown")
+                    at_bottom=self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(at_bottom["z"],initial["depth"]-pin["radiusM"],delta=.001)
+                    canvas.press("Shift+ArrowDown")
+                    self.assertIn("도면 경계",page.locator("#pointerLabel").inner_text())
+                    page.locator("#undoBtn").click()
+                    after_bottom_undo=self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(after_bottom_undo["z"],at_bottom["z"]-.5,delta=.001)
+                    self.assertEqual(after_bottom_undo["minQualityScore"],70)
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
