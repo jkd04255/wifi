@@ -20,6 +20,12 @@
 #selectedRequiredRadius::-moz-range-thumb{width:24px;height:24px}
 #requiredPinSelect:focus-visible,#requiredNextPin:focus-visible,#selectedRequiredRadius:focus-visible{outline:3px solid #5b42b9;outline-offset:2px}
 #editorCanvas{touch-action:none}
+.signal-level-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:9px 0 7px}
+.signal-level-buttons button{min-width:0;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#31445c;padding:10px 1px;font-weight:800;line-height:1.2}
+.signal-level-buttons button small{display:block;margin-top:4px;font-size:10px;font-weight:600;color:#687c92}
+.signal-level-buttons button[aria-pressed="true"]{background:#eaf1ff;border-color:#3268ce;color:#225cc6;box-shadow:inset 0 0 0 1px #3268ce}
+.signal-level-buttons button:disabled{opacity:.42;cursor:not-allowed}
+.signal-level-buttons button:focus-visible{outline:3px solid #3e7ce3;outline-offset:2px}
 </style></head>
 <body data-view="design"><div class="app-shell">
 <header class="topbar">
@@ -36,7 +42,7 @@
  <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
   <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
   <details class="palette-drawer" id="eraserDrawer"><summary><span>◌ 부분 지우개</span><span class="summary-meta">크기 조절</span></summary><div class="drawer-content"><div class="brush-controls"><label for="eraserSize">지우개 반경 <output id="eraserSizeValue">0.22 m</output></label><input type="range" id="eraserSize" min="0.1" max="1.2" step="0.02" value="0.22"></div><p>지우개가 지나간 <b>선과 벽의 해당 부분만</b> 사라집니다. 직사각형의 한 변 중간을 지워도 나머지 벽은 남습니다. 중요도 칠하기도 지운 위치만 기본 0%로 돌아갑니다. 한 번의 드래그는 실행 취소 1회로 복원합니다.</p></div></details>
-  <details class="palette-drawer" id="requiredDrawer"><summary><span>◎ 신호 세기 · 기본 4칸(64점 이상)</span></summary><div class="drawer-content"><p>핀은 반경 없는 한 점만 검사합니다. 새 핀은 기본 4칸(64점 이상)으로 추가됩니다. 선택한 핀마다 팔레트에서 요구 신호 세기를 변경할 수 있습니다.</p><div id="requiredPinPicker" hidden><label for="requiredPinSelect">편집할 핀</label><div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 신호 세기 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary">다음 핀</button></div><p id="requiredSelectionStatus" role="status" aria-live="polite">핀을 선택하고 이동하세요.</p></div><div id="requiredSelectedControls" hidden><strong id="requiredSelectedName">선택한 신호 세기</strong><p id="requiredSelectedHint">지정한 한 점을 검사합니다.</p></div><label class="field-label" for="signalBarsSelect"><span>선택한 핀의 최소 신호 세기</span><select id="signalBarsSelect" aria-label="선택한 신호 세기 핀의 최소 요구 칸수" style="width:100%;padding:10px;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#263e5a"><option value="4">4칸 이상 · 64점 이상 (기본값)</option><option value="3">3칸 이상 · 42점 이상</option><option value="2">2칸 이상 · 27점 이상</option><option value="1">1칸 이상 · 9점 이상</option><option value="0">0칸 이상 · 0점 이상</option></select></label><p id="signalBarsHelp">핀을 추가하고 선택하면 이곳에서 해당 지점의 기준을 변경할 수 있습니다.</p><p>LAN 포트와 천장·벽 높이 제한 없이 동작합니다. 결과는 미보정 RSSI 예상입니다.</p></div></details>
+  <details class="palette-drawer" id="requiredDrawer"><summary><span>◎ 신호 세기 · 기본 4칸(64점 이상)</span></summary><div class="drawer-content"><p>핀은 반경 없는 한 점만 검사합니다. 새 핀은 기본 4칸(64점 이상)으로 추가됩니다. 선택한 핀마다 팔레트에서 요구 신호 세기를 변경할 수 있습니다.</p><div id="requiredPinPicker" hidden><label for="requiredPinSelect">편집할 핀</label><div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 신호 세기 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary">다음 핀</button></div><p id="requiredSelectionStatus" role="status" aria-live="polite">핀을 선택하고 이동하세요.</p></div><div id="requiredSelectedControls" hidden><strong id="requiredSelectedName">선택한 신호 세기</strong><p id="requiredSelectedHint">지정한 한 점을 검사합니다.</p></div><label class="field-label" for="signalBarsSelect"><span>선택한 핀의 최소 신호 세기</span><select id="signalBarsSelect" aria-label="선택한 신호 세기 핀의 최소 요구 칸수" style="width:100%;padding:10px;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#263e5a"><option value="4">4칸 이상 · 64점 이상 (기본값)</option><option value="3">3칸 이상 · 42점 이상</option><option value="2">2칸 이상 · 27점 이상</option><option value="1">1칸 이상 · 9점 이상</option><option value="0">0칸 이상 · 0점 이상</option></select></label><div class="signal-level-buttons" id="signalLevelButtons" role="group" aria-label="선택한 핀의 최소 신호 세기 빠른 설정"><button type="button" data-signal-level="4" aria-pressed="false">4칸<small>64점</small></button><button type="button" data-signal-level="3" aria-pressed="false">3칸<small>42점</small></button><button type="button" data-signal-level="2" aria-pressed="false">2칸<small>27점</small></button><button type="button" data-signal-level="1" aria-pressed="false">1칸<small>9점</small></button><button type="button" data-signal-level="0" aria-pressed="false">0칸<small>0점</small></button></div><button type="button" id="requiredDeletePin" class="text-button danger" disabled>선택한 핀 삭제</button><p id="signalBarsHelp">핀을 추가하고 선택하면 이곳에서 해당 지점의 기준을 변경할 수 있습니다.</p><p>LAN 포트와 천장·벽 높이 제한 없이 동작합니다. 결과는 미보정 RSSI 예상입니다.</p></div></details>
   <details class="palette-drawer" id="elementsDrawer"><summary><span>▤ 도면 요소 목록</span><span class="summary-meta" id="numWallsChip">벽 0개</span></summary><div class="drawer-content"><div class="element-list" id="elementList"></div><button type="button" class="text-button danger" id="clearBtn">벽과 스케치 전체 지우기</button></div></details>
   <div class="side-help"><strong>도면 그리는 방법</strong><p>‘그리기’는 자유선, ‘선 추가’는 시작점과 끝점 사이의 직선 벽, ‘직사각형’은 벽 네 면을 만듭니다. <b>도면화</b>는 자유선과 사선을 직각으로 보정합니다. <b>부분 지우개</b>는 닿은 부분만 지웁니다.</p><p>벽은 모두 콘크리트로 계산됩니다. 중요도는 신호 세기를 직접 바꾸지 않고 최적 배치 평가에 사용됩니다.</p></div>
   <button type="button" id="resetBtn" class="ghost full">＋ 새 도면 시작</button>
@@ -481,6 +487,11 @@ function syncSelectedRequired(){
  $('requiredNextPin').disabled=pins.length<2;
  $('signalBarsSelect').value=pin?String(signalBars(pin)):'4';
  $('signalBarsSelect').disabled=!pin;
+ $('requiredDeletePin').disabled=!pin;
+ document.querySelectorAll('[data-signal-level]').forEach(button=>{
+  const active=Boolean(pin)&&Number(button.dataset.signalLevel)===signalBars(pin);
+  button.disabled=!pin;button.setAttribute('aria-pressed',String(active));
+ });
  $('signalBarsHelp').textContent=pin?'선택한 핀만 '+signalBars(pin)+'칸(최소 '+signalMinScore(pin)+'점)으로 검사합니다. 새 핀은 항상 4칸으로 추가됩니다.':'핀을 추가하면 4칸에서 다른 칸수로 변경할 수 있습니다.';
  if(!pin){selectedRequiredId=null;return;}
  select.value=pin.id;
@@ -785,13 +796,21 @@ $('requiredNextPin').onclick=()=>{
  const index=pins.findIndex(pin=>pin.id===selectedRequiredId);
  selectRequiredPin(pins[(index+1)%pins.length].id);
 };
-$('signalBarsSelect').onchange=e=>{
+function updateSelectedSignalBars(bars){
  const pin=getSelectedRequiredPin();if(!pin)return;
- const bars=Number(e.target.value);
  if(!Number.isInteger(bars)||bars<0||bars>4){syncSelectedRequired();return;}
- if(signalBars(pin)===bars)return;
+ if(signalBars(pin)===bars){syncSelectedRequired();return;}
  pushUndo();pin.signalBars=bars;pin.minQualityScore=SIGNAL_LEVELS[bars];
  changed('선택한 신호 세기 핀을 '+bars+'칸 이상 ('+SIGNAL_LEVELS[bars]+'점 이상)으로 변경했습니다.');
+}
+$('signalBarsSelect').onchange=e=>updateSelectedSignalBars(Number(e.target.value));
+for(const button of document.querySelectorAll('[data-signal-level]'))button.onclick=()=>updateSelectedSignalBars(Number(button.dataset.signalLevel));
+$('requiredDeletePin').onclick=()=>{
+ const pin=getSelectedRequiredPin();if(!pin)return;
+ const pins=L.requiredPins||[],index=pins.indexOf(pin);
+ pushUndo();pins.splice(index,1);
+ selectedRequiredId=pins.length?pins[Math.min(index,pins.length-1)].id:null;
+ changed('선택한 신호 세기 핀을 삭제했습니다.');
 };
 $('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
 $('eraserSize').oninput=e=>{$('eraserSizeValue').textContent=fmt(e.target.value,2)+' m';renderEditor()};
@@ -871,7 +890,12 @@ function renderProbe(){if(!result)return;
 }
 $('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
 $('useBestBtn').onclick=async()=>{if(!best)return;pushUndo();L.router.x=best.best.x;L.router.z=best.best.z;best=null;changed('추천 위치를 적용했습니다. 히트맵을 갱신합니다.');await simulate(weighted)};
-$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(L,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wifi-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('도면 JSON 파일을 저장했습니다.')};
+function exportLayout(){
+ return {...L,requiredPins:(L.requiredPins||[]).map(pin=>({
+  id:pin.id,x:pin.x,z:pin.z,signalBars:signalBars(pin),minQualityScore:signalMinScore(pin)
+ }))};
+}
+$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(exportLayout(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wifi-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('도면 JSON 파일을 저장했습니다.')};
 $('importFile').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
@@ -916,12 +940,11 @@ $('importFile').onchange=async e=>{
     router:{x:val(r.x,w),y:Math.max(0,cleanNum(r.y,1.2)),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20)},
     walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
   probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedRequiredId=null;requiredDrag=null;
-  if(requiredPins.length)
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
  }catch(err){toast('JSON 불러오기 실패: '+err.message)}finally{e.target.value='';}
 };
-$('engineMode').innerHTML=location.protocol==='file:'?'<span class="dot"></span>독립 실행 엔진 (JS)':'<span class="dot"></span>API 자동 연동';
+$('engineMode').textContent='오프라인 JS · 미보정 예측';
 window.addEventListener('resize',()=>{renderEditor();renderHeat()});
 if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>{renderEditor();renderHeat()});ro.observe(editor);ro.observe(heat);}
 syncLayout();renderElements();renderEditor();renderHeat();
