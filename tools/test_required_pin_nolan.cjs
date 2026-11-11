@@ -1,68 +1,71 @@
-// No-LAN release behavior verification, using the exact embedded v1.6 RSSI engine.
+// Point-only mandatory-pin contract in the exact fully offline HTML RSSI engine.
 "use strict";
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const vm = require("node:vm");
-const file = process.argv[2];
-if (!file) throw new Error("HTML file path required");
-const html=fs.readFileSync(file,"utf8");
-for(const marker of ['data-tool="required"','id="requiredRadius"','requiredSamples','minQualityScore'])assert(html.includes(marker),marker);
-for(const marker of ['id="g3LanX"','id="g3LanZ"','id="g3LanY"','id="g3Cable"','id="g3Mode"','data-tool="zone"','id="roomDrawer"',"async function g3LocalOptimize"]){
- assert(!html.includes(marker), "Unexpected deleted UI: "+marker);
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const vm=require("node:vm");
+const html=fs.readFileSync(process.argv[2],"utf8");
+for(const key of ['data-tool="required"','id="requiredPinSelect"','function requiredSamples','minQualityScore'])assert(html.includes(key),key);
+for(const key of ['id="requiredRadius"','id="selectedRequiredRadius"','data-tool="zone"','id="roomDrawer"',
+                  'id="g3LanX"','id="g3LanZ"','id="g3LanY"','id="g3Cable"','id="g3Mode"',
+                  '17개 표본점','반경 설정',"async function g3LocalOptimize"]){
+  assert(!html.includes(key),"Retired UI/calculation still present: "+key);
 }
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
-assert(scripts.length>=2,"Expected inline engine and main script");
+assert(scripts.length>=2);
 for(const js of scripts)new vm.Script(js);
 const window={};
 vm.runInNewContext(scripts[0],{window});
 const engine=window.WifiEngine;
-assert(engine&&typeof engine.optimize==="function");
-const standard=()=>({
- schemaVersion:"1.1",
- coordinateSystem:{plane:"XZ",verticalAxis:"Y"},
+assert.equal(typeof engine.optimize,"function");
+const layout=()=>({
+ schemaVersion:"1.1",coordinateSystem:{plane:"XZ",verticalAxis:"Y"},
  width:6,depth:4,roomHeightM:2.7,receiverY:1,
  router:{x:3,y:1.2,z:2,frequency:2.4,txPowerDbm:30,antennaGainDbi:0},
  walls:[],zones:[],importanceStrokes:[],
- requiredPins:[{id:"needed",x:3,z:2,radiusM:0.8,minQualityScore:70}]
+ requiredPins:[{id:"point-one",x:3,z:2,minQualityScore:70}],
 });
-const samples=(pin)=>[{x:pin.x,z:pin.z},...[0.5,1].flatMap(scale=>Array.from({length:8},(_,i)=>{
- const a=2*Math.PI*i/8;return {x:pin.x+Math.cos(a)*pin.radiusM*scale,z:pin.z+Math.sin(a)*pin.radiusM*scale};
-}))];
-const calcQ=dbm=>Math.max(0,Math.min(100,(dbm+90)/55*100));
-const good=standard();
-const found=engine.optimize(good,0.35,0.75,true);
+const quality=dbm=>Math.max(0,Math.min(100,(dbm+90)/55*100));
+const a=layout(),found=engine.optimize(a,.35,.75,true);
 assert.equal(found.status,"ok",JSON.stringify(found));
 assert.equal(found.requiredAreaSatisfied,true);
-assert.equal(found.requiredAreaSampleCount,17);
-assert(found.best && typeof found.best.x==="number");
-assert(found.best.x>=.2&&found.best.x<=good.width-.2);
-assert(found.best.z>=.2&&found.best.z<=good.depth-.2);
-const trial={...good,router:{...good.router,...found.best}};
-const min=Math.min(...samples(good.requiredPins[0]).map(p=>calcQ(engine.value(trial,p.x,p.z))));
-assert(min>=70-1e-8, "Recommended point violates mandatory pin: "+min);
-assert(Math.abs(found.requiredAreaMinimumQualityScore-min)<.02);
-const withoutLan={...good,lanPort:{x:-999,z:-999,y:999,maxCableLengthM:0}};
-const r2=engine.optimize(withoutLan,.35,.75,true);
-assert.equal(r2.status,"ok","No-LAN optimizer must not inspect LAN fields");
-assert(Math.abs(found.best.x-r2.best.x)<1e-8);
-assert(Math.abs(found.best.z-r2.best.z)<1e-8);
-const impossible=standard();
-impossible.router.txPowerDbm=-100;
-const noResult=engine.optimize(impossible,.35,.75,true);
-assert.equal(noResult.status,"no_feasible_candidate");
-assert.equal(noResult.best,null);
-assert.equal(noResult.requiredAreaSatisfied,false);
-const two=standard();
-two.requiredPins.push({id:"other",x:3.1,z:2.1,radiusM:.6,minQualityScore:70});
-const passBoth=engine.optimize(two,.35,.75,true);
-assert.equal(passBoth.status,"ok");
-assert.equal(passBoth.requiredAreaSampleCount,34);
-const withWall=standard();
-withWall.walls=[{x1:3,z1:0,x2:3,z2:4,material:"concrete"}];
-const wallResult=engine.optimize(withWall,.35,.75,true);
-if(wallResult.status==="ok")assert(Math.abs(wallResult.best.x-3)>=.2-1e-6,
- "Router should not be placed on concrete wall");
-console.log("NO_LAN_HTML_AND_HARD70_ENGINE_PASS",{
- scripts:scripts.length,htmlBytes:Buffer.byteLength(html),successMinimum:+min.toFixed(2),
- failedCandidatesAreRejected:!noResult.best,extraLanIgnored:true,wallCandidateBlocked:true
+assert.equal(found.requiredAreaSampleCount,1,"One mandatory pin must mean exactly ONE point");
+assert(found.best && Number.isFinite(found.best.x));
+assert(found.best.x>=.2&&found.best.x<=a.width-.2);
+assert(found.best.z>=.2&&found.best.z<=a.depth-.2);
+const trial={...a,router:{...a.router,...found.best}};
+const expected=quality(engine.value(trial,a.requiredPins[0].x,a.requiredPins[0].z));
+assert(expected>=70-1e-8,"Point must pass 70, got "+expected);
+assert(Math.abs(expected-found.requiredAreaMinimumQualityScore)<.02);
+const obsoleteRadius=layout();obsoleteRadius.requiredPins[0].radiusM=2.3;
+const withOld=engine.optimize(obsoleteRadius,.35,.75,true);
+assert.equal(withOld.status,"ok");
+assert.equal(withOld.requiredAreaSampleCount,1);
+assert.deepEqual([withOld.best.x,withOld.best.z],[found.best.x,found.best.z],
+ "Legacy radius must have absolutely NO influence on recommended location");
+const phantomLan=layout();phantomLan.lanPort={x:-100,z:100,y:99,maxCableLengthM:0};
+const ignoringLan=engine.optimize(phantomLan,.35,.75,true);
+assert.equal(ignoringLan.status,"ok");
+assert.deepEqual([ignoringLan.best.x,ignoringLan.best.z],[found.best.x,found.best.z]);
+const bad=layout();bad.router.txPowerDbm=-100;
+const fail=engine.optimize(bad,.35,.75,true);
+assert.equal(fail.status,"no_feasible_candidate");
+assert.equal(fail.best,null);
+assert.equal(fail.requiredAreaSatisfied,false);
+assert.equal(fail.requiredAreaSampleCount,1);
+const two=layout();
+two.requiredPins.push({id:"point-two",x:3.1,z:2.2,minQualityScore:70});
+const goodTwo=engine.optimize(two,.35,.75,true);
+assert.equal(goodTwo.status,"ok");
+assert.equal(goodTwo.requiredAreaSampleCount,2,"Two mandatory pins must mean TWO points");
+const concrete=layout();
+concrete.walls=[{x1:3,z1:0,x2:3,z2:4,material:"concrete"}];
+const w=engine.optimize(concrete,.35,.75,true);
+if(w.status==="ok")assert(Math.abs(w.best.x-3)>=.2-1e-6,"No router on wall");
+console.log("POINT_ONLY_70_EXACT_COORDINATES_PASS",{
+ htmlBytes:Buffer.byteLength(html),
+ singlePointCount:found.requiredAreaSampleCount,
+ multiplePinCount:goodTwo.requiredAreaSampleCount,
+ minimumQuality:+expected.toFixed(2),
+ ignoresLegacyRadius:true, ignoresLan:true,
+ infeasibleHardConstraint:true,concreteWallExcluded:true,
 });
