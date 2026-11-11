@@ -489,12 +489,13 @@ function drawWalls(ctx,sx,sy){for(const wall of L.walls){
 function drawRouter(ctx,x,y,rad=10){ctx.save();ctx.shadowColor='#245ee790';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fillStyle='#2469dc';ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=3;ctx.strokeStyle='white';ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.3;for(const r of [rad+5,rad+10]){ctx.beginPath();ctx.arc(x,y,r,Math.PI*1.24,Math.PI*1.76);ctx.stroke();}ctx.restore();}
 function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0,w,h);background(eCtx,w,h,true);
  const sx=w/L.width,sy=h/L.depth;
- for(const z of L.zones)drawZone(eCtx,z,sx,sy,false);
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(eCtx,pin,sx,sy);
  paintImportanceLayer(eCtx,L.importanceStrokes||[],w,h,sx,sy);
  for(const sk of (L.sketches||[]))drawSketch(eCtx,sk,sx,sy);
  if(currentPath?.tool==='brush')paintBrush(eCtx,{points:currentPath.points,weightPct:currentPath.weightPct,radiusM:currentPath.radiusM},sx,sy);
  if(currentPath?.tool==='sketch')drawSketch(eCtx,currentPath,sx,sy);
  if(tool==='erase'&&hoverPoint){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('eraserSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.fillStyle='rgba(255,255,255,.50)';eCtx.fill();eCtx.setLineDash([4,3]);eCtx.strokeStyle='#e44e57';eCtx.lineWidth=1.7;eCtx.stroke();eCtx.restore();}
+ if(tool==='required'&&hoverPoint&&!start)drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
  if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
  drawWalls(eCtx,sx,sy);drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
  if(preview&&start){const a={x:start.x*sx,y:start.y*sy},b={x:preview.x*sx,y:preview.y*sy};
@@ -506,7 +507,7 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
   eCtx.save();eCtx.fillStyle='rgba(36,102,220,.08)';eCtx.fillRect(x,y,rw,rh);
   eCtx.strokeStyle='#2466dc';eCtx.lineWidth=4;eCtx.setLineDash([8,5]);eCtx.strokeRect(x,y,rw,rh);eCtx.restore();
  }
- if(tool==='zone')drawZone(eCtx,{label:$('zoneLabel').value,weightPct:Number($('zoneWeight').value),x1:start.x,z1:start.y,x2:preview.x,z2:preview.y},sx,sy,true);
+
  }
 }
 const stops=[[-90,[165,0,38]],[-75,[244,109,67]],[-67,[254,224,139]],[-55,[166,217,106]],[-30,[26,152,80]]];
@@ -517,21 +518,23 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  for(let r=0;r<result.rows;r++)for(let c=0;c<result.cols;c++){const v=result.values[r][c],rgbv=rgb(v),i=(r*result.cols+c)*4;img.data[i]=rgbv[0];img.data[i+1]=rgbv[1];img.data[i+2]=rgbv[2];img.data[i+3]=255;}
  ctx.putImageData(img,0,0);hCtx.imageSmoothingEnabled=true;hCtx.drawImage(off,0,0,w,h);
  const sx=w/L.width,sy=h/L.depth;
- if(weighted){for(const z of L.zones)drawZone(hCtx,z,sx,sy,true);paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);}
+ if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
  hCtx.beginPath();hCtx.setLineDash([5,4]);hCtx.lineWidth=1.5;hCtx.strokeStyle='#202c40bb';hCtx.moveTo(L.router.x*sx,L.router.z*sy);hCtx.lineTo(probe.x*sx,probe.z*sy);hCtx.stroke();hCtx.setLineDash([]);
  drawWalls(hCtx,sx,sy);drawRouter(hCtx,L.router.x*sx,L.router.z*sy,9);
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,requiredMinimum(pin)+1e-8>=PIN_MIN_QUALITY);
+ renderRequiredStatus();
  if(best){hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
  hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
  $('heatmapBand').textContent=fmt(L.router.frequency, L.router.frequency===5?0:1)+' GHz';
 }
-function renderElements(){const box=$('elementList');box.replaceChildren();const entries=[...L.walls.map(v=>({...v,type:'wall'})),...L.zones.map(v=>({...v,type:'zone'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
- if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 관심 구역을 추가해 주세요.';box.appendChild(n);return;}
+function renderElements(){const box=$('elementList');box.replaceChildren();
+ const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
+ if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 필수영역 핀을 추가해 주세요.';box.appendChild(n);return;}
  entries.forEach(item=>{const row=document.createElement('div');row.className='element';const left=document.createElement('div');left.className='element-text';
- left.textContent=item.type==='wall'?'▰ '+(materials[item.material]||item.material):item.type==='zone'?'▧ '+item.label:item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
- const sub=document.createElement('small');sub.textContent=item.type==='wall'?`${fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))}m · ${item.id}`:item.type==='zone'?`중요도 ${zonePercent(item)} · ${item.id}`:item.type==='sketch'?`${item.points.length}개 점 · ${materials[item.material]}`:item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':`${item.weightPct>=0?'+':''}${item.weightPct}% · 반경 ${fmt(item.radiusM)}m`;
- left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',zone:'zones',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed()};
- row.append(left,del);box.appendChild(row);});
- $('numWallsChip').textContent=`벽 ${L.walls.length}개 · 스케치 ${(L.sketches||[]).length}개 · 중요도 ${(L.importanceStrokes||[]).length}획`;
+ left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 필수영역 (예상 품질 ≥70)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
+ const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 반경 '+fmt(item.radiusM)+'m':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
+ left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
+ $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 필수영역 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
 }
 function syncLayout(){
  const p=L.areaPyeong??(L.width*L.depth/SQM_PER_PYEONG);
