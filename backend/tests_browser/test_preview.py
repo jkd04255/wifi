@@ -430,5 +430,117 @@ class Stage3BrowserTests(unittest.TestCase):
 
 
 
+    def test_drag_existing_required_pin_and_undo_in_both_engines(self):
+        """Dragging the pin center moves exactly one existing pin; one undo restores it."""
+        for engine in ("chromium", "webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self.open_page(engine=engine)
+                try:
+                    self._place_required_pin(page)
+                    page.locator("#backToEditorBtn").click()
+                    page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
+                    original = page.evaluate("({...L.requiredPins[0]})")
+                    canvas = page.locator("#editorCanvas")
+                    bounds = canvas.bounding_box()
+                    x = bounds["x"] + bounds["width"] * original["x"] / page.evaluate("L.width")
+                    z = bounds["y"] + bounds["height"] * original["z"] / page.evaluate("L.depth")
+                    page.mouse.move(x, z)
+                    page.mouse.down()
+                    page.mouse.move(x + 48, z + 22, steps=6)
+                    page.mouse.up()
+                    shifted = page.evaluate("({...L.requiredPins[0]})")
+                    self.assertEqual(page.evaluate("L.requiredPins.length"), 1)
+                    self.assertGreater(shifted["x"], original["x"] + 0.1)
+                    self.assertGreater(shifted["z"], original["z"] + 0.1)
+                    self.assertAlmostEqual(shifted["radiusM"], original["radiusM"])
+                    self.assertIn("위치를 변경", page.locator("#statusLine").inner_text())
+                    page.locator("#undoBtn").click()
+                    restored = page.evaluate("({...L.requiredPins[0]})")
+                    self.assertAlmostEqual(restored["x"], original["x"], delta=0.001)
+                    self.assertAlmostEqual(restored["z"], original["z"], delta=0.001)
+                    self.assertEqual(errors, [])
+                finally:
+                    browser.close()
+
+    def test_selected_pin_radius_change_and_invalid_size_rejected(self):
+        browser, page, errors = self.open_page(engine="webkit")
+        try:
+            self._place_required_pin(page)
+            page.locator("#backToEditorBtn").click()
+            page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
+            self.assertTrue(page.locator("#requiredSelectedControls").is_visible())
+            self.assertEqual(page.locator("#selectedRequiredRadius").input_value(), "0.8")
+            page.locator("#selectedRequiredRadius").evaluate(
+                "(input) => {input.value='1.2';"
+                "input.dispatchEvent(new Event('input',{bubbles:true}));"
+                "input.dispatchEvent(new Event('change',{bubbles:true}));}")
+            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), 1.2, delta=.001)
+            self.assertIn("1.2 m", page.locator("#selectedRequiredRadiusValue").inner_text())
+            page.locator("#undoBtn").click()
+            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), .8, delta=.001)
+
+            # The proposed radius 2.0m would extend beyond x=1 and is rejected.
+            page.evaluate("() => {L.requiredPins[0].x=1;L.requiredPins[0].z=1;syncSelectedRequired();}")
+            page.locator("#selectedRequiredRadius").evaluate(
+                "(input) => {input.value='2.0';"
+                "input.dispatchEvent(new Event('input',{bubbles:true}));"
+                "input.dispatchEvent(new Event('change',{bubbles:true}));}")
+            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), .8, delta=.001)
+            self.assertEqual(page.locator("#selectedRequiredRadius").input_value(), "0.8")
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_pin_quality_panel_lists_current_and_recommendation(self):
+        browser, page, errors = self.open_page()
+        try:
+            page.locator("#powerInput").fill("35")
+            page.locator("#powerInput").press("Tab")
+            self._place_required_pin(page)
+            self.assertTrue(page.locator("#requiredResults").is_visible())
+            self.assertIn("필수영역 1", page.locator("#requiredResults").inner_text())
+            self.assertIn("현재 최소", page.locator("#requiredResults").inner_text())
+            page.locator("#g3Settings summary").click()
+            page.locator("#g3LanX").fill("0.5")
+            page.locator("#g3LanZ").fill("0.5")
+            page.locator("#g3LanY").fill("0.3")
+            page.locator("#g3Cable").fill("30")
+            page.locator("#optimizeBtn").click()
+            page.wait_for_function(
+                "!document.getElementById('optimizeBtn').disabled && "
+                "(document.getElementById('recommendation').hidden === false || "
+                "document.getElementById('statusLine').textContent.includes('최적화 실패'))",
+                timeout=45000)
+            self.assertTrue(page.locator("#recommendation").is_visible(),
+                            page.locator("#statusLine").inner_text())
+            cards = page.locator("#requiredResults").inner_text()
+            self.assertIn("추천 최소", cards)
+            self.assertIn("70점 충족", cards)
+            self.assertIn("17개 표본점", cards)
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_pin_quality_panel_clears_outdated_recommendation_on_edit(self):
+        browser, page, errors = self.open_page()
+        try:
+            self._place_required_pin(page)
+            page.evaluate("() => {best={stage3:true,requiredAreaSatisfied:true,best:{x:L.router.x,z:L.router.z,y:L.router.y}}; renderHeat();}")
+            self.assertIn("추천 최소", page.locator("#requiredResults").inner_text())
+            page.locator("#backToEditorBtn").click()
+            page.locator("#selectedRequiredRadius").evaluate(
+                "(input) => {input.value='1.1';"
+                "input.dispatchEvent(new Event('input',{bubbles:true}));"
+                "input.dispatchEvent(new Event('change',{bubbles:true}));}")
+            page.locator("#applyBottomBtn").click()
+            page.wait_for_function("document.body.dataset.view === 'analysis'", timeout=10000)
+            self.assertNotIn("추천 최소", page.locator("#requiredResults").inner_text())
+            self.assertIn("현재 최소", page.locator("#requiredResults").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
