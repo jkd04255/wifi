@@ -1,0 +1,1004 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101c35"><title>Wi-Fi Placement Studio | 포인트 핀 오프라인 시뮬레이터</title><style>
+:root{--bg:#f3f6fa;--paper:#fff;--ink:#16283c;--muted:#73869a;--line:#dce5ef;--blue:#2466dc;--blue2:#e9f1ff;--shadow:0 12px 38px rgba(31,57,95,.06);font-family:'Malgun Gothic','Segoe UI',system-ui,sans-serif;color:var(--ink)}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-size:13px}body[data-view="design"] #resultScreen,body[data-view="analysis"] #editorScreen{display:none!important}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:wait}.app-shell{width:min(1740px,calc(100% - 48px));margin:auto}.topbar{min-height:75px;display:flex;align-items:center;gap:24px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}.brand-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--blue);color:#fff;font-size:30px;font-weight:900}.brand-name{font-size:16px;font-weight:800;letter-spacing:-.5px}.brand-name strong{color:var(--blue)}.brand-sub{font-size:9px;font-weight:800;letter-spacing:1px;color:#9aaabd;margin-top:3px}.view-nav{display:flex;align-items:center;gap:6px;margin-left:26px;padding:4px;border-radius:11px;background:#eaf0f6}.view-tab{border:0;background:transparent;color:#7b8da3;font-weight:800;padding:10px 18px;border-radius:8px;white-space:nowrap}.view-tab.active{background:white;color:#205fcc;box-shadow:0 1px 5px #1d4a8522}.top-actions{display:flex;gap:8px;align-items:center;margin-left:auto}.connection{font-size:10px;color:#7691a4;white-space:nowrap}.ghost,.secondary,.primary{border:1px solid var(--line);border-radius:10px;padding:11px 15px;font-weight:800;background:#fff;color:#456078;white-space:nowrap}.ghost:hover,.secondary:hover{background:#f5f9ff;border-color:#aac5e6}.primary{color:#fff;background:var(--blue);border-color:var(--blue);box-shadow:0 4px 13px #2466dc33}.primary:hover{background:#1754bf}.upload{cursor:pointer}.page-intro{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:23px 0 20px}.eyebrow{font-size:10px;font-weight:900;letter-spacing:1.8px;color:#2772d9}.page-intro h1{font-size:27px;letter-spacing:-1px;margin:6px 0 6px}.page-intro p{margin:0;font-size:12px;color:var(--muted);line-height:1.6}.page-intro p span{font-weight:700;color:#6a89af}.proceed{font-size:13px;padding:13px 21px}.proceed b{margin-left:7px}.layout-bar{display:flex;align-items:center;gap:25px;padding:14px 19px;border:1px solid var(--line);border-radius:13px;background:#fff;margin-bottom:13px;box-shadow:var(--shadow)}.area-controls{display:flex;gap:9px;align-items:center;white-space:nowrap}.area-controls label{font-size:13px;font-weight:900;margin-right:4px}.area-controls input{width:88px;padding:10px 9px;border-radius:8px;border:1px solid var(--line);text-align:right;font-size:16px;font-weight:900;color:#255eba}.area-controls strong{color:#647c95}.layout-metrics{display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:#68819a}.layout-metrics strong{font-size:14px;color:#24446b}.layout-metrics small{font-size:10px;color:#a1aebe}.dirty-pill{font-size:10px;color:#b47b16;background:#fff5df;padding:7px 12px;border-radius:99px;margin-left:auto;white-space:nowrap}.dirty-pill:not(.dirty){background:#eaf9f0;color:#299a74}.draw-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:13px;padding:9px 12px;margin-bottom:13px}.tool-row,.edit-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.tool{border:1px solid transparent;background:#fff;color:#73879c;font-weight:800;padding:11px 17px;border-radius:9px;display:flex;align-items:center;gap:9px}.tool-icon{font-size:17px;line-height:1}.tool.active{background:#edf4ff;border-color:#a6c4ee;color:#1d63d3}.edit-actions .secondary{padding:11px 12px}.orthogonal{background:#e8f0ff;color:#225fbf;border-color:#b9d2f4}.editor-workarea,.result-workarea{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:14px;align-items:start}.canvas-column,.result-map{min-width:0;background:#fff;padding:14px;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.canvas-frame{position:relative;background:#fbfdff;border:1px solid #dbe4f0;border-radius:11px;overflow:hidden;aspect-ratio:5/4;width:100%}.canvas-frame canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.canvas-corner{position:absolute;top:11px;right:11px;padding:7px 9px;border-radius:7px;background:#ffffffed;border:1px solid #e4eaf2;color:#617b9b;font:bold 10px Consolas,monospace;pointer-events:none}.canvas-corner span{color:#a2b0bf}.canvas-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px 1px;color:#8294a8;font-size:11px;flex-wrap:wrap}.canvas-foot>span:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.legend-line{display:inline-block;background:#253c59;width:17px;height:4px;border-radius:2px}.legend-zone{display:inline-block;background:#9fd9ff;border:1px solid #438eef;width:13px;height:10px;margin-left:9px}.legend-brush{display:inline-block;background:linear-gradient(90deg,#ed4c59,#32bd8c,#398de5);width:17px;height:10px;border-radius:6px;margin-left:9px}.legend-router{color:#266be2;font-size:16px;margin-left:10px}.side-controls,.result-controls{padding:17px;background:white;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);min-width:0}.side-title{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-bottom:14px}.side-title strong{font-size:15px}.side-title small{font-size:10px;color:#98a8b9}.palette-drawer{margin-bottom:9px;border-radius:10px;border:1px solid #e1e9f2;background:#fbfdff;overflow:hidden}.palette-drawer summary{padding:14px 12px;display:flex;justify-content:space-between;align-items:center;gap:5px;cursor:pointer;font-weight:900;font-size:12px;list-style:none}.palette-drawer summary::-webkit-details-marker{display:none}.palette-drawer summary:after{content:'⌄';color:#7a96b8;margin-left:5px;font-size:15px}.palette-drawer[open] summary:after{content:'⌃'}.summary-meta{font-size:10px;font-weight:500;color:#8ba0b8;margin-left:auto}.drawer-content{border-top:1px solid var(--line);padding:12px}.weight-palette{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.palette-choice{border-radius:10px;background:#fff;border:2px solid #e4ebf2;min-width:0;padding:10px 2px;display:flex;align-items:center;flex-direction:column;gap:5px;color:#4e6680}.palette-choice i{display:block;border-radius:50%;background:var(--swatch);height:27px;width:27px;box-shadow:0 0 0 2px #ffffff,0 0 0 3px #d0dce9}.palette-choice strong{font-size:11px}.palette-choice span{font-size:11px;font-weight:900}.palette-choice.selected{border-color:var(--blue);background:#eaf2ff}.brush-controls{margin:14px 0 6px;display:grid;gap:8px;font-size:11px;color:#7a8a9b}.brush-controls strong,.brush-controls output{color:#2565c8}.brush-controls label{display:flex;justify-content:space-between}.brush-controls input{width:100%;accent-color:#2572d9}.drawer-content p,.side-help p{font-size:11px;line-height:1.7;color:#7e91a5}.field-label{display:grid;gap:6px;color:#71839b;font-size:11px;font-weight:800;margin-bottom:11px}.field-label input,.field-label select,.router-grid input,.router-grid select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#28405b;min-width:0}.side-help{border-radius:11px;background:#f0f6ff;border:1px solid #e1edfa;padding:15px;margin:14px 0}.side-help strong{font-size:12px;color:#2759a0}.side-help p{margin:10px 0 0}.full{width:100%}.text-button{border:0;background:transparent;color:#326dc7;padding:9px 0;font-size:11px;font-weight:800}.text-button.danger{color:#bd5561}.element-list{max-height:280px;overflow-y:auto;display:grid;gap:7px}.element{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:8px 9px;border:1px solid #e7eff6;border-radius:7px;min-width:0}.element-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:800}.element small{display:block;color:#9cabbb;font-weight:500;margin-top:4px}.element button{border:0;background:#f0f4f9;border-radius:6px;color:#8094ac}.editor-bottom{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:16px 0 8px;color:#7d91a4;font-size:11px}.editor-bottom .primary{padding:13px 22px}.result-workarea{grid-template-columns:minmax(0,1fr) 320px}.result-map{padding:16px}.heat-gradient{height:12px;flex:1;background:linear-gradient(90deg,#a50026,#f46d43 25%,#fee08b 42%,#a6d96a 62%,#1a9850);border-radius:999px}.signal-legend{display:flex;align-items:center;gap:12px;padding:13px 4px 0;color:#688098;font:11px Consolas,monospace}.signal-labels{display:flex;justify-content:space-between;margin:6px 4px 20px;color:#9aabba;font-size:10px}.empty-heatmap{position:absolute;inset:0;background:#f7faffee;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:7px;pointer-events:none;color:#607c99}.empty-heatmap span{font-size:42px;color:#a1bce0}.empty-heatmap strong{font-size:16px}.empty-heatmap small{color:#8fa2b5}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:13px}.stat{background:#f5f8fc;border:1px solid #e9eff6;border-radius:10px;padding:13px}.stat span{font-size:10px;color:#7b8ea2}.stat strong{display:block;font-size:21px;margin:7px 0}.stat small{color:#a1afc0;font-size:10px}.inspector{border:1px solid #e1e9f3;border-radius:10px;overflow:hidden}.inspector-head{display:flex;justify-content:space-between;gap:10px;background:#f6f9fd;padding:12px}.inspector-head small{color:#90a3b5}.inspector-body{padding:13px;color:#617a95;font-size:11px}.readout-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e6ecf3}.readout-row:last-child{border-bottom:0}.readout-row strong{color:#20446c}.readout-row.main{font-weight:900;color:#1f60c8}.router-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:17px}.router-grid label{font-size:11px;color:#7c8b9d;font-weight:700;display:grid;gap:7px}.slider-group{border-radius:10px;padding:12px;background:#f5f9ff;border:1px solid #e2edf8;margin-bottom:14px}.slider-group>div:first-child{display:flex;justify-content:space-between;gap:6px}.slider-group label{font-size:12px;font-weight:800}.slider-group label small{display:block;color:#8ba0b7;font-size:10px;font-weight:400;margin-top:3px}.slider-group strong{font-size:13px;color:#245fb9}.slider-group input{width:100%;accent-color:var(--blue);margin:13px 0 7px}.slider-hint{display:flex;justify-content:space-between;color:#879eb3;font-size:10px}.analysis-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.analysis-buttons button{white-space:normal;padding:12px 7px}.analysis-buttons button:first-child{grid-column:span 2}.status-line{margin:13px 0;font-size:11px;color:#708ba2;line-height:1.7}.status-line.error{color:#c94749}.recommendation{padding:13px;margin-top:15px;border-radius:10px;border:1px solid #bad6f5;background:#f0f7ff}.recommend-heading strong{color:#215cb2}.recommendation #recommendBody{font-size:11px;line-height:1.9;color:#40618a;margin:10px 0}.recommendation button{width:100%}.footnote{font-size:10px;line-height:1.7;color:#9babbc;padding-top:10px}.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,10px);background:#1c344f;color:#fff;padding:12px 20px;border-radius:10px;opacity:0;pointer-events:none;box-shadow:0 10px 35px #223b5e43;transition:opacity .2s,transform .2s;z-index:10}.toast.show{opacity:1;transform:translate(-50%,0)}footer{display:flex;justify-content:space-between;gap:10px;padding:26px 0;color:#9baaBA;font-size:10px;line-height:1.5}@media(max-width:1200px){.app-shell{width:calc(100% - 28px)}.view-nav{margin-left:0}.connection{display:none}.layout-bar{gap:14px;flex-wrap:wrap}.dirty-pill{display:none}.tool{padding:11px 10px}.editor-workarea{grid-template-columns:minmax(0,1fr) 264px}}@media(max-width:920px){.topbar{flex-wrap:wrap;padding:13px 0;gap:9px}.view-nav{order:3;width:100%}.view-tab{flex:1}.editor-workarea,.result-workarea{grid-template-columns:1fr}.side-controls{order:2}.tool-row{gap:3px}.draw-toolbar{flex-wrap:wrap}.stats-grid{grid-template-columns:1fr 1fr}.page-intro h1{font-size:23px}.page-intro{flex-wrap:wrap}}@media(max-width:560px){.app-shell{width:calc(100% - 18px)}.top-actions{gap:4px}.top-actions .ghost{padding:8px;font-size:11px}.brand-name{font-size:14px}.brand-sub{font-size:8px}.page-intro{padding:16px 0}.page-intro p{font-size:11px}.page-intro h1{font-size:22px}.page-intro .proceed{width:100%}.layout-bar{padding:12px}.layout-metrics small{width:100%}.tool-row{width:100%;justify-content:space-between}.tool{padding:9px 5px;font-size:10px;gap:3px;flex-direction:column}.tool-icon{font-size:19px}.edit-actions{width:100%}.edit-actions button{flex:1;font-size:11px}.canvas-column{padding:6px}.canvas-corner{font-size:8px;top:5px;right:5px}.canvas-foot{font-size:9px}.editor-bottom{flex-direction:column;align-items:stretch}.editor-bottom button{width:100%}.stats-grid .stat strong{font-size:17px}.router-grid{gap:7px}.result-map{padding:7px}}@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* Collapse the entire palette rail to devote the page to drawing. */
+.editor-workarea.palette-collapsed{grid-template-columns:minmax(0,1fr)}.editor-workarea.palette-collapsed .side-controls{display:none!important}.edit-actions #paletteToggleBtn{color:#215db8;border-color:#b5cdec;background:#f0f6ff}.editor-workarea.palette-collapsed .canvas-column{max-width:100%}
+
+/* v1.6: room-exterior importance cleanup */
+.exterior-clean{background:#f1f8fc;border-color:#b4d7e9;color:#25627f}.exterior-clean:hover{background:#e2f1f9;border-color:#87bfd9}.cleanup-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}.cleanup-row .secondary{padding:9px 11px;font-size:11px}
+
+
+/* Required-area pin touch and keyboard ergonomics — isolated GATE 3 preview only */
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+#editorCanvas:focus-visible{outline:3px solid #5b42b9;outline-offset:-4px}
+.required-picker-row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.required-picker-row select{min-width:0;flex:1;min-height:44px;padding:9px;border-radius:9px;border:1px solid #aab9d2;background:#fff;color:#263c5c}
+.required-picker-row button{min-height:44px;padding:9px 12px}
+.required-selection-hint{font-size:11px;line-height:1.55;color:#536985;margin:7px 0 2px}
+#selectedRequiredRadius{min-height:44px;accent-color:#6b48b9;touch-action:pan-x}
+#selectedRequiredRadius::-webkit-slider-thumb{width:24px;height:24px}
+#selectedRequiredRadius::-moz-range-thumb{width:24px;height:24px}
+#requiredPinSelect:focus-visible,#requiredNextPin:focus-visible,#selectedRequiredRadius:focus-visible{outline:3px solid #5b42b9;outline-offset:2px}
+#editorCanvas{touch-action:none}
+.signal-level-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:9px 0 7px}
+.signal-level-buttons button{min-width:0;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#31445c;padding:10px 1px;font-weight:800;line-height:1.2}
+.signal-level-buttons button small{display:block;margin-top:4px;font-size:10px;font-weight:600;color:#687c92}
+.signal-level-buttons button[aria-pressed="true"]{background:#eaf1ff;border-color:#3268ce;color:#225cc6;box-shadow:inset 0 0 0 1px #3268ce}
+.signal-level-buttons button:disabled{opacity:.42;cursor:not-allowed}
+.signal-level-buttons button:focus-visible{outline:3px solid #3e7ce3;outline-offset:2px}
+</style></head>
+<body data-view="design"><div class="app-shell">
+<header class="topbar">
+ <div class="brand"><span class="brand-icon">⌁</span><div><div class="brand-name">Wi-Fi <strong>Placement Studio</strong></div><div class="brand-sub">FLOOR PLAN & SIGNAL LAB · OFFLINE</div></div></div>
+ <nav class="view-nav" aria-label="화면 전환"><button type="button" class="view-tab active" id="designTab" aria-current="page">① 도면 그리기</button><button type="button" class="view-tab" id="analysisTab">② 신호 분석</button></nav>
+ <div class="top-actions"><span class="connection" id="engineMode">오프라인 엔진 준비</span><label class="ghost upload" for="importFile">불러오기</label><input id="importFile" type="file" accept=".json,application/json" hidden><button id="exportBtn" class="ghost">도면 저장</button></div>
+</header>
+<main>
+<section id="editorScreen" class="screen editor-screen">
+ <div class="page-intro"><div><div class="eyebrow">STEP 01 · DRAW YOUR HOME</div><h1>우리 집 도면 그리기</h1><p>집의 구조를 자유롭게 그려 보세요. <span>그림을 원하는 위치에 신호 세기 핀을 배치해 최소 예상 품질을 지정하세요.</span></p></div><button type="button" class="primary proceed" id="applyFromEditorBtn">Apply · 신호 확인하기 <b>→</b></button></div>
+ <div class="layout-bar"><div class="area-controls"><label for="pyeongInput">우리 집 크기</label><input id="pyeongInput" type="number" value="24.2" min="1" max="150" step="0.1" inputmode="decimal"><strong>평</strong><button id="areaApplyBtn" class="secondary">면적 적용</button></div><div class="layout-metrics"><strong id="mapSizeChip">10.0 × 8.0m</strong><span id="areaChip">약 80.0㎡</span><small>X–Z 평면 5:4 비율 가정 · Y는 바닥으로부터의 높이</small></div><div class="dirty-pill" id="dirtyPill">● 도면 작성 중</div></div>
+ <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="신호 세기 핀 · 기본 4칸(64점 이상) · 단일 지점"><span class="tool-icon">◎</span>신호 세기</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div></div>
+ <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 신호 세기 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">신호 세기 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 신호 세기 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
+ <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
+  <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
+  <details class="palette-drawer" id="eraserDrawer"><summary><span>◌ 부분 지우개</span><span class="summary-meta">크기 조절</span></summary><div class="drawer-content"><div class="brush-controls"><label for="eraserSize">지우개 반경 <output id="eraserSizeValue">0.22 m</output></label><input type="range" id="eraserSize" min="0.1" max="1.2" step="0.02" value="0.22"></div><p>지우개가 지나간 <b>선과 벽의 해당 부분만</b> 사라집니다. 직사각형의 한 변 중간을 지워도 나머지 벽은 남습니다. 중요도 칠하기도 지운 위치만 기본 0%로 돌아갑니다. 한 번의 드래그는 실행 취소 1회로 복원합니다.</p></div></details>
+  <details class="palette-drawer" id="requiredDrawer"><summary><span>◎ 신호 세기 · 기본 4칸(64점 이상)</span></summary><div class="drawer-content"><p>핀은 반경 없는 한 점만 검사합니다. 새 핀은 기본 4칸(64점 이상)으로 추가됩니다. 선택한 핀마다 팔레트에서 요구 신호 세기를 변경할 수 있습니다.</p><div id="requiredPinPicker" hidden><label for="requiredPinSelect">편집할 핀</label><div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 신호 세기 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary">다음 핀</button></div><p id="requiredSelectionStatus" role="status" aria-live="polite">핀을 선택하고 이동하세요.</p></div><div id="requiredSelectedControls" hidden><strong id="requiredSelectedName">선택한 신호 세기</strong><p id="requiredSelectedHint">지정한 한 점을 검사합니다.</p></div><label class="field-label" for="signalBarsSelect"><span>선택한 핀의 최소 신호 세기</span><select id="signalBarsSelect" aria-label="선택한 신호 세기 핀의 최소 요구 칸수" style="width:100%;padding:10px;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#263e5a"><option value="4">4칸 이상 · 64점 이상 (기본값)</option><option value="3">3칸 이상 · 42점 이상</option><option value="2">2칸 이상 · 27점 이상</option><option value="1">1칸 이상 · 9점 이상</option><option value="0">0칸 이상 · 0점 이상</option></select></label><div class="signal-level-buttons" id="signalLevelButtons" role="group" aria-label="선택한 핀의 최소 신호 세기 빠른 설정"><button type="button" data-signal-level="4" aria-pressed="false">4칸<small>64점</small></button><button type="button" data-signal-level="3" aria-pressed="false">3칸<small>42점</small></button><button type="button" data-signal-level="2" aria-pressed="false">2칸<small>27점</small></button><button type="button" data-signal-level="1" aria-pressed="false">1칸<small>9점</small></button><button type="button" data-signal-level="0" aria-pressed="false">0칸<small>0점</small></button></div><button type="button" id="requiredDeletePin" class="text-button danger" disabled>선택한 핀 삭제</button><p id="signalBarsHelp">핀을 추가하고 선택하면 이곳에서 해당 지점의 기준을 변경할 수 있습니다.</p><p>LAN 포트와 천장·벽 높이 제한 없이 동작합니다. 결과는 미보정 RSSI 예상입니다.</p></div></details>
+  <details class="palette-drawer" id="elementsDrawer"><summary><span>▤ 도면 요소 목록</span><span class="summary-meta" id="numWallsChip">벽 0개</span></summary><div class="drawer-content"><div class="element-list" id="elementList"></div><button type="button" class="text-button danger" id="clearBtn">벽과 스케치 전체 지우기</button></div></details>
+  <div class="side-help"><strong>도면 그리는 방법</strong><p>‘그리기’는 자유선, ‘선 추가’는 시작점과 끝점 사이의 직선 벽, ‘직사각형’은 벽 네 면을 만듭니다. <b>도면화</b>는 자유선과 사선을 직각으로 보정합니다. <b>부분 지우개</b>는 닿은 부분만 지웁니다.</p><p>벽은 모두 콘크리트로 계산됩니다. 중요도는 신호 세기를 직접 바꾸지 않고 최적 배치 평가에 사용됩니다.</p></div>
+  <button type="button" id="resetBtn" class="ghost full">＋ 새 도면 시작</button>
+ </aside></div>
+ <div class="editor-bottom"><span id="drawingHelp">그리기·선 추가·직사각형을 사용하세요. 부분 지우개로 선의 일부만 잘라낼 수 있습니다.</span><button type="button" class="primary" id="applyBottomBtn">Apply · Wi-Fi 출력량 보기 →</button></div>
+</section>
+<section id="resultScreen" class="screen results-screen" hidden>
+ <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
+ <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
+ <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><p id="offlineModeInfo" class="footnote">오프라인 JS 예측 엔진만 사용합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
+</section></main><footer><span>Wi-Fi Placement Studio · Offline HTML / Windows EXE</span><span>1평 ≈ 3.3058㎡ · 가로세로 비율 추정 · 결과는 예측치입니다.</span></footer>
+</div><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
+/* Browser-offline companion of backend/wifi_engine/core.py.
+   New layout contract v1.1: floor map XZ, vertical height Y, RSSI values[row Z][col X].
+   The received signal is an estimate, not throughput/CSI. */
+(function(global){
+ 'use strict';
+ const preset={
+   '2.4':{p0:-35,n:2.2,wallLoss:{concrete:12,gypsum:4,glass:3,door:3,brick:8,wood:3}},
+   '5':{p0:-41,n:2.2,wallLoss:{concrete:18,gypsum:6,glass:5,door:5,brick:12,wood:5}}
+ };
+ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+ const depth=L=>L.depth??L.height;
+ function normalizeLayout(old){
+   if(old.schemaVersion==='1.1')return old;
+   const L=JSON.parse(JSON.stringify(old));L.schemaVersion='1.1';L.depth=depth(L);delete L.height;
+   L.coordinateSystem={plane:'XZ',verticalAxis:'Y',origin:'top-left-floor',xPositive:'right',zPositive:'down',yPositive:'up',unit:'meter'};
+   L.roomHeightM??=2.7;L.receiverY??=1;
+   if(L.router){L.router.z=L.router.y;L.router.y=1.2;}
+   for(const v of [...(L.walls||[]),...(L.zones||[])]){v.z1=v.y1;v.z2=v.y2;delete v.y1;delete v.y2;}
+   return L;
+ }
+ function settings(L){L=normalizeLayout(L);
+   const r=L.router,p=preset[String(r.frequency)],o=L.modelOverrides||{},wallLoss={};
+   Object.keys(p.wallLoss).forEach(k=>wallLoss[k]=p.wallLoss[k]*(o.wallScale??1));Object.assign(wallLoss,o.wallLoss||{});
+   return {name:'multi-wall-v2',p0:(o.p0??p.p0)+(r.txPowerDbm??20)-20+(r.antennaGainDbi??0),n:o.pathLossExponent??p.n,wallLoss,wallScale:o.wallScale??1};
+ }
+ // Fraction of projected transmitter-to-receiver segment at the concrete wall.
+ function wallFraction(ax,az,bx,bz,w){
+   const dx=bx-ax,dz=bz-az,wx=w.x2-w.x1,wz=w.z2-w.z1,den=dx*wz-dz*wx;
+   if(Math.abs(den)<1e-10)return null;
+   const t=((w.x1-ax)*wz-(w.z1-az)*wx)/den;
+   const u=((w.x1-ax)*dz-(w.z1-az)*dx)/den;
+   return t>1e-10&&t<1-1e-10&&u>1e-10&&u<1-1e-10?t:null;
+ }
+ function crosses(rx,rz,x,z,w){return wallFraction(rx,rz,x,z,w)!==null;}
+ function wallHit(L,x,z,wall,receiverY){return wallFraction(L.router.x,L.router.z,x,z,wall)!==null;}
+ function value(L,x,z,p=settings(L),details=false,receiverY=null){L=normalizeLayout(L);
+   const r=L.router,ry=receiverY??L.receiverY??1;
+   const d=Math.max(.5,Math.hypot(x-r.x,z-r.z,ry-r.y));
+   const base=p.p0-10*p.n*Math.log10(d);let total=base;const hits=[];
+   for(const w of (L.walls||[])){
+     if(w.x1===w.x2&&w.z1===w.z2)continue;
+     if(wallHit(L,x,z,w,ry)){
+       const loss=p.wallLoss[w.material];if(loss===undefined)throw Error('알 수 없는 벽 재질: '+w.material);
+       total-=loss;if(details)hits.push({id:w.id,material:w.material,lossDb:loss});
+     }
+   }
+   if(!details)return total;
+   return {x,z,y:ry,distanceM:+d.toFixed(2),beforeWallsDbm:+base.toFixed(1),walls:hits,wallLossDb:+(base-total).toFixed(1),rssiDbm:+total.toFixed(1)};
+ }
+ function weight(L,x,z){L=normalizeLayout(L);let base=1;
+   for(const a of L.zones||[]){
+     if(x>=Math.min(a.x1,a.x2)&&x<Math.max(a.x1,a.x2)&&z>=Math.min(a.z1,a.z2)&&z<Math.max(a.z1,a.z2))
+       base+=a.weightPct!==undefined&&a.weightPct!==null?a.weightPct/100:(a.weight??1)-1;
+   }
+   let painted=false,pct=0;
+   for(const stroke of L.importanceStrokes||[]){
+     if(stroke.kind==='outside-erase'){
+       if(global.WifiCleanup.outsideAt(stroke.mask,x,z,L.width,L.depth)){pct=0;painted=true;}
+       continue;
+     }
+     const pts=stroke.points||[],radius=stroke.radiusM??.5;
+     if(!pts.length)continue;let hit=false;
+     if(pts.length===1)hit=Math.hypot(x-pts[0][0],z-pts[0][1])<=radius;
+     else for(let i=1;i<pts.length;i++){
+       const a=pts[i-1],b=pts[i],dx=b[0]-a[0],dz=b[1]-a[1],len=dx*dx+dz*dz;
+       if(x<Math.min(a[0],b[0])-radius||x>Math.max(a[0],b[0])+radius||z<Math.min(a[1],b[1])-radius||z>Math.max(a[1],b[1])+radius)continue;
+       const t=len?clamp(((x-a[0])*dx+(z-a[1])*dz)/len,0,1):0;
+       if(Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz)<=radius){hit=true;break;}
+     }
+     if(hit){pct=stroke.erase?0:(stroke.weightPct??0);painted=true;}
+   }
+   return painted?1+clamp(pct,-100,100)/100:Math.max(0,base);
+ }
+ function score(rows,weights){let sum=0,wsum=0,min=Infinity,max=-Infinity,quality=0,weightedMean=0,good=0,weak=0,wgood=0,wweak=0,count=0;
+   for(let i=0;i<rows.length;i++)for(let j=0;j<rows[i].length;j++){
+     const v=rows[i][j],w=weights[i][j];count++;sum+=v;wsum+=w;weightedMean+=v*w;
+     quality+=clamp((v+90)/55*100,0,100)*w;good+=+(v>=-67);weak+=+(v< -75);
+     wgood+=w*+(v>=-67);wweak+=w*+(v< -75);min=Math.min(min,v);max=Math.max(max,v);
+   }
+   if(wsum<=0)return score(rows,rows.map(row=>row.map(()=>1)));
+   const rnd=v=>+v.toFixed(1);
+   return {meanDbm:rnd(sum/count),minDbm:rnd(min),maxDbm:rnd(max),weightedMeanDbm:rnd(weightedMean/wsum),qualityScore:rnd(quality/wsum),coverageGoodPct:rnd(good/count*100),coverageWeakPct:rnd(weak/count*100),weightedGoodPct:rnd(wgood/wsum*100),weightedWeakPct:rnd(wweak/wsum*100)};
+ }
+ function grid(layout,step=.25,weighted=false){const L=normalizeLayout(layout);
+   const cols=Math.ceil(L.width/step),rows=Math.ceil(L.depth/step);
+   if(cols*rows>30000)throw Error('격자 수 초과: 그리드 간격을 높여 주세요.');
+   const p=settings(L),values=[],weights=[];
+   for(let r=0;r<rows;r++){
+     const rv=[],rw=[],z=Math.min(L.depth,(r+.5)*step);
+     for(let c=0;c<cols;c++){const x=Math.min(L.width,(c+.5)*step);rv.push(+value(L,x,z,p).toFixed(1));rw.push(weighted?weight(L,x,z):1);}
+     values.push(rv);weights.push(rw);
+   }
+   return {schemaVersion:'1.1',unit:'dBm',frequency:L.router.frequency,gridStep:step,origin:{x:0,z:0},gridPlane:'XZ',rowAxis:'z',colAxis:'x',receiverY:L.receiverY??1,routerPosition:{x:L.router.x,y:L.router.y,z:L.router.z},cellAnchor:'center',rows,cols,values,weights,statistics:score(values,weights),weighted,model:p};
+ }
+ function optimize(layout,gridStep=.35,searchStep=.75,weighted=true){const L=normalizeLayout(layout),p=settings(L),sample=[];
+   const columns=Math.ceil(L.width/gridStep),rows=Math.ceil(L.depth/gridStep);
+   for(let r=0;r<rows;r++)for(let c=0;c<columns;c++){
+     const x=Math.min(L.width,(c+.5)*gridStep),z=Math.min(L.depth,(r+.5)*gridStep);
+     sample.push({x,z,w:weighted?weight(L,x,z):1});
+   }
+   let wtotal=sample.reduce((a,s)=>a+s.w,0);if(wtotal<=0){sample.forEach(s=>s.w=1);wtotal=sample.length;}
+   function evaluate(x,z){const trial={...L,router:{...L.router,x,z}};let quality=0,weak=0,good=0,dbm=0;
+     for(const s of sample){const v=value(trial,s.x,s.z,p);quality+=clamp((v+90)/55*100,0,100)*s.w;weak+=(v< -75?s.w:0);good+=(v>=-67?s.w:0);dbm+=v*s.w;}
+     return {objective:quality/wtotal-.12*weak/wtotal*100,stats:{qualityScore:+(quality/wtotal).toFixed(1),weightedWeakPct:+(weak/wtotal*100).toFixed(1),weightedGoodPct:+(good/wtotal*100).toFixed(1),weightedMeanDbm:+(dbm/wtotal).toFixed(1)}};
+   }
+   const cols=Math.max(2,Math.ceil(L.width/searchStep)),rcount=Math.max(2,Math.ceil(L.depth/searchStep));
+   const coord=(i,count,length)=>length<=.7?length/2:.35+(length-.7)*i/(count-1);
+   let best={objective:-Infinity,x:0,z:0,stats:null};
+   function feasible(x,z){for(const a of L.walls||[]){
+     const dx=a.x2-a.x1,dz=a.z2-a.z1,d2=dx*dx+dz*dz;
+     const t=d2?clamp(((x-a.x1)*dx+(z-a.z1)*dz)/d2,0,1):0;
+     if(Math.hypot(x-(a.x1+t*dx),z-(a.z1+t*dz))<.2)return false;
+   }return true;}
+   function check(x,z){if(!feasible(x,z))return;const r=evaluate(x,z);if(r.objective>best.objective)best={...r,x,z};}
+   for(let r=0;r<rcount;r++)for(let c=0;c<cols;c++)check(coord(c,cols,L.width),coord(r,rcount,L.depth));
+   if(!Number.isFinite(best.objective)){const old=evaluate(L.router.x,L.router.z);best={...old,x:L.router.x,z:L.router.z};}
+   for(const scale of [searchStep/2,searchStep/4]){
+     const center={x:best.x,z:best.z};for(const dx of [-scale,0,scale])for(const dz of [-scale,0,scale])check(clamp(center.x+dx,0,L.width),clamp(center.z+dz,0,L.depth));
+   }
+   const current=evaluate(L.router.x,L.router.z);
+   return {best:{x:+best.x.toFixed(2),y:+L.router.y.toFixed(2),z:+best.z.toFixed(2)},bestStats:best.stats,currentStats:current.stats,improvementPoints:+(best.objective-current.objective).toFixed(1),criterion:'weighted RSSI quality index minus weak-area penalty (XZ plane, fixed Y)',candidates:cols*rcount+18,weightsUsed:weighted};
+ }
+ global.WifiEngine={settings,value,grid,optimize,weight,score,crosses,normalizeLayout};
+})(window);
+
+</script><script>
+/* Pure metric-space geometry for vector erasing: the eraser is a swept circle
+   (capsule) along each pointer-move segment. Walls are clipped, not deleted. */
+(function(global){
+ 'use strict';
+ const EPS=1e-8;
+ const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+ function linearInterval(a,b,lo,hi){
+   if(Math.abs(b)<EPS)return a>=lo-EPS&&a<=hi+EPS?[0,1]:null;
+   const t1=(lo-a)/b,t2=(hi-a)/b;
+   const start=Math.max(0,Math.min(t1,t2)),end=Math.min(1,Math.max(t1,t2));
+   return end>=start-EPS?[clamp(start,0,1),clamp(end,0,1)]:null;
+ }
+ function intersection(a,b){if(!a||!b)return null;let lo=Math.max(a[0],b[0]),hi=Math.min(a[1],b[1]);return hi>=lo-EPS?[clamp(lo,0,1),clamp(hi,0,1)]:null;}
+ function circleInterval(a,b,c,r){
+   const dx=b.x-a.x,dy=b.y-a.y,fx=a.x-c.x,fy=a.y-c.y;
+   const A=dx*dx+dy*dy,B=2*(fx*dx+fy*dy),C=fx*fx+fy*fy-r*r;
+   if(A<EPS)return C<=0?[0,1]:null;
+   const disc=B*B-4*A*C;if(disc<0)return null;
+   const s=Math.sqrt(Math.max(0,disc)),lo=Math.max(0,(-B-s)/(2*A)),hi=Math.min(1,(-B+s)/(2*A));
+   return hi>=lo-EPS?[clamp(lo,0,1),clamp(hi,0,1)]:null;
+ }
+ function capsuleIntervals(a,b,p,q,r){
+   const hits=[];
+   for(const c of [p,q]){const t=circleInterval(a,b,c,r);if(t)hits.push(t);}
+   const ex=q.x-p.x,ey=q.y-p.y,len2=ex*ex+ey*ey;
+   if(len2>EPS){
+     const dx=b.x-a.x,dy=b.y-a.y;
+     const proj0=((a.x-p.x)*ex+(a.y-p.y)*ey)/len2,proj1=(dx*ex+dy*ey)/len2;
+     const l=Math.sqrt(len2);
+     const perp0=(ex*(a.y-p.y)-ey*(a.x-p.x))/l,perp1=(ex*dy-ey*dx)/l;
+     const central=intersection(linearInterval(proj0,proj1,0,1),linearInterval(perp0,perp1,-r,r));
+     if(central)hits.push(central);
+   }
+   hits.sort((a,b)=>a[0]-b[0]);
+   const merged=[];for(const span of hits){const last=merged[merged.length-1];
+     if(last&&span[0]<=last[1]+EPS)last[1]=Math.max(last[1],span[1]);
+     else merged.push(span.slice());}
+   return merged;
+ }
+ function point(a,b,t){return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+ function clipSegment(a,b,p,q,r){
+   const holes=capsuleIntervals(a,b,p,q,r);
+   if(!holes.length)return {changed:false,parts:[[a,b]]};
+   const parts=[];let from=0;
+   for(const [h0,h1] of holes){if(h0>from+EPS)parts.push([point(a,b,from),point(a,b,h0)]);from=Math.max(from,h1);}
+   if(from<1-EPS)parts.push([point(a,b,from),point(a,b,1)]);
+   // Skip numerical fragments smaller than 1 cm. These are not meaningful walls.
+   const cleaned=parts.filter(([s,e])=>Math.hypot(e.x-s.x,e.y-s.y)>=.01);
+   return {changed:true,parts:cleaned};
+ }
+ function eraseWalls(walls,p,q,r,makeId){let changed=false;const output=[];
+   for(const w of walls){const legacy=w.z1===undefined;const a={x:w.x1,y:legacy?w.y1:w.z1},b={x:w.x2,y:legacy?w.y2:w.z2},res=clipSegment(a,b,p,q,r);
+     if(!res.changed){output.push(w);continue;}changed=true;
+     for(let i=0;i<res.parts.length;i++){const [s,e]=res.parts[i];output.push(legacy?{...w,id:makeId(),x1:s.x,y1:s.y,x2:e.x,y2:e.y}:{...w,id:makeId(),x1:s.x,z1:s.y,x2:e.x,z2:e.y});}
+   }return {changed,walls:output};}
+ function near(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1])<1e-6;}
+ function eraseSketches(sketches,p,q,r,makeId){let changed=false;const output=[];
+   for(const sk of sketches){const pts=sk.points||[];if(!pts.length)continue;
+     if(pts.length===1){const inside=Math.hypot(pts[0][0]-p.x,pts[0][1]-p.y)<=r||Math.hypot(pts[0][0]-q.x,pts[0][1]-q.y)<=r;
+       if(inside)changed=true;else output.push(sk);continue;}
+     const groups=[];let path=[],edited=false;
+     for(let i=1;i<pts.length;i++){
+       const a={x:pts[i-1][0],y:pts[i-1][1]},b={x:pts[i][0],y:pts[i][1]};
+       const result=clipSegment(a,b,p,q,r);edited ||= result.changed;
+       if(!result.parts.length){if(path.length>1)groups.push(path);path=[];continue;}
+       for(const [s,e] of result.parts){const begin=[s.x,s.y],end=[e.x,e.y];
+         if(path.length&&!near(path[path.length-1],begin)){if(path.length>1)groups.push(path);path=[];}
+         if(!path.length)path.push(begin);path.push(end);
+       }
+       if(Math.hypot(result.parts[result.parts.length-1][1].x-b.x,result.parts[result.parts.length-1][1].y-b.y)>EPS){
+         if(path.length>1)groups.push(path);path=[];
+       }
+     }
+     if(path.length>1)groups.push(path);
+     if(!edited){output.push(sk);continue;}changed=true;
+     for(const group of groups){if(group.length>=2)output.push({...sk,id:makeId(),points:group});}
+   }return {changed,sketches:output};
+ }
+ const api={capsuleIntervals,clipSegment,eraseWalls,eraseSketches};
+ global.WifiGeometry=api;
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script><script>
+/* Room-exterior importance cleanup. Works in browser, Node and embedded EXE.
+   XZ is the drawing plane. Walls/sketch lines form impermeable boundaries;
+   areas connected to the edge through gaps are considered 'outside'.
+   The action saves a compact, immutable snapshot of the exterior mask, so
+   later brush strokes can repaint anywhere without being blocked permanently.
+*/
+(function(global){
+'use strict';
+const MAX_CELLS=160000;
+const decoded=new WeakMap();
+function bitsFor(mask){
+  if(decoded.has(mask))return decoded.get(mask);
+  if(!mask || !Number.isInteger(mask.cols)||!Number.isInteger(mask.rows)||mask.cols<1||mask.rows<1||mask.cols*mask.rows>MAX_CELLS||typeof mask.bits!=='string')throw Error('잘못된 중요도 정리 마스크입니다.');
+  const raw=atob(mask.bits);
+  if(raw.length!==Math.ceil(mask.cols*mask.rows/8))throw Error('중요도 마스크 길이가 잘못되었습니다.');
+  const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));decoded.set(mask,bytes);return bytes;
+}
+function outsideAt(mask,x,z,width,depth){
+  if(!mask)return false;
+  const c=Math.max(0,Math.min(mask.cols-1,Math.floor(x/width*mask.cols)));
+  const r=Math.max(0,Math.min(mask.rows-1,Math.floor(z/depth*mask.rows)));
+  const n=r*mask.cols+c,bits=bitsFor(mask);
+  return !!(bits[n>>3] & (128>>(n&7)));
+}
+function buildMask(layout){
+  const width=layout.width,depth=layout.depth;
+  if(!(width>0&&depth>0))throw Error('도면의 평면 크기가 잘못되었습니다.');
+  const resolution=Math.max(.075,Math.sqrt(width*depth/MAX_CELLS));
+  const cols=Math.ceil(width/resolution),rows=Math.ceil(depth/resolution),n=cols*rows;
+  if(n>MAX_CELLS)throw Error('도면 크기가 너무 큽니다.');
+  const dx=width/cols,dz=depth/rows;
+  const barrier=new Uint8Array(n),exterior=new Uint8Array(n),queue=new Int32Array(n);
+  const barriers=[];
+  for(const w of layout.walls||[])barriers.push([w.x1,w.z1,w.x2,w.z2]);
+  for(const sk of layout.sketches||[]){const points=sk.points||[];for(let k=1;k<points.length;k++)barriers.push([...points[k-1],...points[k]]);}
+  // Rasterize a slightly thick centerline so touching endpoints stay joined.
+  const radius=Math.hypot(dx,dz)*.7;
+  for(const [x1,z1,x2,z2] of barriers){
+    const minC=Math.max(0,Math.floor((Math.min(x1,x2)-radius)/dx));
+    const maxC=Math.min(cols-1,Math.floor((Math.max(x1,x2)+radius)/dx));
+    const minR=Math.max(0,Math.floor((Math.min(z1,z2)-radius)/dz));
+    const maxR=Math.min(rows-1,Math.floor((Math.max(z1,z2)+radius)/dz));
+    const vx=x2-x1,vz=z2-z1,len2=vx*vx+vz*vz;
+    for(let r=minR;r<=maxR;r++)for(let c=minC;c<=maxC;c++){
+      const px=(c+.5)*dx,pz=(r+.5)*dz;
+      const t=len2?Math.min(1,Math.max(0,((px-x1)*vx+(pz-z1)*vz)/len2)):0;
+      if((px-x1-t*vx)**2+(pz-z1-t*vz)**2<=radius**2)barrier[r*cols+c]=1;
+    }
+  }
+  // Four-neighbour flood fill from every boundary cell not covered by a wall.
+  let head=0,tail=0;
+  function seed(i){if(!barrier[i]&&!exterior[i]){exterior[i]=1;queue[tail++]=i;}}
+  for(let c=0;c<cols;c++){seed(c);seed((rows-1)*cols+c);}
+  for(let r=0;r<rows;r++){seed(r*cols);seed(r*cols+cols-1);}
+  while(head<tail){const i=queue[head++],r=Math.floor(i/cols),c=i%cols;
+    if(c>0)seed(i-1);if(c+1<cols)seed(i+1);
+    if(r>0)seed(i-cols);if(r+1<rows)seed(i+cols);
+  }
+  let inside=0, outside=0;
+  const packed=new Uint8Array(Math.ceil(n/8));
+  for(let i=0;i<n;i++){
+    if(!barrier[i]&&!exterior[i])inside++;
+    else {packed[i>>3]|=128>>(i&7);outside++;}
+  }
+  let binary='';for(let i=0;i<packed.length;i++)binary+=String.fromCharCode(packed[i]);
+  const mask={cols,rows,bits:btoa(binary)};
+  decoded.set(mask,packed);
+  return {mask,insideCells:inside,outsideCells:outside,roomFound:inside>0,barrierSegments:barriers.length};
+}
+function drawErase(ctx,mask,w,h){
+  const bits=bitsFor(mask),off=document.createElement('canvas');off.width=mask.cols;off.height=mask.rows;
+  const oc=off.getContext('2d'),img=oc.createImageData(mask.cols,mask.rows);
+  for(let i=0;i<mask.cols*mask.rows;i++)if(bits[i>>3] & (128>>(i&7))){img.data[4*i]=0;img.data[4*i+1]=0;img.data[4*i+2]=0;img.data[4*i+3]=255;}
+  oc.putImageData(img,0,0);ctx.save();ctx.globalCompositeOperation='destination-out';ctx.imageSmoothingEnabled=false;ctx.drawImage(off,0,0,w,h);ctx.restore();
+}
+function validateMask(mask){
+  const clean={cols:Number(mask?.cols),rows:Number(mask?.rows),bits:mask?.bits};
+  bitsFor(clean);return clean;
+}
+global.WifiCleanup={buildMask,bitsFor,outsideAt,drawErase,validateMask};
+})(typeof window!=='undefined'?window:globalThis);
+
+</script><script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id), materials={concrete:'콘크리트',gypsum:'석고보드',glass:'유리',door:'문',brick:'벽돌',wood:'목재'};
+const coords={plane:'XZ',verticalAxis:'Y',origin:'top-left-floor',xPositive:'right',zPositive:'down',yPositive:'up',unit:'meter'};
+// Pyeong -> square meters. A fixed 5:4 bounding canvas is an explicit estimate,
+// not a claim about the home's actual aspect ratio. Every geometric item is in meters.
+const SQM_PER_PYEONG=3.305785, RATIO=1.25;
+function sizeForPyeong(pyeong){const sqm=pyeong*SQM_PER_PYEONG;return {width:Math.sqrt(sqm*RATIO),height:Math.sqrt(sqm/RATIO)};}
+function sample(){const areaPyeong=24.2,{width,height}=sizeForPyeong(areaPyeong);return {schemaVersion:'1.1',coordinateSystem:{...coords},width,depth:height,roomHeightM:2.7,receiverY:1.0,areaPyeong,
+ router:{x:width/2,y:1.2,z:height/2,frequency:2.4,txPowerDbm:20,antennaGainDbi:0},
+ walls:[], zones:[],requiredPins:[],sketches:[],importanceStrokes:[],modelOverrides:{pathLossExponent:2.2,wallScale:1}};}
+let L=sample(),tool='sketch',material='concrete',result=null,weighted=false,best=null,dirty=true,
+ probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[],selectedRequiredId=null,requiredDrag=null;
+const geometry=window.WifiGeometry,cleanup=window.WifiCleanup;
+if(!geometry||!cleanup)throw Error('geometry.js / cleanup.js not loaded');
+const editor=$('editorCanvas'), heat=$('heatmapCanvas'),eCtx=editor.getContext('2d'),hCtx=heat.getContext('2d');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const cleanNum=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
+const fmt=(x,p=1)=>Number(x).toFixed(p);
+const escapeHTML=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2900)}
+function pushUndoSnapshot(snapshot){undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift()}
+function pushUndo(){pushUndoSnapshot(JSON.stringify(L))}
+function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
+ dirty=true;best=null;$('recommendation').hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
+ $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
+}
+function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty')}
+function resizeCanvas(canvas,ctx){const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return {w:1,h:1};const dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:rect.width,h:rect.height};}
+function positions(canvas,event){const r=canvas.getBoundingClientRect();return{x:clamp((event.clientX-r.left)/r.width*L.width,0,L.width),y:clamp((event.clientY-r.top)/r.height*L.depth,0,L.depth)};}
+function snapped(p){return{x:clamp(Math.round(p.x*4)/4,0,L.width),y:clamp(Math.round(p.y*4)/4,0,L.depth)};}
+function line(ctx,a,b,color,width=3,dash=[]){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);}
+function background(ctx,w,h,editorMode){ctx.fillStyle='#f9fbfe';ctx.fillRect(0,0,w,h);const sx=w/L.width,sy=h/L.depth;
+ ctx.lineWidth=1;ctx.strokeStyle=editorMode?'#e8eff7':'#ffffff45';
+ for(let x=0;x<=L.width;x++){const px=x*sx;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,h);ctx.stroke();}
+ for(let y=0;y<=L.depth;y++){const py=y*sy;ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(w,py);ctx.stroke();}
+ if(editorMode){ctx.font='10px Consolas,monospace';ctx.fillStyle='#9daabd';for(let x=1;x<L.width;x++)ctx.fillText(x+'m',x*sx+3,13);for(let y=1;y<L.depth;y++)ctx.fillText(y+'m',4,y*sy-4);}
+}
+// Three exact importance levels. Unpainted space is transparent / +0% / multiplier 1.
+const palette=[{pct:100,label:'빨강',rgb:[237,76,89]},
+ {pct:0,label:'초록',rgb:[50,189,140]},
+ {pct:-100,label:'파랑',rgb:[57,141,229]}];
+let selectedWeight=0;
+function brushInfo(pct){return palette.reduce((prev,item)=>Math.abs(item.pct-Number(pct))<Math.abs(prev.pct-Number(pct))?item:prev,palette[0]);}
+function brushStyle(pct){const [r,g,b]=brushInfo(pct).rgb;return `rgba(${r},${g},${b},0.43)`;}
+// Paint a single path, allowing the layer renderer to erase old colors before drawing a new one.
+function paintBrush(ctx,stroke,sx,sy,opaque=false){const pts=stroke.points||[];if(!pts.length)return;
+ const radius=stroke.radiusM??.6;
+ ctx.save();ctx.fillStyle=ctx.strokeStyle=opaque?'#000':brushStyle(stroke.weightPct??0);
+ ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=2*radius*Math.min(sx,sy);
+ ctx.beginPath();ctx.moveTo(pts[0][0]*sx,pts[0][1]*sy);for(const p of pts.slice(1))ctx.lineTo(p[0]*sx,p[1]*sy);
+ if(pts.length===1){ctx.beginPath();ctx.arc(pts[0][0]*sx,pts[0][1]*sy,radius*Math.min(sx,sy),0,Math.PI*2);ctx.fill();}
+ else ctx.stroke();ctx.restore();}
+function paintImportanceLayer(ctx,strokes,w,h,sx,sy){if(!strokes?.length)return;
+ const off=document.createElement('canvas');off.width=Math.ceil(w);off.height=Math.ceil(h);
+ const layer=off.getContext('2d');
+ for(const stroke of strokes){if(stroke.kind==='outside-erase'){cleanup.drawErase(layer,stroke.mask,w,h);continue;}
+  layer.globalCompositeOperation='destination-out';paintBrush(layer,stroke,sx,sy,true);
+  if(!stroke.erase){layer.globalCompositeOperation='source-over';paintBrush(layer,stroke,sx,sy);}}
+ ctx.drawImage(off,0,0,w,h);
+}
+function drawSketch(ctx,sk,sx,sy){const pts=sk.points||[];if(!pts.length)return;ctx.save();ctx.strokeStyle='#8755cc';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(pts[0][0]*sx,pts[0][1]*sy);
+ for(const p of pts.slice(1))ctx.lineTo(p[0]*sx,p[1]*sy);ctx.stroke();ctx.restore();}
+function zonePercent(z){return z.weightPct!==undefined&&z.weightPct!==null?((z.weightPct>=0?'+':'')+z.weightPct+'%'):'×'+(z.weight??1)+' (구형)';}
+function uid(prefix){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);}
+function roundQuarter(v){return Math.round(v*4)/4;}
+function segmentDistance(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,d=dx*dx+dy*dy,t=d?clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/d,0,1):0;return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);}
+function simplifyPath(points,epsilon=.20){if(points.length<3)return points.slice();const a=points[0],b=points[points.length-1];let best=0,index=-1;
+ for(let i=1;i<points.length-1;i++){const d=segmentDistance(points[i],a,b);if(d>best){best=d;index=i;}}
+ if(best<=epsilon||index<0)return [a,b];const left=simplifyPath(points.slice(0,index+1),epsilon),right=simplifyPath(points.slice(index),epsilon);return left.slice(0,-1).concat(right);}
+// Convert drawn geometry to true axis-aligned line segments, retaining wall material.
+function manhattanSegments(a,b,mat){const dx=Math.abs(a.x-b.x),dy=Math.abs(a.y-b.y),nodes=[a];
+ if(dx<.23&&dy<.23)return [];
+ if(dx>=dy*2.2)nodes.push({x:b.x,y:a.y});
+ else if(dy>=dx*2.2)nodes.push({x:a.x,y:b.y});
+ else if(dx>.12&&dy>.12)nodes.push({x:b.x,y:a.y},b);
+ else nodes.push(b);
+ const out=[];for(let i=1;i<nodes.length;i++){const p1=nodes[i-1],p2=nodes[i];if(Math.hypot(p2.x-p1.x,p2.y-p1.y)<.22)continue;
+ out.push({id:uid('wall'),x1:roundQuarter(p1.x),z1:roundQuarter(p1.y),x2:roundQuarter(p2.x),z2:roundQuarter(p2.y),material:mat});}
+ return out.filter(v=>v.x1!==v.x2||v.z1!==v.z2);
+}
+// Four concrete wall segments, directly compatible with both JS and Python RF engines.
+// Their creation is one undo step; no separate rectangle schema is required.
+function rectangleWalls(a,b){
+ const x1=roundQuarter(Math.min(a.x,b.x)),x2=roundQuarter(Math.max(a.x,b.x));
+ const y1=roundQuarter(Math.min(a.y,b.y)),y2=roundQuarter(Math.max(a.y,b.y));
+ if(x2-x1<.25||y2-y1<.25)return [];
+ return [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]]
+  .map(([u,v,x,y])=>({id:uid('wall'),x1:u,z1:v,x2:x,z2:y,material:'concrete'}));
+}
+function convertSketch(sk){const raw=(sk.points||[]).map(p=>({x:p[0],y:p[1]}));if(raw.length<2)return [];
+ const xmin=Math.min(...raw.map(p=>p.x)),xmax=Math.max(...raw.map(p=>p.x)),ymin=Math.min(...raw.map(p=>p.y)),ymax=Math.max(...raw.map(p=>p.y));
+ const closed=Math.hypot(raw[0].x-raw[raw.length-1].x,raw[0].y-raw[raw.length-1].y)<.65;
+ if(closed&&xmax-xmin>.5&&ymax-ymin>.5){const x1=roundQuarter(xmin),x2=roundQuarter(xmax),y1=roundQuarter(ymin),y2=roundQuarter(ymax);
+ return [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]].map(v=>({id:uid('wall'),x1:v[0],z1:v[1],x2:v[2],z2:v[3],material:sk.material}));}
+ const nodes=simplifyPath(raw,.35);const out=[];
+ for(let i=1;i<nodes.length;i++)out.push(...manhattanSegments(nodes[i-1],nodes[i],sk.material));
+ return out;
+}
+function drawZone(ctx,z,sx,sy,active=false){const x=Math.min(z.x1,z.x2)*sx,y=Math.min(z.z1,z.z2)*sy,w=Math.abs(z.x2-z.x1)*sx,h=Math.abs(z.z2-z.z1)*sy;
+ if(w<2||h<2)return;ctx.fillStyle=active?'rgba(19,89,207,.16)':'rgba(64,149,237,.13)';ctx.fillRect(x,y,w,h);
+ ctx.strokeStyle=active?'#1f69d2':'#61a5e8';ctx.setLineDash([6,4]);ctx.lineWidth=1.5;ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);
+ if(w>58&&h>22){const name=z.label||'중요 구역';ctx.fillStyle=active?'#174eaa':'#438cbd';ctx.textBaseline='top';ctx.textAlign='left';ctx.font='bold 10px Malgun Gothic, sans-serif';ctx.fillText(name+' '+zonePercent(z),x+7,y+6,Math.max(0,w-10));}
+}
+// Mandatory-area pins: strictly a predicted-quality constraint, not zone weighting.
+const PIN_MIN_QUALITY=64,PIN_MAX_COUNT=12;
+const SIGNAL_LEVELS=Object.freeze({4:64,3:42,2:27,1:9,0:0});
+function signalBarsFromScore(score){
+ const value=score==null?NaN:Number(score);
+ return Number.isFinite(value)?([4,3,2,1,0].find(b=>value>=SIGNAL_LEVELS[b])??0):4;
+}
+function signalBars(pin){
+ const bars=Number(pin?.signalBars);
+ return pin?.signalBars!=null&&Number.isInteger(bars)&&bars>=0&&bars<=4?bars:signalBarsFromScore(pin?.minQualityScore);
+}
+function signalMinScore(pin){return SIGNAL_LEVELS[signalBars(pin)];}
+function newSignalPin(x,z){return {id:uid('required'),x,z,signalBars:4,minQualityScore:PIN_MIN_QUALITY};}
+
+function requiredSamples(pin){return [{x:pin.x,z:pin.z}];}
+function qualityPoint(rssi){return clamp((rssi+90)/55*100,0,100)}
+function requiredMinimum(pin,router=L.router){
+ const trial={...L,router:{...L.router,...router}};
+ return Math.min(...requiredSamples(pin).map(p=>qualityPoint(window.WifiEngine.value(trial,p.x,p.z))));
+}
+function getSelectedRequiredPin(){return (L.requiredPins||[]).find(p=>p.id===selectedRequiredId)||null;}
+function syncSelectedRequired(){
+ const pins=L.requiredPins||[],panel=$('requiredSelectedControls'),picker=$('requiredPinPicker');
+ if(pins.length&&!getSelectedRequiredPin())selectedRequiredId=pins[0].id;
+ const pin=getSelectedRequiredPin();
+ panel.hidden=!pin;picker.hidden=!pins.length;
+ const select=$('requiredPinSelect');select.replaceChildren();
+ pins.forEach((v,i)=>{
+  const opt=document.createElement('option');opt.value=v.id;
+  opt.textContent='신호 세기 '+(i+1)+' · '+signalBars(v)+'칸 이상 · X '+fmt(v.x,2)+'m · Z '+fmt(v.z,2)+'m';
+  select.appendChild(opt);
+ });
+ $('requiredNextPin').disabled=pins.length<2;
+ $('signalBarsSelect').value=pin?String(signalBars(pin)):'4';
+ $('signalBarsSelect').disabled=!pin;
+ $('requiredDeletePin').disabled=!pin;
+ document.querySelectorAll('[data-signal-level]').forEach(button=>{
+  const active=Boolean(pin)&&Number(button.dataset.signalLevel)===signalBars(pin);
+  button.disabled=!pin;button.setAttribute('aria-pressed',String(active));
+ });
+ $('signalBarsHelp').textContent=pin?'선택한 핀만 '+signalBars(pin)+'칸(최소 '+signalMinScore(pin)+'점)으로 검사합니다. 새 핀은 항상 4칸으로 추가됩니다.':'핀을 추가하면 4칸에서 다른 칸수로 변경할 수 있습니다.';
+ if(!pin){selectedRequiredId=null;return;}
+ select.value=pin.id;
+ const n=pins.indexOf(pin)+1;
+ $('requiredSelectedName').textContent='신호 세기 '+n+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';
+ $('requiredSelectedHint').textContent='선택한 단일 점의 위치와 최소 칸수를 변경할 수 있습니다.';
+ $('requiredSelectionStatus').textContent='신호 세기 '+n+' 선택됨 · '+signalBars(pin)+'칸 이상 · 핀 드래그 또는 목록으로 선택';
+}
+function selectRequiredPin(id){
+ if(!(L.requiredPins||[]).some(pin=>pin.id===id))return;
+ selectedRequiredId=id;syncSelectedRequired();renderEditor();renderElements();
+}
+function hitRequiredPins(point,pointerType='mouse'){
+ const size=editor.getBoundingClientRect();
+ const px=pointerType==='touch'?34:19;
+ return (L.requiredPins||[]).map((pin,index)=>({
+  pin,index,dist:Math.hypot((pin.x-point.x)*size.width/L.width,(pin.z-point.y)*size.height/L.depth)
+ })).filter(x=>x.dist<=px).sort((a,b)=>a.dist-b.dist||b.index-a.index).map(x=>x.pin);
+}
+function hitRequiredPin(point,pointerType='mouse'){
+ return hitRequiredPins(point,pointerType)[0]||null;
+}
+function drawRequiredPin(ctx,pin,sx,sy,passed=null){
+ const x=pin.x*sx,y=pin.z*sy,r=12;
+ const color=passed===true?'#138b66':passed===false?'#c85448':'#6949c6';
+ ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+ ctx.fillStyle=passed===false?'rgba(210,75,64,.12)':'rgba(105,73,198,.09)';ctx.fill();
+ ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+ ctx.beginPath();ctx.arc(x,y-7,8,Math.PI,0);ctx.lineTo(x,y+12);ctx.closePath();ctx.fillStyle=color;ctx.fill();
+ ctx.beginPath();ctx.arc(x,y-7,3,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();
+ ctx.fillStyle=color;ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillText(signalBars(pin)+'칸',x+12,y-12);
+ if(pin.id&&pin.id===selectedRequiredId&&ctx===eCtx){ctx.beginPath();ctx.arc(x,y,r+6,0,Math.PI*2);ctx.strokeStyle='#3c228e';ctx.lineWidth=3;ctx.setLineDash([]);ctx.stroke();ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.arc(x,y,21,0,Math.PI*2);ctx.strokeStyle='#3c228e';ctx.lineWidth=2;ctx.stroke();}
+ ctx.restore();
+}
+function renderRequiredStatus(){
+ const pins=L.requiredPins||[],box=$('requiredResults');box.replaceChildren();
+ if(!pins.length){
+  box.hidden=true;$('requiredStatus').textContent='신호 세기 핀 없음 · 기본 4칸(64점 이상) · 단일 지점';
+  $('requiredStatus').style.color='#62788c';return;
+ }
+ const currentScores=pins.map(pin=>requiredMinimum(pin));
+ const passedCount=pins.filter((pin,i)=>currentScores[i]+1e-8>=signalMinScore(pin)).length;
+ const ok=passedCount===pins.length;
+ $('requiredStatus').textContent='신호 세기 '+pins.length+'곳 · 현재 배치 '+passedCount+'/'+pins.length+'곳 기준 충족 · 최소 예상 '+fmt(Math.min(...currentScores),1)+'/100 (미보정 예측)';
+ $('requiredStatus').style.color=ok?'#15845c':'#ba4e48';
+ const suggestion=best?.stage3&&best.requiredAreaSatisfied===true?best.best:null;
+ const title=document.createElement('div');title.textContent='신호 세기 지점별 품질 확인';
+ title.style.cssText='font-size:13px;font-weight:700;margin:0 0 7px;color:#293b55';box.appendChild(title);
+ pins.forEach((pin,i)=>{
+  const before=currentScores[i],after=suggestion?requiredMinimum(pin,suggestion):null,minimum=signalMinScore(pin);
+  const beforeOK=before+1e-8>=minimum,afterOK=after!==null&&after+1e-8>=minimum;
+  const row=document.createElement('div');row.style.cssText='border:1px solid #dae3ee;border-radius:10px;padding:10px 12px;margin:7px 0;background:#fff';
+  const head=document.createElement('div');head.style.cssText='display:flex;justify-content:space-between;gap:8px;align-items:center';
+  const name=document.createElement('strong');name.textContent='◎ 신호 세기 '+(i+1)+' · '+signalBars(pin)+'칸 이상 ('+minimum+'점) · X '+fmt(pin.x,2)+' · Z '+fmt(pin.z,2);name.style.fontSize='12px';
+  const pill=document.createElement('span');pill.textContent=(after!==null?afterOK:beforeOK)?'충족':'미달';
+  pill.style.cssText='font-size:11px;font-weight:700;border-radius:99px;padding:3px 8px;color:'+((after!==null?afterOK:beforeOK)?'#147454':'#b74a3c')+';background:'+((after!==null?afterOK:beforeOK)?'#e5f5ec':'#fff0ec');
+  head.append(name,pill);
+  const score=document.createElement('div');score.style.cssText='font-size:12px;margin-top:7px;color:#44556c';
+  score.textContent='현재 예상 '+fmt(before,1)+'점 ('+(beforeOK?'충족':'미달')+')'+(after===null?'':' → 추천 예상 '+fmt(after,1)+'점 ('+(afterOK?'충족':'미달')+')');
+  row.append(head,score);box.appendChild(row);
+ });
+ const caveat=document.createElement('p');caveat.style.cssText='font-size:10px;color:#718096;margin:6px 0 0';
+ caveat.textContent='칸수는 시뮬레이터의 점수 구간입니다. 실제 휴대폰 칸수와 다를 수 있으며 보정되지 않은 단일 지점 RSSI 예측입니다.';
+ box.appendChild(caveat);box.hidden=false;
+}
+function drawWalls(ctx,sx,sy){for(const wall of L.walls){
+ const a={x:wall.x1*sx,y:wall.z1*sy},b={x:wall.x2*sx,y:wall.z2*sy};
+ line(ctx,a,b,'#ffffffd9',9);line(ctx,a,b,'#263b57',5);
+}}
+function drawRouter(ctx,x,y,rad=10){ctx.save();ctx.shadowColor='#245ee790';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fillStyle='#2469dc';ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=3;ctx.strokeStyle='white';ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.3;for(const r of [rad+5,rad+10]){ctx.beginPath();ctx.arc(x,y,r,Math.PI*1.24,Math.PI*1.76);ctx.stroke();}ctx.restore();}
+function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0,w,h);background(eCtx,w,h,true);
+ const sx=w/L.width,sy=h/L.depth;
+ paintImportanceLayer(eCtx,L.importanceStrokes||[],w,h,sx,sy);
+ for(const sk of (L.sketches||[]))drawSketch(eCtx,sk,sx,sy);
+ if(currentPath?.tool==='brush')paintBrush(eCtx,{points:currentPath.points,weightPct:currentPath.weightPct,radiusM:currentPath.radiusM},sx,sy);
+ if(currentPath?.tool==='sketch')drawSketch(eCtx,currentPath,sx,sy);
+ if(tool==='erase'&&hoverPoint){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('eraserSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.fillStyle='rgba(255,255,255,.50)';eCtx.fill();eCtx.setLineDash([4,3]);eCtx.strokeStyle='#e44e57';eCtx.lineWidth=1.7;eCtx.stroke();eCtx.restore();}
+ if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,signalBars:4,minQualityScore:PIN_MIN_QUALITY},sx,sy);
+ if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
+ drawWalls(eCtx,sx,sy);
+ // Draw the selected pin last so an overlapping pin cannot cover its focus ring.
+ const pins=L.requiredPins||[];
+ for(const pin of pins)if(pin.id!==selectedRequiredId)drawRequiredPin(eCtx,pin,sx,sy);
+ const focusedPin=getSelectedRequiredPin();if(focusedPin)drawRequiredPin(eCtx,focusedPin,sx,sy);
+ drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
+ if(preview&&start){const a={x:start.x*sx,y:start.y*sy},b={x:preview.x*sx,y:preview.y*sy};
+ 
+ 
+ if(tool==='line')line(eCtx,a,b,'#2466dc',4,[8,5]);
+ if(tool==='rectangle'){
+  const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),rw=Math.abs(b.x-a.x),rh=Math.abs(b.y-a.y);
+  eCtx.save();eCtx.fillStyle='rgba(36,102,220,.08)';eCtx.fillRect(x,y,rw,rh);
+  eCtx.strokeStyle='#2466dc';eCtx.lineWidth=4;eCtx.setLineDash([8,5]);eCtx.strokeRect(x,y,rw,rh);eCtx.restore();
+ }
+
+ }
+}
+const stops=[[-90,[165,0,38]],[-75,[244,109,67]],[-67,[254,224,139]],[-55,[166,217,106]],[-30,[26,152,80]]];
+function rgb(v){if(v<=-90)return stops[0][1];for(let i=1;i<stops.length;i++){const a=stops[i-1],b=stops[i];if(v<=b[0]){const t=(v-a[0])/(b[0]-a[0]);return [0,1,2].map(j=>Math.round(a[1][j]*(1-t)+b[1][j]*t));}}return stops[stops.length-1][1];}
+function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h);background(hCtx,w,h,false);
+ if(!result)return;
+ const off=document.createElement('canvas');off.width=result.cols;off.height=result.rows;const ctx=off.getContext('2d');const img=ctx.createImageData(result.cols,result.rows);
+ for(let r=0;r<result.rows;r++)for(let c=0;c<result.cols;c++){const v=result.values[r][c],rgbv=rgb(v),i=(r*result.cols+c)*4;img.data[i]=rgbv[0];img.data[i+1]=rgbv[1];img.data[i+2]=rgbv[2];img.data[i+3]=255;}
+ ctx.putImageData(img,0,0);hCtx.imageSmoothingEnabled=true;hCtx.drawImage(off,0,0,w,h);
+ const sx=w/L.width,sy=h/L.depth;
+ if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
+ hCtx.beginPath();hCtx.setLineDash([5,4]);hCtx.lineWidth=1.5;hCtx.strokeStyle='#202c40bb';hCtx.moveTo(L.router.x*sx,L.router.z*sy);hCtx.lineTo(probe.x*sx,probe.z*sy);hCtx.stroke();hCtx.setLineDash([]);
+ drawWalls(hCtx,sx,sy);drawRouter(hCtx,L.router.x*sx,L.router.z*sy,9);
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,requiredMinimum(pin)+1e-8>=signalMinScore(pin));
+ renderRequiredStatus();
+ if(best){hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
+ hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
+ $('heatmapBand').textContent=fmt(L.router.frequency, L.router.frequency===5?0:1)+' GHz';
+}
+function renderElements(){const box=$('elementList');box.replaceChildren();
+ const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
+ if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 신호 세기 핀을 추가해 주세요.';box.appendChild(n);return;}
+ entries.forEach(item=>{const row=document.createElement('div');row.className='element';const left=document.createElement('div');left.className='element-text';
+ left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 신호 세기 '+signalBars(item)+'칸 (≥'+signalMinScore(item)+'점)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
+ const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 단일 지점':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
+ left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
+ $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
+}
+function syncLayout(){
+ const p=L.areaPyeong??(L.width*L.depth/SQM_PER_PYEONG);
+ $('mapSizeChip').textContent=`${fmt(L.width)} × ${fmt(L.depth)} m`;
+ $('areaChip').textContent=`약 ${fmt(L.width*L.depth)}㎡`;
+ $('pyeongInput').value=Number(p.toFixed(1));
+ $('numWallsChip').textContent=`벽 ${L.walls.length} · 미변환 ${(L.sketches||[]).length}`;
+ $('routerY').value=String(L.router.y);$('routerYValue').textContent=fmt(L.router.y)+' m';$('routerXValue').textContent='X = '+fmt(L.router.x)+' m · Z = '+fmt(L.router.z)+' m';
+ $('receiverY').value=String(L.receiverY);
+ $('frequencySelect').value=String(L.router.frequency);$('powerInput').value=L.router.txPowerDbm??20;$('gainInput').value=L.router.antennaGainDbi??0;
+ $('exponentInput').value=L.modelOverrides?.pathLossExponent??2.2;
+ for(const canvas of [editor,heat])canvas.parentElement.style.aspectRatio=L.width+'/'+L.depth;
+}
+// Geometric eraser: remove intersections with a swept circle (capsule), retaining
+// all unaffected segments as independent concrete walls and untouched sketches.
+// Do not rely on canvas pixel erasing: analysis consumes the edited vector geometry.
+function eraseAt(a,b){
+ const radius=Number($('eraserSize').value);
+ const wallResult=geometry.eraseWalls(L.walls,a,b,radius,()=>uid('wall'));
+ const sketchResult=geometry.eraseSketches(L.sketches||[],a,b,radius,()=>uid('sketch'));
+ const touched=wallResult.changed||sketchResult.changed;
+ if(touched){if(!eraseChanged)pushUndo();eraseChanged=true;L.walls=wallResult.walls;L.sketches=sketchResult.sketches;}
+ return touched;
+}
+function finishEraser(p){
+ if(eraseLast)eraseAt(eraseLast,p);
+ // Reset importance only in the swept region; this is a transparent baseline
+ // marker (erase:true), not a deletion of the complete paint stroke.
+ if((L.importanceStrokes||[]).length&&erasedBrushPoints.length){
+   if(!eraseChanged)pushUndo();eraseChanged=true;
+   L.importanceStrokes.push({id:uid('neutral'),points:erasedBrushPoints.map(v=>[+v[0].toFixed(3),+v[1].toFixed(3)]),weightPct:0,radiusM:Number($('eraserSize').value),erase:true});
+ }
+ start=null;preview=null;eraseLast=null;erasedBrushPoints=[];
+ if(eraseChanged)changed('부분 지우개 적용 완료 · 닿은 부분만 제거했습니다. Apply 결과에도 반영됩니다.');
+ else renderEditor();
+ eraseChanged=false;
+}
+function moveRequiredDrag(point,event){
+ const drag=requiredDrag;if(!drag)return;
+ const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(!pin)return;
+ const x=clamp(point.x+drag.offsetX,0,L.width);
+ const z=clamp(point.y+drag.offsetZ,0,L.depth);
+ // Screen-pixel threshold prevents touch jitter from becoming a real move/Undo step.
+ const distancePx=Math.hypot(event.clientX-drag.startClientX,event.clientY-drag.startClientY);
+ if(!drag.moved&&distancePx>=(drag.pointerType==='touch'?10:5)){
+   // Stage the pre-drag snapshot; commit it only on pointerup. A cancelled
+   // drag must never evict an older entry from the bounded 30-step history.
+   drag.undoSnapshot=JSON.stringify(L);drag.moved=true;
+ }
+ if(drag.moved){pin.x=+x.toFixed(3);pin.z=+z.toFixed(3);}
+}
+// Keyboard-only equivalent to tapping, dragging and undoing a mandatory pin.
+editor.addEventListener('keydown',e=>{
+ if(tool!=='required')return;
+ const arrows={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+ const d=arrows[e.key];
+ if(d){
+  e.preventDefault();
+  const pin=getSelectedRequiredPin();
+  if(!pin){$('pointerLabel').textContent='신호 세기 핀을 먼저 추가하거나 목록에서 선택하세요.';return;}
+  const step=e.shiftKey?0.5:0.1;
+  const x=+clamp(pin.x+d[0]*step,0,L.width).toFixed(3);
+  const z=+clamp(pin.z+d[1]*step,0,L.depth).toFixed(3);
+  if(Math.hypot(x-pin.x,z-pin.z)<0.0001){
+   $('pointerLabel').textContent='도면 경계입니다. 더 이상 이동할 수 없습니다.';return;
+  }
+  pushUndo();pin.x=x;pin.z=z;
+  changed('키보드로 신호 세기 위치를 이동했습니다. Apply로 다시 계산하세요.');
+  $('pointerLabel').textContent='선택 핀: X '+fmt(x,2)+'m · Z '+fmt(z,2)+'m · Undo 가능';
+  return;
+ }
+ if(e.key!=='Enter'&&e.key!==' ')return;
+ e.preventDefault();
+ if(!(L.requiredPins||[]).length){
+  const x=L.width/2,z=L.depth/2;
+  pushUndo();const pin=newSignalPin(x,z);
+  L.requiredPins.push(pin);selectedRequiredId=pin.id;
+  changed('키보드로 신호 세기 핀을 도면 중앙에 추가했습니다.');
+ }else{
+  if(!getSelectedRequiredPin())selectedRequiredId=L.requiredPins[0].id;
+  syncSelectedRequired();renderEditor();$('pointerLabel').textContent='선택 핀은 방향키로 이동할 수 있습니다.';
+ }
+});
+editor.addEventListener('pointerdown',e=>{
+ if(e.button!==0||(e.pointerType==='touch'&&!e.isPrimary)||pointerId!==null)return;
+ const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);
+ try{editor.setPointerCapture(e.pointerId)}catch{/* synthetic pointer-event tests may not create active native capture */ }
+ pointerId=e.pointerId;
+ if(tool==='required'){
+   const matches=hitRequiredPins(raw,e.pointerType),existing=matches.find(pin=>pin.id===selectedRequiredId)||matches[0];
+   if(existing){
+     const selectedAtDown=selectedRequiredId;selectedRequiredId=existing.id;
+     requiredDrag={id:existing.id,startX:existing.x,startZ:existing.z,
+       offsetX:existing.x-raw.x,offsetZ:existing.z-raw.y,
+       startClientX:e.clientX,startClientY:e.clientY,pointerType:e.pointerType,
+       overlappingIds:matches.map(v=>v.id),selectedAtDown,moved:false};
+     syncSelectedRequired();renderEditor();return;
+   }
+   pointerId=null;const place=snapped(raw);
+   if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('신호 세기은 최대 12개입니다.');return;}
+   pushUndo();L.requiredPins=L.requiredPins||[];
+   const pin=newSignalPin(place.x,place.y);
+   L.requiredPins.push(pin);selectedRequiredId=pin.id;
+   changed('신호 세기 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
+ }
+ if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}
+ if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
+ start=p;preview=p;hoverPoint=p;
+ if(tool==='sketch')currentPath={tool:'sketch',points:[[p.x,p.y]],material:'concrete'};
+ if(tool==='brush')currentPath={tool:'brush',points:[[p.x,p.y]],radiusM:Number($('brushSize').value),weightPct:selectedWeight};
+ renderEditor();
+});
+editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
+ $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
+ if(requiredDrag){if(e.pointerId!==pointerId)return;moveRequiredDrag(p,e);editor.style.cursor='grabbing';renderEditor();return;}
+ if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
+ if(start){preview=p;if(currentPath){const pts=currentPath.points,last=pts[pts.length-1];if(pts.length<1400&&Math.hypot(p.x-last[0],p.y-last[1])>.065)pts.push([p.x,p.y]);}renderEditor();}
+ else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':tool==='required'&&hitRequiredPin(raw,e.pointerType)?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
+function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);pointerId=null;
+ if(requiredDrag){
+  moveRequiredDrag(raw,e);const drag=requiredDrag;requiredDrag=null;
+  if(drag.moved){pushUndoSnapshot(drag.undoSnapshot);changed('신호 세기 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
+  else if(drag.overlappingIds.length>1){
+    // Repeated taps rotate overlapping pins. A drag always moves the selected one.
+    const oldIndex=drag.overlappingIds.indexOf(drag.selectedAtDown);
+    const next=drag.overlappingIds[oldIndex>=0?(oldIndex+1)%drag.overlappingIds.length:0];
+    selectRequiredPin(next);
+  }else selectRequiredPin(drag.id);
+  editor.style.cursor='grab';return;
+ }
+ if(tool==='erase'){finishEraser(p);return;}
+ if(!start){currentPath=null;return;}
+ const a=start;start=null;preview=null;
+ if(tool==='sketch'&&currentPath){const pts=currentPath.points;if(Math.hypot(p.x-pts[pts.length-1][0],p.y-pts[pts.length-1][1])>.04)pts.push([p.x,p.y]);
+ if(pts.length>1){pushUndo();L.sketches=L.sketches||[];L.sketches.push({id:uid('sketch'),points:pts.map(q=>q.map(v=>+v.toFixed(3))),material:currentPath.material});changed('그리기 완료! 도면화 버튼으로 벽을 직각으로 정리하세요.');}}
+ else if(tool==='brush'&&currentPath){const pts=currentPath.points;pushUndo();L.importanceStrokes=L.importanceStrokes||[];L.importanceStrokes.push({id:uid('brush'),points:pts.map(q=>q.map(v=>+v.toFixed(3))),weightPct:currentPath.weightPct,radiusM:currentPath.radiusM});changed('중요도 브러시가 적용되었습니다. 중요도 반영 계산을 눌러 주세요.');}
+ else if(tool==='line'){
+  if(Math.hypot(p.x-a.x,p.y-a.y)>=.10){pushUndo();L.walls.push({id:uid('wall'),x1:a.x,z1:a.y,x2:p.x,z2:p.y,material:'concrete'});changed('직선 벽을 추가했습니다. 사선은 도면화 버튼으로 직각 보정할 수 있습니다.');}
+  else toast('선은 조금 더 길게 그려 주세요.');
+ }
+ else if(tool==='rectangle'){
+  const sides=rectangleWalls(a,p);
+  if(sides.length){pushUndo();L.walls.push(...sides);changed('직사각형 벽 4면을 그렸습니다. 바로 Apply로 분석할 수 있습니다.');}
+  else toast('직사각형은 가로·세로 각각 최소 0.25m 이상 드래그해 주세요.');
+ }
+
+ currentPath=null;renderEditor();}
+editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;$('pointerLabel').textContent='신호 세기 핀 드래그가 취소되어 원래 위치로 복원했습니다.';}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
+editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
+heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
+function togglePalette(open){
+ $('editorWorkarea').classList.toggle('palette-collapsed',!open);
+ $('toolsRail').hidden=!open;
+ $('paletteToggleBtn').textContent=open?'☷ 팔레트 접기':'☷ 팔레트 펼치기';
+ $('paletteToggleBtn').setAttribute('aria-expanded',String(open));
+ requestAnimationFrame(renderEditor);
+}
+$('paletteToggleBtn').onclick=()=>{
+ const willOpen=$('toolsRail').hidden;
+ togglePalette(willOpen);
+ if(willOpen&&tool==='required')$('requiredDrawer').open=true;
+};
+for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>{
+ tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];requiredDrag=null;pointerId=null;
+ document.querySelectorAll('[data-tool]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+ if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
+ if(tool==='required'&&!$('toolsRail').hidden)$('requiredDrawer').open=true;
+ if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
+ renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 기본 4칸(64점 이상) 핀이 추가됩니다. 팔레트에서 선택한 핀의 칸수를 변경할 수 있습니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
+};
+for(const button of document.querySelectorAll('.palette-choice'))button.onclick=()=>{
+ selectedWeight=Number(button.dataset.weight);const color=brushInfo(selectedWeight);
+ document.querySelectorAll('.palette-choice').forEach(b=>{const on=b===button;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on));});
+ $('brushWeightValue').textContent=`${color.label} · ${selectedWeight>=0?'+':''}${selectedWeight}%`;
+ tool='brush';document.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool==='brush';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
+ renderEditor();};
+$('requiredPinSelect').onchange=e=>selectRequiredPin(e.target.value);
+$('requiredNextPin').onclick=()=>{
+ const pins=L.requiredPins||[];if(pins.length<2)return;
+ const index=pins.findIndex(pin=>pin.id===selectedRequiredId);
+ selectRequiredPin(pins[(index+1)%pins.length].id);
+};
+function updateSelectedSignalBars(bars){
+ const pin=getSelectedRequiredPin();if(!pin)return;
+ if(!Number.isInteger(bars)||bars<0||bars>4){syncSelectedRequired();return;}
+ if(signalBars(pin)===bars){syncSelectedRequired();return;}
+ pushUndo();pin.signalBars=bars;pin.minQualityScore=SIGNAL_LEVELS[bars];
+ changed('선택한 신호 세기 핀을 '+bars+'칸 이상 ('+SIGNAL_LEVELS[bars]+'점 이상)으로 변경했습니다.');
+}
+$('signalBarsSelect').onchange=e=>updateSelectedSignalBars(Number(e.target.value));
+for(const button of document.querySelectorAll('[data-signal-level]'))button.onclick=()=>updateSelectedSignalBars(Number(button.dataset.signalLevel));
+$('requiredDeletePin').onclick=()=>{
+ const pin=getSelectedRequiredPin();if(!pin)return;
+ const pins=L.requiredPins||[],index=pins.indexOf(pin);
+ pushUndo();pins.splice(index,1);
+ selectedRequiredId=pins.length?pins[Math.min(index,pins.length-1)].id:null;
+ changed('선택한 신호 세기 핀을 삭제했습니다.');
+};
+$('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
+$('eraserSize').oninput=e=>{$('eraserSizeValue').textContent=fmt(e.target.value,2)+' m';renderEditor()};
+$('orthogonalizeBtn').onclick=()=>{
+ const sketches=L.sketches||[],diagonals=L.walls.filter(w=>Math.abs(w.x1-w.x2)>.01&&Math.abs(w.z1-w.z2)>.01);
+ if(!sketches.length&&!diagonals.length){toast('정리할 자유선 또는 사선 벽이 없습니다.');return;}
+ pushUndo();const converted=[];const flat=[];
+ for(const wall of L.walls){if(Math.abs(wall.x1-wall.x2)>.01&&Math.abs(wall.z1-wall.z2)>.01)flat.push(...manhattanSegments({x:wall.x1,y:wall.z1},{x:wall.x2,y:wall.z2},wall.material));else flat.push(wall);}
+ for(const sk of sketches)converted.push(...convertSketch(sk));
+ L.walls=flat.concat(converted);L.sketches=[];changed(`도면화 완료: 자유선 ${sketches.length}개와 사선 ${diagonals.length}개를 직각 벽으로 변환했습니다. Apply로 분석하세요.`);
+ toast('도면화 완료 · 총 '+(converted.length+flat.length)+'개 벽');
+};
+function clearOutsideImportance(){
+ const weightExists=(L.importanceStrokes||[]).some(s=>s.kind!=='outside-erase'&&!s.erase&&Number(s.weightPct)!==0)
+  ||(L.zones||[]).some(z=>Number(z.weightPct??((z.weight??1)-1)*100)!==0);
+ if(!weightExists){toast('지울 중요도가 없습니다. 먼저 빨강·파랑 중요도를 칠해 주세요.');return;}
+ let built;try{built=cleanup.buildMask(L)}catch(e){toast('방 밖 판별 실패: '+e.message);return;}
+ if(!built.roomFound){toast('닫힌 방이 없습니다. 벽을 연결하거나 도면화한 후 다시 눌러 주세요.');return;}
+ pushUndo();
+ L.importanceStrokes.push({id:uid('outside'),kind:'outside-erase',mask:built.mask});
+ changed('방 밖 중요도를 +0%로 초기화했습니다. 닫힌 방 안의 중요도는 유지됩니다.');
+ toast('방 밖 중요도 정리 완료 · 실행 취소 가능');
+}
+$('clearOutsideWeightBtn').onclick=clearOutsideImportance;
+$('clearOutsideWeightPaletteBtn').onclick=clearOutsideImportance;
+$('clearBrushBtn').onclick=()=>{if(!(L.importanceStrokes||[]).length){toast('초기화할 브러시가 없습니다.');return;}pushUndo();L.importanceStrokes=[];changed('중요도 브러시를 초기화했습니다.');};
+// Changing pyeong rescales the entire room, its concrete walls, room labels,
+// router, probe and brush radii, so the RF model changes in real meters.
+function applyArea(){
+ const p=Number($('pyeongInput').value);
+ if(!Number.isFinite(p)||p<1||p>150){toast('평수는 1평에서 150평 사이로 입력해 주세요.');syncLayout();return;}
+ const oldW=L.width,oldH=L.depth,{width,height}=sizeForPyeong(p),sx=width/oldW,sy=height/oldH;
+ pushUndo();L.width=width;L.depth=height;L.areaPyeong=p;
+ L.router.x*=sx;L.router.z*=sy;probe.x*=sx;probe.z*=sy;
+ for(const v of L.walls){v.x1*=sx;v.x2*=sx;v.z1*=sy;v.z2*=sy;}
+ for(const pin of (L.requiredPins||[])){pin.x*=sx;pin.z*=sy;}
+ for(const path of [...(L.sketches||[]),...(L.importanceStrokes||[])]){
+  if(path.points)path.points=path.points.map(([x,y])=>[x*sx,y*sy]);
+  if('radiusM' in path)path.radiusM*=Math.sqrt(sx*sy);
+ }
+ changed(`${fmt(p)}평 기준 약 ${fmt(width*height)}㎡로 공간의 실제 좌표를 조정했습니다.`);
+ toast('평수에 따라 공간 크기를 조정했습니다.');
+}
+$('areaApplyBtn').onclick=applyArea;
+$('pyeongInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyArea();}});
+$('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());changed();};
+$('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.sketches=[];changed()};
+$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
+function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
+$('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 위치가 변경되었습니다. Apply로 다시 계산하세요.')};
+$('receiverY').onchange=e=>{
+ const n=Number(e.target.value);if(!Number.isFinite(n)||n<0){toast('수신기 높이는 0 이상으로 지정하세요.');syncLayout();return;}
+ L.receiverY=n;changed('수신기 높이(Y)를 변경했습니다.');};
+$('frequencySelect').onchange=e=>setRouterField('frequency',Number(e.target.value),2.4,5);
+$('powerInput').onchange=e=>setRouterField('txPowerDbm',e.target.value,0,35);
+$('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20);
+$('exponentInput').onchange=e=>{const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
+function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';}
+function setBusy(busy){for(const id of ['applyBtn','weightBtn','optimizeBtn','plainBtn'])$(id).disabled=busy;}
+async function simulate(w){weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
+ await new Promise(resolve=>setTimeout(resolve,25));
+ try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent='오프라인 JS · 미보정 예측';
+ applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();$('statusLine').textContent=w?'중요도를 반영한 공간 품질 평가가 완료되었습니다. 반투명 표시로 가중치 영역을 확인할 수 있습니다.':'신호 계산이 완료되었습니다. 히트맵의 원하는 곳을 눌러 보세요.';
+ }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
+}
+function renderStats(){if(!result)return;const s=result.statistics;
+ $('meanStat').textContent=fmt(s.meanDbm)+' dBm';$('goodStat').textContent=fmt(s.coverageGoodPct)+'%';$('scoreStat').textContent=fmt(s.qualityScore)+' / 100';$('weakStat').textContent=fmt(s.coverageWeakPct)+'%';
+ $('scoreStat').style.color=s.qualityScore>=65?'#168b6d':s.qualityScore>=40?'#a6771a':'#d65b50';
+}
+function renderProbe(){if(!result)return;
+ const d=window.WifiEngine.value(L,probe.x,probe.z,undefined,true);
+ $('probeCoordinates').textContent=`X ${fmt(probe.x,2)} · Y ${fmt(L.receiverY,2)} · Z ${fmt(probe.z,2)} m`;
+ const items=[['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
+ ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
+ ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
+ const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
+}
+$('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
+$('useBestBtn').onclick=async()=>{if(!best)return;pushUndo();L.router.x=best.best.x;L.router.z=best.best.z;best=null;changed('추천 위치를 적용했습니다. 히트맵을 갱신합니다.');await simulate(weighted)};
+function exportLayout(){
+ return {...L,requiredPins:(L.requiredPins||[]).map(pin=>({
+  id:pin.id,x:pin.x,z:pin.z,signalBars:signalBars(pin),minQualityScore:signalMinScore(pin)
+ }))};
+}
+$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(exportLayout(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wifi-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('도면 JSON 파일을 저장했습니다.')};
+$('importFile').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  const raw=JSON.parse(await file.text());const converted=window.WifiEngine.normalizeLayout(raw);
+  const w=Number(converted.width),depth=Number(converted.depth);
+  if(!Number.isFinite(w)||!Number.isFinite(depth)||w<2||depth<2||w>100||depth>100||!converted.router||!Array.isArray(converted.walls))throw Error('도면 XZ 크기, 공유기, 벽 목록을 확인해 주세요.');
+  const val=(v,max)=>{const n=Number(v);if(!Number.isFinite(n)||n<0||n>max)throw Error('좌표가 도면 범위를 벗어났습니다.');return n;};
+  const pinCoordinate=(v,max)=>{if(typeof v!=='number'||!Number.isFinite(v))throw Error('신호 세기 핀 좌표는 유효한 숫자여야 합니다.');return val(v,max);};
+  const roomHeightM=2.7,receiverY=Math.max(0,cleanNum(converted.receiverY,1));
+  const r=converted.router;
+  if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
+  const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete'}));
+  const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
+  if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기 핀은 최대 12개까지 지정할 수 있습니다.');
+  const importedPinIds=new Set();
+  const requiredPins=rawPins.map((pin,i)=>{
+   if(!pin||typeof pin!=='object'||Array.isArray(pin))throw Error('신호 세기 핀 데이터가 잘못됐습니다.');
+   const x=pinCoordinate(pin.x,w),z=pinCoordinate(pin.z,depth);
+   const bars=signalBars(pin);
+   let id=typeof pin.id==='string'&&pin.id.trim()?pin.id.trim():'required-import-'+(i+1);
+   if(importedPinIds.has(id)){id='required-import-'+(i+1);while(importedPinIds.has(id))id+='-unique';}
+   importedPinIds.add(id);
+   return {id,x,z,signalBars:bars,minQualityScore:SIGNAL_LEVELS[bars]};
+  });
+  // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
+  const zones=[];
+  const readPaths=(key,min,parse)=>{const arr=Array.isArray(converted[key])?converted[key]:[];
+   if(arr.length>300)throw Error('도면에 너무 많은 '+key+' 항목이 있습니다.');
+   return arr.map((q,i)=>{if(!Array.isArray(q.points)||q.points.length<min||q.points.length>1500)throw Error('좌표열이 잘못됐습니다.');
+    const points=q.points.map(pt=>{if(!Array.isArray(pt)||pt.length!==2)throw Error('평면 좌표는 [x,z] 형태여야 합니다.');return [val(pt[0],w),val(pt[1],depth)];});
+    return {id:String(q.id||key+'-'+i),points,...parse(q)};
+   });};
+  const sketches=readPaths('sketches',2,()=>({material:'concrete'}));
+  const rawImportance=Array.isArray(converted.importanceStrokes)?converted.importanceStrokes:[];
+  if(rawImportance.length>300)throw Error('중요도 항목이 너무 많습니다.');
+  const importanceStrokes=rawImportance.map((q,i)=>{
+   if(q.kind==='outside-erase')return {id:String(q.id||'outside-'+i),kind:'outside-erase',mask:cleanup.validateMask(q.mask)};
+   if(!Array.isArray(q.points)||q.points.length<1||q.points.length>1500)throw Error('중요도 좌표열이 잘못됐습니다.');
+   return {id:String(q.id||'brush-'+i),points:q.points.map(pt=>{if(!Array.isArray(pt)||pt.length!==2)throw Error('중요도 좌표는 [x,z]여야 합니다.');return[val(pt[0],w),val(pt[1],depth)];}),radiusM:clamp(cleanNum(q.radiusM,.6),.05,5),weightPct:brushInfo(clamp(cleanNum(q.weightPct,0),-100,100)).pct,...(q.erase?{erase:true}:{})};
+  });
+  pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
+    router:{x:val(r.x,w),y:Math.max(0,cleanNum(r.y,1.2)),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20)},
+    walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
+  probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedRequiredId=null;requiredDrag=null;
+  $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
+  toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
+ }catch(err){toast('JSON 불러오기 실패: '+err.message)}finally{e.target.value='';}
+};
+$('engineMode').textContent='오프라인 JS · 미보정 예측';
+window.addEventListener('resize',()=>{renderEditor();renderHeat()});
+if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>{renderEditor();renderHeat()});ro.observe(editor);ro.observe(heat);}
+syncLayout();renderElements();renderEditor();renderHeat();
+// New sessions open with a completely empty, large drawing canvas.
+function switchView(view){
+ const design=view==='design';document.body.dataset.view=view;
+ $('editorScreen').hidden=!design;$('resultScreen').hidden=design;
+ $('designTab').classList.toggle('active',design);$('analysisTab').classList.toggle('active',!design);
+ $('designTab').setAttribute('aria-current',design?'page':'false');
+ $('analysisTab').setAttribute('aria-current',design?'false':'page');
+ requestAnimationFrame(()=>{design?renderEditor():renderHeat();});
+}
+async function enterAnalysis(){switchView('analysis');await simulate(false);}
+$('designTab').onclick=()=>switchView('design');
+$('backToEditorBtn').onclick=()=>switchView('design');
+$('analysisTab').onclick=enterAnalysis;
+$('applyFromEditorBtn').onclick=enterAnalysis;
+$('applyBottomBtn').onclick=enterAnalysis;
+
+// Isolated offline mode. One sample per pin; no LAN/cable/ceiling constraints.
+async function optimizeOfflinePins(){
+ const pins=L.requiredPins||[],step=Math.max(.65,Math.max(L.width,L.depth)/12),search=Math.max(.5,Math.max(L.width,L.depth)/14),sample=[];
+ const isWeighted=weighted||(L.importanceStrokes||[]).length>0;
+ for(let z=step/2;z<L.depth;z+=step)for(let x=step/2;x<L.width;x+=step)sample.push({x,z,w:isWeighted?window.WifiEngine.weight(L,x,z):1});
+ if(!sample.some(s=>s.w>0))for(const s of sample)s.w=1;
+ const sumW=sample.reduce((n,s)=>n+s.w,0);
+ const score=(x,z)=>{const trial={...L,router:{...L.router,x,z}},cfg=window.WifiEngine.settings(L);let sum=0,weak=0;
+  for(const p of sample){const v=window.WifiEngine.value(trial,p.x,p.z,cfg);sum+=qualityPoint(v)*p.w;if(v< -75)weak+=p.w;}
+  return {quality:sum/sumW,objective:(sum-12*weak)/sumW};};
+ const before=score(L.router.x,L.router.z),valid=(x,z)=>(L.walls||[]).every(w=>{
+   const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
+ let bestPoint=null,candidates=0;
+ const check=(x,z)=>{if(!valid(x,z))return;candidates++;if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8))return;
+  const current=score(x,z);if(!bestPoint||current.objective>bestPoint.score.objective)bestPoint={x,z,score:current};};
+ const nx=Math.max(2,Math.ceil(L.width/search)),nz=Math.max(2,Math.ceil(L.depth/search));
+ for(let z=0;z<=nz;z++)for(let x=0;x<=nx;x++)check(L.width*x/nx,L.depth*z/nz);
+ check(L.router.x,L.router.z);
+ if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
+ if(!bestPoint)throw Error(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.');
+ const min=pins.length?Math.min(...pins.map(pin=>requiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+before.quality.toFixed(1)},bestStats:{qualityScore:+bestPoint.score.quality.toFixed(1)},improvementPoints:+(bestPoint.score.objective-before.objective).toFixed(1),stage3:true,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:min,requiredAreaSampleCount:pins.length,candidates,weightsUsed:isWeighted};
+}
+$('optimizeBtn').onclick=async()=>{
+ setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
+ await new Promise(resolve=>setTimeout(resolve,25));
+ try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
+ const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m','품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점','후보 '+best.candidates+'개 검토 · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · 최저 예상 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),'LAN·케이블·천장·벽 높이 제한 미적용. RSSI 미보정 예측값'];
+ for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
+ $('recommendation').hidden=false;$('statusLine').textContent='오프라인 공유기 추천 완료';$('engineMode').textContent='오프라인 JS · 미보정 예측';renderHeat();renderRequiredStatus();
+ }catch(err){best=null;$('recommendation').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
+ finally{setBusy(false)}
+};
+
+switchView('design');
+})();
+
+</script></body></html>

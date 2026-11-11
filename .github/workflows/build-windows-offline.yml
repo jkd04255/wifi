@@ -1,0 +1,88 @@
+name: Lightweight standalone HTML and Windows EXE
+on:
+  push:
+    branches:
+      - feat/point-pin-heightless-offline-exe
+  workflow_dispatch:
+jobs:
+  html-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate HTML scripts with Node
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('preview/stage4_offline.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',src,re.S|re.I)
+          if len(scripts)<2:
+              raise SystemExit('missing inline JS')
+          for i,code in enumerate(scripts):
+              Path('/tmp/studio-%d.js'%i).write_text(code,encoding='utf-8')
+          print('validated script count:',len(scripts))
+          PY
+          for s in /tmp/studio-*.js; do node --check "$s"; done
+      - name: Assert point-only offline contract
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          h=Path('preview/stage4_offline.html').read_text(encoding='utf-8')
+          checks=['function requiredSamples(pin){return [{x:pin.x,z:pin.z}];}',
+                  'async function optimizeOfflinePins()',
+                  '천장·벽 높이 제한',
+                  'LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다',
+                  'const SIGNAL_LEVELS=Object.freeze({4:64,3:42,2:27,1:9,0:0});',
+                  'requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8',
+                  'id="signalBarsSelect"']
+          for c in checks:
+              assert c in h, c
+          for stale in ['id="requiredRadius"', 'id="selectedRequiredRadius"', 'id="roomHeightM"', 'g3Mode', 'fetch(', '/api/', '필수영역']:
+              assert stale not in h, stale
+          print('Signal-bar point contracts passed')
+          PY
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The official image includes the matching browser binary + OS libraries.
+    # Avoid apt installs on runner startup, which stalled previous Actions runs.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.57.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Playwright Python package
+        run: python -m pip install playwright==1.57.0
+      - name: Run standalone offline browser QA
+        run: python -m unittest discover -s backend/tests_browser -p 'test_stage4_offline.py' -v
+
+  win-exe:
+    # Build the signed-off candidate as soon as static checks pass; full browser QA
+    # remains a separate mandatory verification before delivery/merge.
+    needs: [html-check]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile real Windows PE executable with embedded HTML
+        shell: pwsh
+        run: |
+          '101 RCDATA "preview\\stage4_offline.html"' | Set-Content -Path app.rc -Encoding ascii
+          rc /nologo /fo app.res app.rc
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cl /nologo /std:c++17 /O2 /MT /EHsc packaging/win_launcher.cpp app.res /link /SUBSYSTEM:WINDOWS /OUT:WiFi_Placement_Studio.exe shell32.lib user32.lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item preview/stage4_offline.html WiFi_Placement_Studio.html
+          $raw = [System.IO.File]::ReadAllBytes('WiFi_Placement_Studio.exe')
+          if ($raw.Length -lt 50000 -or $raw[0] -ne 0x4D -or $raw[1] -ne 0x5A) { throw 'Not a valid Windows MZ executable' }
+          Write-Host "Windows EXE size (bytes): $($raw.Length)"
+          Write-Host "HTML size (bytes): $((Get-Item WiFi_Placement_Studio.html).Length)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wifi-studio-real-exe-and-html
+          path: |
+            WiFi_Placement_Studio.exe
+            WiFi_Placement_Studio.html
+          if-no-files-found: error
+          retention-days: 30
