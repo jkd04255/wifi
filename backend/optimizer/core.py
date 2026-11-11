@@ -50,6 +50,8 @@ class Probe(StrictModel):
     z: float
     priorityPct: Literal[-100, 0, 100] = 0
     targetDbm: float = Field(default=-67, ge=-110, le=-20)
+    # When set, this sample is a HARD quality constraint (0..100), independent of importance.
+    minQualityScore: float | None = Field(default=None, ge=0, le=100)
 
 
 class Prediction(StrictModel):
@@ -286,6 +288,20 @@ def _quality(pred: Prediction, probes: list[Probe]) -> tuple[float,float,bool]:
     return round(objective,2), (round(coverage,1) if coverage is not None else None), need_ap
 
 
+def _required_quality(pred: Prediction, probes: list[Probe]) -> tuple[bool, float | None]:
+    # Same quality scale as the existing weighted RSSI objective, but a mandatory
+    # sample is a constraint, not a bonus weight in the global objective.
+    values = [max(0., min(100., (dbm + 90.) / 55. * 100.))
+              for probe, dbm in zip(probes, pred.rssisDbm)
+              if probe.minQualityScore is not None]
+    if not values:
+        return True, None
+    passed = all(max(0., min(100., (dbm + 90.) / 55. * 100.)) + EPS >= probe.minQualityScore
+                 for probe, dbm in zip(probes, pred.rssisDbm)
+                 if probe.minQualityScore is not None)
+    return passed, round(min(values), 2)
+
+
 def optimize(request: OptimizeRequest) -> dict:
     """이미 계산된 (각 후보별) RSSI 데이터를 비교. 2번 엔진 호출/전파 예측은 하지 않음."""
     f,p=request.floor,request.lanPort
@@ -297,21 +313,31 @@ def optimize(request: OptimizeRequest) -> dict:
     distances=_compute_routes(request)
     valid=[]
     invalid=0
+    required_rejected=0
+    required_sample_count=sum(probe.minQualityScore is not None for probe in request.probes)
     for candidate in request.candidates:
         cable=_route_length(request,candidate.position,distances)
         if cable is None or cable > p.maxCableLengthM+EPS:
             invalid+=1
             continue
+        required_passed, minimum_quality=_required_quality(candidate,request.probes)
+        if not required_passed:
+            required_rejected+=1
+            continue
         sc, cov, ap=_quality(candidate,request.probes)
-        valid.append((sc,cable,candidate,cov,ap))
+        valid.append((sc,cable,candidate,cov,ap,minimum_quality))
     before=None
     current_cable=None
+    current_meets_required=False
     if request.current:
         before,_,_=_quality(request.current,request.probes)
         current_cable=_route_length(request,request.current.position,distances)
+        current_meets_required,_=_required_quality(request.current,request.probes)
     warnings=[]
     if invalid:
         warnings.append(f"{invalid} candidate(s) rejected (outside, on wall, unreachable, or cable too short)")
+    if required_rejected:
+        warnings.append(f"{required_rejected} candidate(s) rejected because mandatory pin samples did not meet quality minimum")
     if request.current is None:
         warnings.append("current position RSSI not provided; scoreBefore cannot be calculated")
     if not valid:
@@ -319,14 +345,19 @@ def optimize(request: OptimizeRequest) -> dict:
                 "estimatedCableLengthM":None,"scoreBefore":before,"scoreAfter":None,
                 "deltaScore":None,"criticalCoveragePct":None,"additionalApAdvised":None,
                 "evaluatedCandidatesCount":len(request.candidates),"feasibleCandidatesCount":0,
-                "reason":"No candidate satisfies the installation and cable constraints.",
+                "reason":("No candidate meets all mandatory area sample quality minimums and installation constraints."
+                          if required_rejected else "No candidate satisfies the installation and cable constraints."),
+                "requiredAreaSatisfied":False if required_sample_count else None,
+                "requiredAreaMinimumQualityScore":None,
+                "requiredAreaSampleCount":required_sample_count,
                 "feasibilityWarnings":warnings,"signalSource":"caller_supplied_predictions"}
     # 큰 점수 우선, 동점일 때 짧은 케이블 우선, 그 뒤 좌표순(결정론)
     valid.sort(key=lambda v:(-v[0],v[1],v[2].position.x,v[2].position.z))
-    best_score,cable,best,cov,ap=valid[0]
-    if request.current and current_cable is not None and current_cable <= p.maxCableLengthM+EPS and before is not None and before > best_score+EPS:
+    best_score,cable,best,cov,ap,minimum_quality=valid[0]
+    if request.current and current_meets_required and current_cable is not None and current_cable <= p.maxCableLengthM+EPS and before is not None and before > best_score+EPS:
         best=request.current
         best_score,cov,ap=_quality(best,request.probes)
+        _,minimum_quality=_required_quality(best,request.probes)
         cable=current_cable
         warnings.append("current placement outperforms evaluated candidates; recommending no move")
     return {"status":"ok","recommendedPosition":best.position.model_dump(),
@@ -334,5 +365,8 @@ def optimize(request: OptimizeRequest) -> dict:
             "scoreAfter":best_score,"deltaScore":round(best_score-before,2) if before is not None else None,
             "criticalCoveragePct":cov,"additionalApAdvised":ap,
             "evaluatedCandidatesCount":len(request.candidates),"feasibleCandidatesCount":len(valid),
-            "reason":"Highest predicted weighted coverage among feasible positions; additional AP evaluation is advisory.",
+            "reason":"Highest predicted weighted coverage among feasible positions satisfying all mandatory sample thresholds; additional AP evaluation is advisory.",
+            "requiredAreaSatisfied":True if required_sample_count else None,
+            "requiredAreaMinimumQualityScore":minimum_quality,
+            "requiredAreaSampleCount":required_sample_count,
             "feasibilityWarnings":warnings,"signalSource":"caller_supplied_predictions"}
