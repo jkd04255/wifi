@@ -122,8 +122,13 @@ class OfflineDesktopSmoke(unittest.TestCase):
 
     def test_offline_engine_identical_on_http_and_file_origins(self):
         self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function(
+            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('engineMode').textContent.includes('오프라인 JS')",
+            timeout=30000,
+        )
         file_score = self.page.locator("#scoreStat").inner_text()
-        self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
+        self.assertNotEqual(file_score, "—")
         contacted = []
         self.page.on("request", lambda req: contacted.append(req.url) if "/api/" in req.url else None)
         html = (Path(__file__).resolve().parents[2] / "preview" / "stage4_offline.html").read_text(encoding="utf-8")
@@ -133,6 +138,11 @@ class OfflineDesktopSmoke(unittest.TestCase):
         )
         self.page.goto("http://standalone.test/offline.html", wait_until="load")
         self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function(
+            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('engineMode').textContent.includes('오프라인 JS')",
+            timeout=30000,
+        )
         self.assertEqual(self.page.locator("#scoreStat").inner_text(), file_score)
         self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
         self.assertEqual(contacted, [])
