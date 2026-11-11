@@ -430,6 +430,24 @@ class Stage3BrowserTests(unittest.TestCase):
 
 
 
+
+    def _export_current_layout(self, page):
+        import json
+        with page.expect_download() as dl:
+            page.locator("#exportBtn").click()
+        return json.loads(dl.value.path().read_text(encoding="utf-8"))
+
+    def _drag_pin_to(self, page, pin, layout, new_x, new_z):
+        bounds = page.locator("#editorCanvas").bounding_box()
+        start_x = bounds["x"] + bounds["width"] * pin["x"] / layout["width"]
+        start_z = bounds["y"] + bounds["height"] * pin["z"] / layout["depth"]
+        end_x = bounds["x"] + bounds["width"] * new_x / layout["width"]
+        end_z = bounds["y"] + bounds["height"] * new_z / layout["depth"]
+        page.mouse.move(start_x, start_z)
+        page.mouse.down()
+        page.mouse.move(end_x, end_z, steps=8)
+        page.mouse.up()
+
     def test_drag_existing_required_pin_and_undo_in_both_engines(self):
         """Dragging the pin center moves exactly one existing pin; one undo restores it."""
         for engine in ("chromium", "webkit"):
@@ -439,25 +457,19 @@ class Stage3BrowserTests(unittest.TestCase):
                     self._place_required_pin(page)
                     page.locator("#backToEditorBtn").click()
                     page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
-                    original = page.evaluate("({...L.requiredPins[0]})")
-                    canvas = page.locator("#editorCanvas")
-                    bounds = canvas.bounding_box()
-                    x = bounds["x"] + bounds["width"] * original["x"] / page.evaluate("L.width")
-                    z = bounds["y"] + bounds["height"] * original["z"] / page.evaluate("L.depth")
-                    page.mouse.move(x, z)
-                    page.mouse.down()
-                    page.mouse.move(x + 48, z + 22, steps=6)
-                    page.mouse.up()
-                    shifted = page.evaluate("({...L.requiredPins[0]})")
-                    self.assertEqual(page.evaluate("L.requiredPins.length"), 1)
-                    self.assertGreater(shifted["x"], original["x"] + 0.1)
-                    self.assertGreater(shifted["z"], original["z"] + 0.1)
+                    layout = self._export_current_layout(page)
+                    original = layout["requiredPins"][0]
+                    self._drag_pin_to(page, original, layout, original["x"] + 1, original["z"] + .5)
+                    shifted = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertEqual(len(self._export_current_layout(page)["requiredPins"]), 1)
+                    self.assertGreater(shifted["x"], original["x"] + .1)
+                    self.assertGreater(shifted["z"], original["z"] + .1)
                     self.assertAlmostEqual(shifted["radiusM"], original["radiusM"])
                     self.assertIn("위치를 변경", page.locator("#statusLine").inner_text())
                     page.locator("#undoBtn").click()
-                    restored = page.evaluate("({...L.requiredPins[0]})")
-                    self.assertAlmostEqual(restored["x"], original["x"], delta=0.001)
-                    self.assertAlmostEqual(restored["z"], original["z"], delta=0.001)
+                    restored = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(restored["x"], original["x"], delta=.001)
+                    self.assertAlmostEqual(restored["z"], original["z"], delta=.001)
                     self.assertEqual(errors, [])
                 finally:
                     browser.close()
@@ -474,46 +486,50 @@ class Stage3BrowserTests(unittest.TestCase):
                 "(input) => {input.value='1.2';"
                 "input.dispatchEvent(new Event('input',{bubbles:true}));"
                 "input.dispatchEvent(new Event('change',{bubbles:true}));}")
-            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), 1.2, delta=.001)
+            self.assertAlmostEqual(self._export_current_layout(page)["requiredPins"][0]["radiusM"], 1.2, delta=.001)
             self.assertIn("1.2 m", page.locator("#selectedRequiredRadiusValue").inner_text())
             page.locator("#undoBtn").click()
-            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), .8, delta=.001)
+            self.assertAlmostEqual(self._export_current_layout(page)["requiredPins"][0]["radiusM"], .8, delta=.001)
 
-            # The proposed radius 2.0m would extend beyond x=1 and is rejected.
-            page.evaluate("() => {L.requiredPins[0].x=1;L.requiredPins[0].z=1;syncSelectedRequired();}")
+            layout = self._export_current_layout(page)
+            self._drag_pin_to(page, layout["requiredPins"][0], layout, 1, 1)
+            moved_pin = self._export_current_layout(page)["requiredPins"][0]
+            self.assertAlmostEqual(moved_pin["x"], 1, delta=.05)
             page.locator("#selectedRequiredRadius").evaluate(
                 "(input) => {input.value='2.0';"
                 "input.dispatchEvent(new Event('input',{bubbles:true}));"
                 "input.dispatchEvent(new Event('change',{bubbles:true}));}")
-            self.assertAlmostEqual(page.evaluate("L.requiredPins[0].radiusM"), .8, delta=.001)
+            self.assertAlmostEqual(self._export_current_layout(page)["requiredPins"][0]["radiusM"], .8, delta=.001)
             self.assertEqual(page.locator("#selectedRequiredRadius").input_value(), "0.8")
             self.assertEqual(errors, [])
         finally:
             browser.close()
 
+    def _run_recommendation_for_required_pin(self, page):
+        page.locator("#powerInput").fill("35")
+        page.locator("#powerInput").press("Tab")
+        self._place_required_pin(page)
+        page.locator("#g3Settings summary").click()
+        page.locator("#g3LanX").fill("0.5")
+        page.locator("#g3LanZ").fill("0.5")
+        page.locator("#g3LanY").fill("0.3")
+        page.locator("#g3Cable").fill("30")
+        page.locator("#optimizeBtn").click()
+        page.wait_for_function(
+            "!document.getElementById('optimizeBtn').disabled && "
+            "(document.getElementById('recommendation').hidden === false || "
+            "document.getElementById('statusLine').textContent.includes('최적화 실패'))",
+            timeout=45000)
+        self.assertTrue(page.locator("#recommendation").is_visible(),
+                        page.locator("#statusLine").inner_text())
+
     def test_pin_quality_panel_lists_current_and_recommendation(self):
         browser, page, errors = self.open_page()
         try:
-            page.locator("#powerInput").fill("35")
-            page.locator("#powerInput").press("Tab")
-            self._place_required_pin(page)
-            self.assertTrue(page.locator("#requiredResults").is_visible())
-            self.assertIn("필수영역 1", page.locator("#requiredResults").inner_text())
-            self.assertIn("현재 최소", page.locator("#requiredResults").inner_text())
-            page.locator("#g3Settings summary").click()
-            page.locator("#g3LanX").fill("0.5")
-            page.locator("#g3LanZ").fill("0.5")
-            page.locator("#g3LanY").fill("0.3")
-            page.locator("#g3Cable").fill("30")
-            page.locator("#optimizeBtn").click()
-            page.wait_for_function(
-                "!document.getElementById('optimizeBtn').disabled && "
-                "(document.getElementById('recommendation').hidden === false || "
-                "document.getElementById('statusLine').textContent.includes('최적화 실패'))",
-                timeout=45000)
-            self.assertTrue(page.locator("#recommendation").is_visible(),
-                            page.locator("#statusLine").inner_text())
+            self._run_recommendation_for_required_pin(page)
             cards = page.locator("#requiredResults").inner_text()
+            self.assertIn("필수영역 1", cards)
+            self.assertIn("현재 최소", cards)
             self.assertIn("추천 최소", cards)
             self.assertIn("70점 충족", cards)
             self.assertIn("17개 표본점", cards)
@@ -524,10 +540,10 @@ class Stage3BrowserTests(unittest.TestCase):
     def test_pin_quality_panel_clears_outdated_recommendation_on_edit(self):
         browser, page, errors = self.open_page()
         try:
-            self._place_required_pin(page)
-            page.evaluate("() => {best={stage3:true,requiredAreaSatisfied:true,best:{x:L.router.x,z:L.router.z,y:L.router.y}}; renderHeat();}")
+            self._run_recommendation_for_required_pin(page)
             self.assertIn("추천 최소", page.locator("#requiredResults").inner_text())
             page.locator("#backToEditorBtn").click()
+            page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
             page.locator("#selectedRequiredRadius").evaluate(
                 "(input) => {input.value='1.1';"
                 "input.dispatchEvent(new Event('input',{bubbles:true}));"
@@ -539,7 +555,6 @@ class Stage3BrowserTests(unittest.TestCase):
             self.assertEqual(errors, [])
         finally:
             browser.close()
-
 
 
 if __name__ == "__main__":
