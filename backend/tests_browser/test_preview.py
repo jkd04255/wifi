@@ -308,5 +308,88 @@ class Stage3BrowserTests(unittest.TestCase):
             browser.close()
 
 
+    def _place_required_pin(self, page):
+        page.locator("#backToEditorBtn").click()
+        page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
+        self.assertEqual(page.locator('[data-tool="zone"]').count(), 0)
+        self.assertEqual(page.locator("#roomDrawer").count(), 0)
+        page.locator('[data-tool="required"]').click()
+        self.assertTrue(page.locator("#requiredRadius").is_visible())
+        canvas = page.locator("#editorCanvas")
+        rect = canvas.bounding_box()
+        canvas.click(position={"x": rect["width"] * .5, "y": rect["height"] * .5})
+        self.assertIn("필수영역", page.locator("#elementList").inner_text())
+        self.assertEqual(page.locator("#g3Mode").input_value(), "local")
+        page.locator("#applyBottomBtn").click()
+        page.wait_for_function("document.body.dataset.view === 'analysis'", timeout=10000)
+        self.assertIn("필수영역 1곳", page.locator("#requiredStatus").inner_text())
+
+    def test_mandatory_pin_creation_radius_and_payload_in_chromium(self):
+        browser, page, errors = self.open_page()
+        bodies = []
+        page.on("request", lambda request: bodies.append(request.post_data_json)
+                if request.url.endswith("/optimize") else None)
+        try:
+            self._place_required_pin(page)
+            page.locator("#g3Settings summary").click()
+            page.locator("#g3LanX").fill("0.5")
+            page.locator("#g3LanZ").fill("0.5")
+            page.locator("#g3LanY").fill("0.3")
+            page.locator("#g3Cable").fill("30")
+            page.locator("#optimizeBtn").click()
+            page.wait_for_function(
+                "!document.getElementById('optimizeBtn').disabled && "
+                "(document.getElementById('statusLine').textContent.includes('추천') || "
+                "document.getElementById('statusLine').textContent.includes('최적화 실패'))",
+                timeout=45000,
+            )
+            self.assertTrue(bodies)
+            mandatory = [p for p in bodies[-1]["probes"] if p.get("minQualityScore") == 70]
+            self.assertEqual(len(mandatory), 17)
+            self.assertTrue(all(p["targetDbm"] == -51.5 for p in mandatory))
+            self.assertTrue(all(-150 <= v <= 30 for c in bodies[-1]["candidates"] for v in c["rssisDbm"]))
+            if page.locator("#recommendation").is_visible():
+                self.assertIn("17개 표본점 모두 70점 이상", page.locator("#recommendBody").inner_text())
+            else:
+                self.assertIn("필수영역", page.locator("#statusLine").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_pin_requires_local_api_no_legacy_silent_success(self):
+        browser, page, errors = self.open_page(engine="webkit")
+        try:
+            self._place_required_pin(page)
+            page.locator("#g3Settings summary").click()
+            page.locator("#g3Mode").select_option("legacy")
+            page.locator("#optimizeBtn").click()
+            page.wait_for_function(
+                "document.getElementById('statusLine').textContent.includes('최적화 실패')",
+                timeout=15000)
+            self.assertTrue(page.locator("#recommendation").is_hidden())
+            self.assertIn("필수영역 70점 조건", page.locator("#statusLine").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+    def test_pin_import_and_removal_no_room_purpose_ui(self):
+        browser, page, errors = self.open_page()
+        try:
+            self._place_required_pin(page)
+            page.locator("#backToEditorBtn").click()
+            page.locator("#elementsDrawer summary").click()
+            self.assertIn("필수영역", page.locator("#elementList").inner_text())
+            # Remove the required pin via its existing element-row delete action.
+            page.locator("#elementList .element").filter(has_text="필수영역").locator("button").click()
+            self.assertNotIn("◎ 필수영역", page.locator("#elementList").inner_text())
+            page.locator("#applyBottomBtn").click()
+            page.wait_for_function("document.body.dataset.view === 'analysis'", timeout=10000)
+            self.assertIn("필수영역 없음", page.locator("#requiredStatus").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
