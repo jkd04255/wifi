@@ -876,17 +876,23 @@ class Stage3BrowserTests(unittest.TestCase):
             with self.subTest(engine=engine):
                 browser,page,errors=self._mobile_touch_editor(engine)
                 try:
+                    import re
                     canvas=page.locator("#editorCanvas")
                     canvas.focus()
                     canvas.press("Enter")
                     initial=self._export_current_layout(page)
                     pin=initial["requiredPins"][0]
+                    def selected_xz():
+                        label=page.locator("#requiredSelectedName").inner_text()
+                        match=re.search(r"X ([0-9.]+)m / Z ([0-9.]+)m",label)
+                        self.assertIsNotNone(match,label)
+                        return float(match.group(1)),float(match.group(2))
                     previous_x=None
                     max_x=initial["width"]-pin["radiusM"]
                     for _ in range(100):
-                        current=self._export_current_layout(page)["requiredPins"][0]
-                        if current["x"]>=max_x-.001:break
-                        previous_x=current["x"]
+                        current_x,_=selected_xz()
+                        if current_x>=max_x-.001:break
+                        previous_x=current_x
                         canvas.press("ArrowRight")
                     at_right=self._export_current_layout(page)["requiredPins"][0]
                     self.assertAlmostEqual(at_right["x"],max_x,delta=.001)
@@ -900,9 +906,9 @@ class Stage3BrowserTests(unittest.TestCase):
                     previous_z=None
                     max_z=initial["depth"]-pin["radiusM"]
                     for _ in range(100):
-                        current=self._export_current_layout(page)["requiredPins"][0]
-                        if current["z"]>=max_z-.001:break
-                        previous_z=current["z"]
+                        _,current_z=selected_xz()
+                        if current_z>=max_z-.001:break
+                        previous_z=current_z
                         canvas.press("Shift+ArrowDown")
                     at_bottom=self._export_current_layout(page)["requiredPins"][0]
                     self.assertAlmostEqual(at_bottom["z"],max_z,delta=.001)
