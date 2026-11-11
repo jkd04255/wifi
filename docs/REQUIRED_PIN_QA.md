@@ -119,3 +119,30 @@ Open `http://127.0.0.1:8001/preview/stage3.html`. Click the **필수영역** too
 - **Browser tests added**: `test_mobile_touch_pin_drag_and_single_step_undo_both_engines`, `test_mobile_overlapping_pins_cycle_and_explicit_picker_both_engines`, `test_mobile_pin_accessibility_keyboard_radius_and_touch_targets`, `test_mobile_touch_jitter_does_not_create_undo_move`. Mobile tests use an emulated touchscreen for true taps and synthetic PointerEvent sequences to check drag handlers; **they do not substitute actual iPhone Safari/device tests**.
 - Existing wall/sketch, brush (+100/0/-100), 17 mandatory samples, 70/100 hard constraints, local API and JSON import/export regression tests retained.
 - No `index.html`/v1.6 legacy change, no GitHub Pages deployment and no main merge. Parent Draft PR #2 and this Draft PR #3 remain **GATE 3 HOLD** until 1/2/3-team contracts and physical verification are provided.
+
+
+## GATE 3 mobile exception hardening — 2026-11-11
+
+**Verified code/test commit:** `edd06870fe22c2b55945dd873f5a0e909c7b2017`  
+**GitHub Actions:** https://github.com/jkd04255/wifi/actions/runs/42986058154 — `completed / success`  
+Python **94/94**, Chromium/WebKit **25/25**, total **119/119 PASS**.
+
+### Defects and UX protections resolved
+- A secondary touch pointer's move event no longer updates the active required-pin drag's hover/coordinate UI or steals its pointer session; only the primary pointer may finish or cancel the original drag.
+- A cancelled required-pin drag restores the original X-Z coordinates and removes the intermediate Undo snapshot. A later touch is still accepted.
+- The required-pin picker always points to an actually existing selected pin after import, deletion or Undo instead of displaying an unselected implicit first option.
+- The selected ring is painted *after other pins* so an overlapping pin cannot hide selection feedback, and pin layers remain visible above the brush/walls in the isolated preview.
+- The editor canvas is keyboard-focusable (`tabindex=0`, accessible label/description). With the required tool selected, **Enter/Space** adds one center pin when none exist; arrow keys nudge the selected pin **0.1m**, Shift+arrow **0.5m**, constrained to floor bounds. Each real nudge supports Undo.
+- Import, drawing, and preexisting priority brush `+100 / 0 / -100`, wall and Python optimizer contracts were not replaced. The **70/100 mandatory quality requirement at 17 points per pin** remains unchanged.
+
+### Regression tests added
+- `test_mobile_secondary_touch_does_not_steal_active_pin_drag`: second touch press/move/cancel during primary move, pin count and one-step Undo, Chromium and WebKit.
+- `test_mobile_cancelled_drag_restores_pin_without_extra_undo`: touch drag cancel, no ghost Undo entry, next touch succeeds, Chromium and WebKit.
+- `test_required_pin_keyboard_create_nudge_boundary_and_undo`: focusable canvas, Enter creation, arrow-key nudge, Shift accelerated nudge, 70-point persistence and two-step Undo, Chromium and WebKit.
+- `test_imported_overlaps_picker_remains_synced_after_delete`: two overlapping imported pins, remove selected pin, remaining selection and screen-reader status match, Chromium and WebKit.
+- Existing 21 browser regressions and 94 Python/contract tests were retained and passed.
+- Touch drag streams in Playwright are **synthetic PointerEvents**, while tap emulation uses a touchscreen. Real iPhone Safari multitouch/VoiceOver remains **unverified**.
+
+### GATE policy
+**GATE 3 HOLD:** 1번 official floor/footprint, 2번 actual `/simulate` schema/source and 3번 measurement-calibration schema/source are not checked into this repo; `docs/TEAM_CONTRACT_TEMPLATE.md` is still PROPOSED/UNVERIFIED.
+No code was integrated from those sources, and no actual RSSI calibration is claimed. Draft PR #2 and #3 stay unmerged, `main/index.html` and legacy v1.6 unchanged, no GitHub Pages redeployment.
