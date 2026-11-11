@@ -18,7 +18,8 @@ with sync_playwright() as p:
             assert page.locator("#roomDrawer").count()==0
             for unused in ("g3LanX","g3LanZ","g3LanY","g3Cable","g3Mode","g3Settings"):
                 assert page.locator("#"+unused).count()==0,unused
-            page.locator("#backToEditorBtn").click()
+            if page.evaluate("document.body.dataset.view") != "design":
+                page.locator("#backToEditorBtn").click()
             page.wait_for_function("document.body.dataset.view==='design'",timeout=10000)
             page.locator('[data-tool="required"]').click()
             assert page.locator("#requiredRadius").is_visible()
