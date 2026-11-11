@@ -61,11 +61,30 @@ const concrete=layout();
 concrete.walls=[{x1:3,z1:0,x2:3,z2:4,material:"concrete"}];
 const w=engine.optimize(concrete,.35,.75,true);
 if(w.status==="ok")assert(Math.abs(w.best.x-3)>=.2-1e-6,"No router on wall");
+// Ceiling height, low partition height and >10m Y values must never limit model output.
+assert(!html.includes('id="roomHeightM"'));
+assert(!html.includes("L.roomHeightM"));
+assert(!html.includes("wall.heightM"));
+const tall=layout();
+tall.router={...tall.router,x:1.5,z:2,y:12};
+tall.receiverY=11;
+tall.roomHeightM=0.4; // Historical ceiling metadata must not affect RSSI.
+const rx=4.5,rz=2;
+const noWall=engine.value({...tall,walls:[]},rx,rz);
+const shallow={id:"short-partition",x1:3,z1:0,x2:3,z2:4,material:"concrete",heightM:0.01};
+const crossed=engine.value({...tall,walls:[shallow]},rx,rz);
+assert(Number.isFinite(noWall)&&Number.isFinite(crossed),"Unlimited Y must return finite prediction");
+assert(crossed<noWall-1,"A concrete wall must attenuate even when stored heightM is tiny");
+const tallCeiling=engine.value({...tall,roomHeightM:1000000,walls:[shallow]},rx,rz);
+assert(Math.abs(tallCeiling-crossed)<1e-8,"Changing old ceiling height must have no effect");
+const actualNoHeight=engine.value({...tall,walls:[{...shallow,heightM:undefined}]},rx,rz);
+assert(Math.abs(actualNoHeight-crossed)<1e-8,"Low historical wall height must be ignored");
+
 console.log("POINT_ONLY_70_EXACT_COORDINATES_PASS",{
  htmlBytes:Buffer.byteLength(html),
  singlePointCount:found.requiredAreaSampleCount,
  multiplePinCount:goodTwo.requiredAreaSampleCount,
  minimumQuality:+expected.toFixed(2),
  ignoresLegacyRadius:true, ignoresLan:true,
- infeasibleHardConstraint:true,concreteWallExcluded:true,
+ infeasibleHardConstraint:true,concreteWallExcluded:true, unlimitedVerticalY:true, lowWallHeightIgnored:true,
 });
