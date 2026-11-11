@@ -1,0 +1,106 @@
+name: Package mandatory-pin 70 desktop EXE and HTML
+
+on:
+  push:
+    branches:
+      - feat/optimizer-required-pin-distribution
+    paths:
+      - "tools/required_pin_desktop.py"
+      - "preview/stage3.html"
+      - ".github/workflows/required-pin-windows-package.yml"
+      - "docs/REQUIRED_PIN_DESKTOP.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-standalone-windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install required local optimizer, embedded WebView, and packager
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check -r backend/requirements.txt
+          python -m pip install --disable-pip-version-check pywebview==5.4 pyinstaller==6.16.0
+      - name: Build HTML copy with an explicit EXE requirement for local optimization
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          html=Path("preview/stage3.html").read_text(encoding="utf-8")
+          assert 'data-tool="required"' in html and 'id="requiredRadius"' in html
+          assert 'data-tool="zone"' not in html and 'id="roomDrawer"' not in html
+          html=html.replace("Wi-Fi Placement Studio | 배치 시뮬레이터 v1.6",
+                            "Wi-Fi Placement Studio | 필수영역 70점 시연")
+          alert = """<script id="standalone-file-note">
+          if (location.protocol === 'file:') {
+            window.addEventListener('DOMContentLoaded', function () {
+              var info = document.getElementById('g3ModeInfo');
+              if (info) info.textContent = 'HTML 단독: 도면/핀 편집·예상 히트맵 가능. 필수영역을 적용한 최적화는 동봉된 EXE에서 실행하세요 (Python API 필요).';
+              var button = document.getElementById('optimizeBtn');
+              if (button) button.addEventListener('click', function (event) {
+                if (document.getElementById('g3Mode').value === 'local') {
+                  event.preventDefault(); event.stopImmediatePropagation();
+                  var status=document.getElementById('statusLine');
+                  status.textContent='필수영역 70점 최적화는 동봉된 EXE에서 실행하세요. HTML만 열면 로컬 Python API가 없습니다.';
+                  status.classList.add('error');
+                }
+              }, true);
+            });
+          }
+          </script>"""
+          assert "</body>" in html
+          html=html.replace("</body>",alert+"</body>")
+          out=Path("release_preview/stage3.html")
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_text(html,encoding="utf-8")
+          Path("dist").mkdir(exist_ok=True)
+          Path("dist/WiFi_Placement_RequiredPin_70.html").write_text(html,encoding="utf-8")
+          '@ | python -
+      - name: Build self-contained local API and WebView Windows executable
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name WiFi_Placement_RequiredPin_70 --paths backend --add-data "release_preview/stage3.html;preview" --hidden-import=uvicorn.protocols.http.h11_impl --hidden-import=uvicorn.loops.asyncio --hidden-import=webview.platforms.edgechromium --collect-all=webview --collect-all=clr_loader --collect-all=pythonnet --collect-all=pydantic --collect-all=pydantic_core --collect-all=uvicorn tools/required_pin_desktop.py
+      - name: Validate true Windows EXE and offline 70-point hard constraint
+        shell: pwsh
+        run: |
+          @'
+          import hashlib
+          from pathlib import Path
+          import subprocess
+          import struct
+
+          exe = Path("dist/WiFi_Placement_RequiredPin_70.exe")
+          html = Path("dist/WiFi_Placement_RequiredPin_70.html")
+          data = exe.read_bytes()
+          assert len(data) > 3_000_000
+          assert data[:2] == b"MZ"
+          offset = struct.unpack_from("<I",data,0x3C)[0]
+          assert data[offset:offset+4] == b"PE\x00\x00"
+          source = html.read_bytes()
+          assert b'data-tool="required"' in source
+          assert b'id="requiredRadius"' in source
+          assert b'data-tool="zone"' not in source
+          assert b'id="roomDrawer"' not in source
+          assert b'minQualityScore' in source
+          subprocess.run([str(exe.resolve()),"--self-test"],check=True,timeout=180)
+          print("PIN70_WINDOWS_PE_AND_BACKEND_TEST_PASS")
+          print("EXE_SHA256",hashlib.sha256(data).hexdigest())
+          print("HTML_SHA256",hashlib.sha256(source).hexdigest())
+          '@ | python -
+      - name: Upload new mandatory-pin EXE + HTML (not old v1.6)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiFi_RequiredPin_70_EXE_HTML
+          path: |
+            dist/WiFi_Placement_RequiredPin_70.exe
+            dist/WiFi_Placement_RequiredPin_70.html
+            docs/REQUIRED_PIN_DESKTOP.md
+          retention-days: 90
+          if-no-files-found: error
