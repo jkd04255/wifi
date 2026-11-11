@@ -824,6 +824,7 @@ $('importFile').onchange=async e=>{
     router:{x:val(r.x,w),y:val(r.y,roomHeightM),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20)},
     walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
   probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;
+  if(requiredPins.length)$('g3Mode').value='local';
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
  }catch(err){toast('JSON 불러오기 실패: '+err.message)}finally{e.target.value='';}
