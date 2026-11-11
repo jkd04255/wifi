@@ -650,42 +650,67 @@ function finishEraser(p){
  else renderEditor();
  eraseChanged=false;
 }
-function moveRequiredDrag(point){
+function moveRequiredDrag(point,event){
  const drag=requiredDrag;if(!drag)return;
- const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);
- if(!pin)return;
- const x=clamp(point.x,pin.radiusM,L.width-pin.radiusM),z=clamp(point.y,pin.radiusM,L.depth-pin.radiusM);
- if(Math.hypot(x-drag.startX,z-drag.startZ)>0.03&&!drag.moved){pushUndo();drag.moved=true;}
+ const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(!pin)return;
+ const x=clamp(point.x+drag.offsetX,pin.radiusM,L.width-pin.radiusM);
+ const z=clamp(point.y+drag.offsetZ,pin.radiusM,L.depth-pin.radiusM);
+ // Screen-pixel threshold prevents touch jitter from becoming a real move/Undo step.
+ const distancePx=Math.hypot(event.clientX-drag.startClientX,event.clientY-drag.startClientY);
+ if(!drag.moved&&distancePx>=(drag.pointerType==='touch'?10:5)){
+   pushUndo();drag.moved=true;
+ }
  if(drag.moved){pin.x=+x.toFixed(3);pin.z=+z.toFixed(3);}
 }
-editor.addEventListener('pointerdown',e=>{if(e.button!==0)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);editor.setPointerCapture(e.pointerId);pointerId=e.pointerId;
+editor.addEventListener('pointerdown',e=>{
+ if(e.button!==0||(e.pointerType==='touch'&&!e.isPrimary)||pointerId!==null)return;
+ const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);
+ try{editor.setPointerCapture(e.pointerId)}catch{/* synthetic pointer-event tests may not create active native capture */ }
+ pointerId=e.pointerId;
  if(tool==='required'){
- const existing=hitRequiredPin(p);
- if(existing){
-   selectedRequiredId=existing.id;
-   requiredDrag={id:existing.id,startX:existing.x,startZ:existing.z,moved:false};
-   syncSelectedRequired();renderEditor();return;
+   const matches=hitRequiredPins(raw,e.pointerType),existing=matches.find(pin=>pin.id===selectedRequiredId)||matches[0];
+   if(existing){
+     const selectedAtDown=selectedRequiredId;selectedRequiredId=existing.id;
+     requiredDrag={id:existing.id,startX:existing.x,startZ:existing.z,
+       offsetX:existing.x-raw.x,offsetZ:existing.z-raw.y,
+       startClientX:e.clientX,startClientY:e.clientY,pointerType:e.pointerType,
+       overlappingIds:matches.map(v=>v.id),selectedAtDown,moved:false};
+     syncSelectedRequired();renderEditor();return;
+   }
+   pointerId=null;const place=snapped(raw),radius=Number($('requiredRadius').value);
+   if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
+   if(!Number.isFinite(radius)||place.x-radius<0||place.x+radius>L.width||
+     place.y-radius<0||place.y+radius>L.depth){toast('반경이 도면 밖으로 나갑니다. 핀을 옮기거나 반경을 줄여주세요.');return;}
+   pushUndo();L.requiredPins=L.requiredPins||[];
+   const pin={id:uid('required'),x:place.x,z:place.y,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};
+   L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
+   changed('필수영역 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
  }
- pointerId=null;const radius=Number($('requiredRadius').value);
- if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
- if(!Number.isFinite(radius)||p.x-radius<0||p.x+radius>L.width||p.y-radius<0||p.y+radius>L.depth){toast('반경이 도면 밖으로 나갑니다. 핀을 옮기거나 반경을 줄여주세요.');return;}
- pushUndo();L.requiredPins=L.requiredPins||[];const pin={id:uid('required'),x:p.x,z:p.y,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};L.requiredPins.push(pin);
- selectedRequiredId=pin.id;$('g3Mode').value='local';
- changed('필수영역 추가 · 핀 중심을 드래그해 위치를 수정할 수 있습니다.');return;
- }
- if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
+ if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}
+ if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
  start=p;preview=p;hoverPoint=p;
  if(tool==='sketch')currentPath={tool:'sketch',points:[[p.x,p.y]],material:'concrete'};
  if(tool==='brush')currentPath={tool:'brush',points:[[p.x,p.y]],radiusM:Number($('brushSize').value),weightPct:selectedWeight};
- renderEditor();});
-editor.addEventListener('pointermove',e=>{const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
+ renderEditor();
+});
+editor.addEventListener('pointermove',e=>{const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
  $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
- if(requiredDrag){moveRequiredDrag(p);editor.style.cursor='grabbing';renderEditor();return;}
+ if(requiredDrag){if(e.pointerId!==pointerId)return;moveRequiredDrag(p,e);editor.style.cursor='grabbing';renderEditor();return;}
  if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
  if(start){preview=p;if(currentPath){const pts=currentPath.points,last=pts[pts.length-1];if(pts.length<1400&&Math.hypot(p.x-last[0],p.y-last[1])>.065)pts.push([p.x,p.y]);}renderEditor();}
- else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
-function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);pointerId=null;
- if(requiredDrag){moveRequiredDrag(p);const moved=requiredDrag.moved;requiredDrag=null;if(moved)changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');else{syncSelectedRequired();renderEditor();}return;}
+ else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':tool==='required'&&hitRequiredPin(raw,e.pointerType)?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
+function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);pointerId=null;
+ if(requiredDrag){
+  moveRequiredDrag(raw,e);const drag=requiredDrag;requiredDrag=null;
+  if(drag.moved){changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
+  else if(drag.overlappingIds.length>1){
+    // Repeated taps rotate overlapping pins. A drag always moves the selected one.
+    const oldIndex=drag.overlappingIds.indexOf(drag.selectedAtDown);
+    const next=drag.overlappingIds[oldIndex>=0?(oldIndex+1)%drag.overlappingIds.length:0];
+    selectRequiredPin(next);
+  }else selectRequiredPin(drag.id);
+  editor.style.cursor='grab';return;
+ }
  if(tool==='erase'){finishEraser(p);return;}
  if(!start){currentPath=null;return;}
  const a=start;start=null;preview=null;
@@ -703,7 +728,7 @@ function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['
  }
 
  currentPath=null;renderEditor();}
-editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;undoStack.pop();}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
+editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;undoStack.pop();}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
 editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
 heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
 function togglePalette(open){
@@ -728,8 +753,14 @@ for(const button of document.querySelectorAll('.palette-choice'))button.onclick=
  $('brushWeightValue').textContent=`${color.label} · ${selectedWeight>=0?'+':''}${selectedWeight}%`;
  tool='brush';document.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool==='brush';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
  renderEditor();};
+$('requiredPinSelect').onchange=e=>selectRequiredPin(e.target.value);
+$('requiredNextPin').onclick=()=>{
+ const pins=L.requiredPins||[];if(pins.length<2)return;
+ const index=pins.findIndex(pin=>pin.id===selectedRequiredId);
+ selectRequiredPin(pins[(index+1)%pins.length].id);
+};
 $('requiredRadius').oninput=e=>{$('requiredRadiusValue').textContent=fmt(e.target.value)+' m';renderEditor()};
-$('selectedRequiredRadius').oninput=e=>{$('selectedRequiredRadiusValue').textContent=fmt(e.target.value)+' m'};
+$('selectedRequiredRadius').oninput=e=>{$('selectedRequiredRadiusValue').textContent=fmt(e.target.value)+' m';e.target.setAttribute('aria-valuetext',fmt(e.target.value)+'미터')};
 $('selectedRequiredRadius').onchange=e=>{
  const pin=getSelectedRequiredPin();if(!pin)return;
  const radius=Number(e.target.value),maxFit=Math.min(3,pin.x,L.width-pin.x,pin.z,L.depth-pin.z);
@@ -785,7 +816,7 @@ $('areaApplyBtn').onclick=applyArea;
 $('pyeongInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyArea();}});
 $('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());changed();};
 $('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.sketches=[];changed()};
-$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedRequiredId=null;requiredDrag=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
+$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
 function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
 $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 위치가 변경되었습니다. Apply로 다시 계산하세요.')};
 $('receiverY').onchange=e=>{
