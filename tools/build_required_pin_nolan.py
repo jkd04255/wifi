@@ -389,6 +389,106 @@ source=source.replace("핀당 17개 표본점", "핀당 지정 좌표 1개")
 # Ensure even historical explanatory strings do not claim a radius or 17 samples.
 source=source.replace("17개 표본점", "정확한 한 좌표")
 
+
+# ---------------------------------------------------------------------------
+# Remove ceiling/wall-height input and ceilings from the *release* only.
+# Keep independent, non-negative router/receiver Y settings for 3D distance.
+# Walls are plan-view obstacles: an XZ ray crossing blocks irrespective of Y.
+# ---------------------------------------------------------------------------
+replace_once(
+    '<input type="range" id="routerY" min="0" max="2.7" step="0.1" value="1.2">',
+    '<input type="number" id="routerY" min="0" step="0.1" value="1.2" inputmode="decimal" aria-label="공유기 Y 위치, 천장 제한 없음">',
+    "router Y uncapped numeric control")
+replace_once(
+    '<input id="receiverY" type="number" value="1.0" min="0" max="10" step="0.1">',
+    '<input id="receiverY" type="number" value="1.0" min="0" step="0.1" inputmode="decimal">',
+    "receiver Y uncapped numeric control")
+replace_once(
+    '<label>천장·벽 높이 (m)<input id="roomHeightM" type="number" value="2.7" min="1" max="10" step="0.1"></label>',
+    "",
+    "remove ceiling and wall height settings")
+replace_once(
+    '벽은 기본적으로 천장 높이까지 연장됩니다.',
+    '벽은 별도 높이 제한 없이 XZ 평면에서 신호를 차단합니다. 공유기·수신기 Y는 각각 입력합니다.',
+    "explain vertical modeling")
+
+replace_once(
+    '   L.roomHeightM??=2.7;L.receiverY??=1;',
+    '   L.receiverY??=1;',
+    "legacy engine layout no ceiling")
+replace_once(
+    """ function wallHit(L,x,z,wall,receiverY){
+   const r=L.router,t=wallFraction(r.x,r.z,x,z,wall);
+   if(t===null)return false;
+   const atY=r.y+t*(receiverY-r.y);
+   return atY>=0&&atY<=(wall.heightM??L.roomHeightM??2.7);
+ }""",
+    """ function wallHit(L,x,z,wall,receiverY){
+   // Height-independent full-height plan-view concrete barrier.
+   // A wall that crosses the XZ line always attenuates the model signal.
+   return wallFraction(L.router.x,L.router.z,x,z,wall)!==null;
+ }""",
+    "remove wall height attenuation limit")
+replace_once(
+    'roomHeightM:2.7,receiverY:1.0,areaPyeong,',
+    'receiverY:1.0,areaPyeong,',
+    "remove room ceiling from new layout")
+replace_once(
+    "$('routerY').max=String(L.roomHeightM);$('routerY').value=String(L.router.y);",
+    "$('routerY').value=String(L.router.y);",
+    "sync unlimited router Y")
+replace_once(
+    "$('receiverY').value=String(L.receiverY);$('roomHeightM').value=String(L.roomHeightM);",
+    "$('receiverY').value=String(L.receiverY);",
+    "sync no ceiling input")
+replace_section(
+    "$('routerY').oninput=e=>",
+    "$('frequencySelect').onchange=e=>",
+    """$('routerY').onchange=e=>{
+ const n=Number(e.target.value);
+ if(e.target.value.trim()===''||!Number.isFinite(n)||n<0){
+  toast('공유기 Y 높이는 0 이상의 유효한 숫자를 입력해 주세요.');syncLayout();return;
+ }
+ L.router.y=n;changed('공유기 Y 높이를 변경했습니다. 천장 높이 제한은 적용하지 않습니다.');
+};
+$('receiverY').onchange=e=>{
+ const n=Number(e.target.value);
+ if(e.target.value.trim()===''||!Number.isFinite(n)||n<0){
+  toast('수신기 Y 높이는 0 이상의 유효한 숫자를 입력해 주세요.');syncLayout();return;
+ }
+ L.receiverY=n;changed('수신기 Y 높이를 변경했습니다. 천장 제한은 적용하지 않습니다.');
+};
+""",
+    "replace vertical handlers without ceiling")
+replace_once(
+    '  const roomHeightM=clamp(cleanNum(converted.roomHeightM,2.7),1,10),receiverY=clamp(cleanNum(converted.receiverY,1),0,roomHeightM);',
+    """  const nonnegativeY=(value,name)=>{const n=Number(value);
+   if(!Number.isFinite(n)||n<0)throw Error(name+' Y 높이는 0 이상의 유효한 숫자여야 합니다.');
+   return n;};
+  // Older roomHeightM is deliberately ignored, not imported.
+  const receiverY=nonnegativeY(converted.receiverY??1,'수신기');""",
+    "import unlimited Y, ignore legacy ceiling")
+replace_once(
+    "material:'concrete',...(q.heightM==null?{}:{heightM:clamp(cleanNum(q.heightM,roomHeightM),.1,roomHeightM)})",
+    "material:'concrete'",
+    "discard legacy wall height, keep concrete")
+replace_once(
+    "width:w,depth,roomHeightM,receiverY,areaPyeong",
+    "width:w,depth,receiverY,areaPyeong",
+    "layout save without ceiling")
+replace_once(
+    "y:val(r.y,roomHeightM)",
+    "y:nonnegativeY(r.y,'공유기')",
+    "import unlimited router Y")
+
+# Do not ship hidden state or legacy ceiling limits.
+for obsolete in ("id=\"roomHeightM\"", "$('roomHeightM')", "L.roomHeightM",
+                 "wall.heightM", "q.heightM", "roomHeightM,receiverY",
+                 "max=\"2.7\" step=\"0.1\" value=\"1.2\"",
+                 "max=\"10\" step=\"0.1\""):
+    assert obsolete not in source, f"Retired height limit persists: {obsolete}"
+
+
 # All references to radiusM left in the app must be unrelated brush/eraser settings.
 assert 'id="requiredRadius"' not in source
 assert 'id="selectedRequiredRadius"' not in source
