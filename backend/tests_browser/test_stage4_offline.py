@@ -42,7 +42,83 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#editorCanvas").click(position={"x": x, "y": y})
 
     def change_bars(self, bars):
+        if self.page.locator("#toolsRail").is_hidden():
+            self.page.locator("#paletteToggleBtn").click()
+        self.page.locator("#requiredDrawer").evaluate("(el) => { el.open = true; }")
         self.page.locator("#signalBarsSelect").select_option(str(bars))
+
+    def test_tool_does_not_auto_expand_palette(self):
+        self.assertTrue(self.page.locator("#toolsRail").is_hidden())
+        self.pin()
+        self.assertTrue(self.page.locator("#toolsRail").is_hidden())
+        self.assertEqual(self.page.locator("#paletteToggleBtn").get_attribute("aria-expanded"), "false")
+        self.page.locator("#paletteToggleBtn").click()
+        self.assertTrue(self.page.locator("#toolsRail").is_visible())
+        self.assertTrue(self.page.locator("#requiredDrawer").evaluate("(node) => node.open"))
+        self.assertEqual(self.page.locator("#signalBarsSelect").input_value(), "4")
+
+    def test_threshold_change_is_undoable(self):
+        self.pin()
+        self.change_bars(1)
+        self.assertEqual(self.export()["requiredPins"][0]["minQualityScore"], 9)
+        self.page.locator("#undoBtn").click()
+        self.assertEqual(self.export()["requiredPins"][0]["minQualityScore"], 64)
+        self.assertEqual(self.page.locator("#signalBarsSelect").input_value(), "4")
+
+    def test_import_duplicate_ids_are_unique_and_selection_survives(self):
+        self.pin()
+        data = self.export()
+        data["requiredPins"] = [
+            {"id": "duplicated", "x": 1, "z": 1, "signalBars": 3, "minQualityScore": 64},
+            {"id": "duplicated", "x": 4, "z": 3, "signalBars": 1, "minQualityScore": 64},
+            {"x": 6, "z": 5, "minQualityScore": None},
+        ]
+        self.page.locator("#importFile").set_input_files({
+            "name": "duplicate-pins.json",
+            "mimeType": "application/json",
+            "buffer": json.dumps(data).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.querySelectorAll('#requiredPinSelect option').length === 3")
+        pins = self.export()["requiredPins"]
+        self.assertEqual(len(set(p["id"] for p in pins)), 3)
+        self.assertEqual([(p["signalBars"], p["minQualityScore"]) for p in pins], [(3, 42), (1, 9), (4, 64)])
+        self.page.locator("#paletteToggleBtn").click()
+        self.page.locator("#requiredPinSelect").select_option(pins[1]["id"])
+        self.assertEqual(self.page.locator("#signalBarsSelect").input_value(), "1")
+        self.change_bars(2)
+        self.assertEqual([v["minQualityScore"] for v in self.export()["requiredPins"]], [42, 27, 64])
+
+    def test_optimizer_rejects_infeasible_four_bars_then_accepts_zero(self):
+        self.pin()
+        data = self.export()
+        data["width"] = 24
+        data["depth"] = 20
+        data["walls"] = []
+        data["requiredPins"] = [
+            {"id": "far-a", "x": 0.3, "z": 0.3, "signalBars": 4, "minQualityScore": 64},
+            {"id": "far-b", "x": 23.7, "z": 19.7, "signalBars": 4, "minQualityScore": 64},
+        ]
+        data["router"]["x"], data["router"]["z"] = 12, 10
+        self.page.locator("#importFile").set_input_files({
+            "name": "far-pins.json", "mimeType": "application/json",
+            "buffer": json.dumps(data).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.querySelectorAll('#requiredPinSelect option').length === 2")
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertIn("추천 불가:", self.page.locator("#statusLine").inner_text())
+        self.assertTrue(self.page.locator("#recommendation").is_hidden())
+        self.page.locator("#designTab").click()
+        self.page.locator("#paletteToggleBtn").click()
+        self.change_bars(0)
+        self.page.locator("#requiredPinSelect").select_option("far-b")
+        self.change_bars(0)
+        self.assertEqual([p["minQualityScore"] for p in self.export()["requiredPins"]], [0, 0])
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
 
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
