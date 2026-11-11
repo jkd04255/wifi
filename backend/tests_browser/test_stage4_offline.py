@@ -120,6 +120,60 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
 
+    def test_offline_engine_identical_on_http_and_file_origins(self):
+        self.page.locator("#applyBottomBtn").click()
+        file_score = self.page.locator("#scoreStat").inner_text()
+        self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
+        contacted = []
+        self.page.on("request", lambda req: contacted.append(req.url) if "/api/" in req.url else None)
+        html = (Path(__file__).resolve().parents[2] / "preview" / "stage4_offline.html").read_text(encoding="utf-8")
+        self.page.route(
+            "http://standalone.test/**",
+            lambda route: route.fulfill(status=200, content_type="text/html", body=html),
+        )
+        self.page.goto("http://standalone.test/offline.html", wait_until="load")
+        self.page.locator("#applyBottomBtn").click()
+        self.assertEqual(self.page.locator("#scoreStat").inner_text(), file_score)
+        self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
+        self.assertEqual(contacted, [])
+
+    def test_invalid_pin_coordinate_import_does_not_corrupt_layout(self):
+        self.pin()
+        original = self.export()
+        malformed = json.loads(json.dumps(original))
+        malformed["requiredPins"][0]["x"] = None
+        self.page.locator("#importFile").set_input_files({
+            "name": "invalid-pin.json", "mimeType": "application/json",
+            "buffer": json.dumps(malformed).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('toast').textContent.includes('JSON 불러오기 실패')")
+        self.assertEqual(self.export()["requiredPins"], original["requiredPins"])
+
+    def test_uncapped_router_and_receiver_height_and_no_ceiling_control(self):
+        self.assertEqual(self.page.locator("#roomHeightM").count(), 0)
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#routerY").fill("40")
+        self.page.locator("#routerY").press("Tab")
+        self.page.locator("#receiverY").fill("35")
+        self.page.locator("#receiverY").press("Tab")
+        result = self.export()
+        self.assertEqual(result["router"]["y"], 40)
+        self.assertEqual(result["receiverY"], 35)
+        self.page.locator("#applyBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
+
+    def test_mobile_signal_palette_and_json(self):
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.page.locator('[data-tool="required"]').click()
+        self.page.locator("#editorCanvas").click(position={"x": 70, "y": 85})
+        self.assertTrue(self.page.locator("#toolsRail").is_hidden())
+        self.page.locator("#paletteToggleBtn").click()
+        self.assertTrue(self.page.locator("#requiredDrawer").evaluate("(node) => node.open"))
+        self.page.locator("#signalBarsSelect").select_option("2")
+        pin = self.export()["requiredPins"][0]
+        self.assertEqual((pin["signalBars"], pin["minQualityScore"]), (2, 27))
+
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
         self.assertIn("신호 세기", tool.inner_text())
