@@ -392,5 +392,43 @@ class Stage3BrowserTests(unittest.TestCase):
 
 
 
+    def test_import_export_preserves_required_pins_and_drops_old_rooms(self):
+        """Old purpose zones must not return, while mandatory pins survive JSON roundtrip."""
+        import json
+        browser, page, errors = self.open_page()
+        try:
+            layout = self._fixture()
+            layout["zones"] = [{
+                "id": "old-bedroom", "x1": 0.2, "z1": 0.2,
+                "x2": 1.5, "z2": 1.5, "label": "침실", "weightPct": 100
+            }]
+            layout["requiredPins"] = [{
+                "id": "must-70", "x": 3.0, "z": 2.0,
+                "radiusM": 0.8, "minQualityScore": 70
+            }]
+            page.locator("#importFile").set_input_files({
+                "name": "fixture-with-legacy-zone.json",
+                "mimeType": "application/json",
+                "buffer": json.dumps(layout).encode("utf-8"),
+            })
+            page.wait_for_function(
+                "document.body.dataset.view === 'design' && "
+                "document.getElementById('statusLine').textContent.includes('XZ')",
+                timeout=10000,
+            )
+            self.assertEqual(page.locator('[data-tool="zone"]').count(), 0)
+            self.assertEqual(page.locator("#g3Mode").input_value(), "local")
+            with page.expect_download() as dl:
+                page.locator("#exportBtn").click()
+            exported = json.loads(dl.value.path().read_text(encoding="utf-8"))
+            self.assertEqual(len(exported["requiredPins"]), 1)
+            self.assertEqual(exported["requiredPins"][0]["minQualityScore"], 70)
+            self.assertEqual(exported["zones"], [])
+            self.assertEqual(errors, [])
+        finally:
+            browser.close()
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
