@@ -118,3 +118,65 @@
 - GitHub `jkd04255/wifi`는 API `private=false`, `visibility=public`로 확인. 타인은 자유 열람·복제 가능. 직접 쓰기 권한은 협업자 초대가 필요하며 아직 초대하지 않음.
 - [Draft PR #2](https://github.com/jkd04255/wifi/pull/2) 유지, `main` 및 Pages 기존 v1.6 변경 금지, **GATE 3 HOLD**.
 - 다음 대화에서는 `docs/GATE3_SYNTHETIC_QA.md`와 위 CI 로그 먼저 확인. 실계약 확보 전 실제 보정/실측 연결 완료로 주장하지 말 것.
+
+
+## GATE 3 UI 요청: 방 용도 제거 → 필수영역 품질 70점 핀 (2026-11-11)
+
+- 작업 브랜치: `feat/optimizer-required-pin`, 별도 [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), 기반 `feat/optimizer-stage3-integration` (Draft PR #2).
+- 원본 `index.html`과 `legacy/WiFi_Placement_Studio_v1.6_offline.html` 수정하지 않음.
+- `preview/stage3.html`: 방 용도 그리기·입력 제거, **필수영역 핀**과 0.3~3m 반경 선택, 70/100 예측 품질 최소조건, 삭제·Undo·JSON 저장/불러오기.
+- `backend/optimizer/core.py`: 선택적 `minQualityScore` 속성으로 필수영역 표본점의 **하드 제약** 구현. 후보 하나라도 미충족 시 해당 후보 배제하고 전체 충족 후보가 없으면 실패 표시. 현재 위치가 전체 점수에서 높아도 필수조건은 건너뛰지 않음.
+- 핀 1개당 **중심/반경 절반/둘레 총 17개 이산 표본점**. 모델 RSSI 점수 70은 약 **−51.5 dBm**. 원형 면적 전체에 대한 보장이나 실제 측정 기반 보정은 아님.
+- 기존 GATE 3 확정 API 계약 미보유 및 Python GitHub Pages 미배포 유지. **정식 GATE 3 HOLD / PR Draft / main·Pages 변경 금지**.
+- [QA 및 로컬 실행 방법](REQUIRED_PIN_QA.md). 초기 94 Python + 12 브라우저 = 106 검증 PASS (Actions #42977957957). 후속 HEAD Actions 확인 필요.
+
+
+### Latest mandatory-pin CI (2026-11-11)
+- Verified SHA `68b5622b85192cad4ef49a94f49859b7a01e3f51`: [Actions run #42978598628](https://github.com/jkd04255/wifi/actions/runs/42978598628) **PASS**, Python **94/94**, Chromium/WebKit **13/13**, **107/107** in total.
+- JSON round-trip preserves `requiredPins`; old room purpose `zones` are retired, with import notice.
+- Public Pages is unchanged. Test the new pin feature locally via `backend/dev_server.py`, not at the old Pages URL.
+- Feature is on [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), based on Draft PR #2, and must not merge/deploy until integration gates clear.
+
+
+## GATE 3 Required Pin UI/UX follow-up — latest verification (2026-11-11)
+
+- Same branch `feat/optimizer-required-pin` and [Draft PR #3](https://github.com/jkd04255/wifi/pull/3).
+- Change: pin center drag relocation within floor bounds, selectable per-pin radius, Undo and cancellation, result-screen current/recommended minimum predicted quality 70-point cards.
+- Code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`: [GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205) **PASS**; Python 94 + Chromium/WebKit 17 = **111/111**.
+- Detailed QA/manual preview steps in [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md). No changes to existing `index.html` or `legacy/*`, no main merge/Pages deployment. Entire GATE 3 remains **HOLD** until real team contracts verified.
+- Immediate next work: confirm full integration contracts/actual RSSI, strengthen real-device accessibility/drag ergonomics, and review against GATE conditions before any rollout.
+
+
+## GATE 3 mobile required pin selection / accessibility — 2026-11-11
+
+- Branch `feat/optimizer-required-pin` / [Draft PR #3](https://github.com/jkd04255/wifi/pull/3); parent Draft PR #2 unchanged.
+- [CI #42984403224](https://github.com/jkd04255/wifi/actions/runs/42984403224) on code/test SHA `cb6112a0612d8d3700d0134299d2fb8aa5aba322`: Python **94/94** + Chromium/WebKit desktop/mobile **21/21**, **115/115 PASS**.
+- Added touch hit targets, pointer-drag threshold + single undo, repeated tap to cycle overlapping pins, accessible dropdown/next-pin control, selected-pin outline/status, keyboard-operable radius slider.
+- Tests use real touchscreen taps + simulated touch PointerEvent dragging; no actual iOS Safari hardware claim.
+- See [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for details. `main/index.html`, legacy v1.6, Pages unchanged. Team 1/2/3 data contracts unverified: **GATE 3 HOLD; no merge/deploy**.
+- Next safe work: team source contracts/real RSSI calibration + field QA; further UX fixes only on feature branch and with complete regression.
+
+
+## 2026-11-11 — GATE 3 mobile gesture cancellation / keyboard QA
+
+- Reviewed current [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), current `docs/REQUIRED_PIN_QA.md`, repo file/branch/PR tree; **no confirmed 1/2/3-team implementation/response contracts** were found, only template plus synthetic adapters. Do not claim real RSSI integration.
+- On `feat/optimizer-required-pin`, constrained secondary multitouch events so they do not interfere with the active drag. Tested pointercancel rollback + Undo cleanup + resumed touch. Imported/deleted selected pins reconcile the picker, and overlapping pins show the selected ring last.
+- Added keyboard focus to editor canvas; Enter/Space adds initial center pin, arrows nudge selected pin 0.1m or Shift+arrows 0.5m within its radius and floor boundaries. Existing radius slider and accessible picker remain.
+- **Verified exact code SHA** `edd06870fe22c2b55945dd873f5a0e909c7b2017`, [Actions #42986058154](https://github.com/jkd04255/wifi/actions/runs/42986058154): Python **94/94** + Chromium/WebKit **25/25**, total **119/119 PASS**.
+- Browser tests use emulated touchscreen taps plus synthetic touch pointer events; **not real iPhone Safari/VoiceOver QA**. Read [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for test and local preview instructions.
+- **No changes** to legacy v1.6 or main, no PR merge and no Pages deployment. GATE 3 HOLD until team 1/2/3 signed-off data schemas, real measurement comparison and physical verification.
+- Next suggested scoped work: additional touch edge/cancel and keyboard boundary/focus QA, or team API adapter only after real contracts are committed.
+
+
+## 2026-11-11 — Undo-capacity cancellation fix and keyboard floor-edge QA
+
+- Latest branch HEAD: `ee542b751b9eda123fe13d3bfefb41a3ec3ca928`; feature branch `feat/optimizer-required-pin`, Draft PR #3 remains open/draft.
+- Confirmed a real history bug: cancelling a pin drag after the 30-entry Undo stack was full removed the staged drag snapshot but could not restore the oldest entry that `pushUndo()` had already evicted.
+- Fixed by staging the pre-drag JSON snapshot on the drag state, committing it to bounded Undo history only on successful pointerup, and restoring coordinates without changing history on pointercancel.
+- Added browser regression `test_cancelled_drag_preserves_full_undo_history`: fill 30 Undo entries, cancel a threshold-crossing touch drag, and verify both the 29th and 30th Undo states.
+- Added `test_keyboard_nudge_stops_at_pin_radius_and_noop_keeps_undo`: keyboard X/Z nudge stops at the radius-adjusted floor boundary; further no-op movement does not add an Undo entry.
+- Exact latest HEAD CI: [Actions #42987876155](https://github.com/jkd04255/wifi/actions/runs/42987876155) completed/success — Python **94/94** and Chromium/WebKit browser suite **27/27**, all pass.
+- The previous multitouch, drag-cancel, overlapping-pin selection, selection restore, and keyboard movement regressions remain in the same suite.
+- Actual iPhone Safari/VoiceOver and physical RF measurement remain unverified. Team 1/2/3 contracts still absent; no actual RSSI adapter/calibration is claimed.
+- Preserve legacy v1.6, `main`, concrete walls, importance brush and 70-point hard requirement. **GATE 3 HOLD; do not merge PR #2/#3 or deploy Pages.**
+- Next scoped work: continue focused selection/focus-return and multi-touch interruption QA; integrate actual team adapters only after signed-off source/schema and sample data are committed.

@@ -109,3 +109,60 @@
 - [x] Public 저장소 `jkd04255/wifi` 확인, 열람과 push 권한 차이 기록.
 - [ ] 팀원 1·2·3 계약/데이터 수신 및 실데이터 교차검증.
 - [ ] GATE 3 정식 통합 판정 및 PR 병합·Pages 재배포 — **HOLD**.
+
+
+### GATE 3 UI 교체: 필수영역 핀 (2026-11-11)
+
+- [x] 방 용도 지정 UI 제거, 필수영역 핀 추가 (반경 0.3–3m, 70/100 최소 예측 품질, 최대 12개).
+- [x] 필수 품질 제약이 전체 중요도 평균보다 우선하도록 4번 Python optimizer 기능 구현; 조건 미달 후보는 추천 불가.
+- [x] Preview JSON import/export, Undo, 개별 삭제, 도면 크기 조정 및 최소품질 현황 UI.
+- [x] Python 94/94 + Chromium/WebKit 12/12 총 106/106 검증 [Actions #42977957957](https://github.com/jkd04255/wifi/actions/runs/42977957957).
+- [ ] 후속 문구 보완 HEAD 전체 회귀 CI 확인.
+- [ ] 실측 데이터 계약, 실제 외곽, 연속 원판 범위의 정확성 검증.
+- [ ] 본 Draft PR #3 및 기반 Draft PR #2의 병합/Pages 배포 — **HOLD**.
+
+
+### Required pin QA finalized (2026-11-11)
+- [x] Final code commit `68b5622b85192cad4ef49a94f49859b7a01e3f51` Python 94/94 + browser 13/13 = **107 PASS** ([Actions #42978598628](https://github.com/jkd04255/wifi/actions/runs/42978598628)).
+- [x] JSON round-trip pin survival and imported legacy room-purpose removal.
+- [ ] Full GATE 3 approval and public deployment — **HOLD**.
+
+
+### GATE 3 필수영역 핀 후속 UI/UX 작업 (2026-11-11)
+- [x] 기존 핀을 직접 드래그해 이동, Undo 1회 복구 및 도면 밖 이동 제한.
+- [x] 선택한 핀만 반경(0.3–3m) 수정 및 잘못된 반경 거부.
+- [x] 결과 화면의 핀별 현재/추천 최소 예측 품질, 70점 충족/미달 배지 표시; 수정·API 실패 시 오래된 추천 제거.
+- [x] Python 94 + Chromium/WebKit 17 = **111/111 PASS** ([GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205), code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`).
+- [ ] 실제 팀원 1·2·3 계약, 예측/실측 보정 비교, 연속 면적 품질 및 실기기 검증.
+- [ ] Draft PR #3/#2 main 병합 및 GitHub Pages 배포 — **GATE HOLD**.
+
+
+### GATE 3 모바일 필수영역 핀 조작성 / 접근성 (2026-11-11)
+
+- [x] 터치 드래그 허용 범위 확장, 터치 손떨림 오동작 방지, 한 번의 Undo / 취소 동작.
+- [x] 겹친 핀 반복 터치 선택 순환, 핀 목록과 다음 핀 버튼, 선택 테두리 표시.
+- [x] 선택 핀 반경의 키보드·스크린리더 설명, 터치 목표 크기 개선.
+- [x] 모바일 Chromium/WebKit 테스트 4종 추가; 전체 Python 94 + browser 21 = **115 PASS** ([Actions #42984403224](https://github.com/jkd04255/wifi/actions/runs/42984403224)).
+- [ ] 1/2/3팀 데이터 계약, 예측/실측 정합성, 실제 iPhone Safari 터치 동작 및 실내 외곽 정확성 검증.
+- [ ] GATE 3 완료, PR #2/#3 병합 및 Pages 재배포 — **HOLD**.
+
+
+### GATE 3 모바일 멀티터치·드래그 취소·키보드 접근성 검증 (2026-11-11)
+
+- [x] 현재 PR/브랜치/파일 점검: 정식 1/2/3번 계약 부재 재확인 (템플릿/합성 샘플만 존재).
+- [x] 보조 터치 간섭 차단, 터치 드래그 취소 시 원위치·Undo 복구.
+- [x] 겹친 핀의 선택 링을 가장 위에 표시, 삭제/불러오기 후 선택 목록 정합성 회복.
+- [x] 캔버스 키보드 접근: Enter/Space 새 필수 핀, 방향키 ±0.1m / Shift ±0.5m, 경계 제한 및 Undo.
+- [x] 신규 Chromium/WebKit 모바일 회귀 4개; Python 94/94 + 브라우저 25/25 = **119/119 PASS** ([Actions #42986058154](https://github.com/jkd04255/wifi/actions/runs/42986058154), code SHA `edd06870fe22c2b55945dd873f5a0e909c7b2017`).
+- [ ] 실제 iPhone Safari 및 VoiceOver, 팀 1/2/3 계약·보정 데이터 정합성, 실제 외곽, 70점 실측 검증.
+- [ ] PR #2/#3 정식 병합과 Pages 재배포 — **GATE 3 HOLD**.
+
+
+### GATE 3 Undo history and keyboard boundary follow-up (2026-11-11)
+
+- [x] Fix full 30-entry Undo history eviction when a required-pin touch drag is cancelled: stage snapshot during drag, commit only on pointerup, pointercancel restores X-Z without mutating history.
+- [x] Add regression for 30-entry Undo history preservation after cancellation (Chromium/WebKit).
+- [x] Add exact right/lower pin-radius boundary test; no-op keyboard movement must not create Undo entry.
+- [x] Latest CI [#42987876155](https://github.com/jkd04255/wifi/actions/runs/42987876155): Python 94/94 + Chromium/WebKit browser 27/27 PASS; HEAD `ee542b751b9eda123fe13d3bfefb41a3ec3ca928`.
+- [ ] Actual iPhone Safari/VoiceOver, real RF measurements and team 1/2/3 signed-off schemas.
+- [ ] PR #2/#3 merge and Pages deployment — **GATE 3 HOLD**.
