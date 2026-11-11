@@ -145,3 +145,13 @@
 - Code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`: [GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205) **PASS**; Python 94 + Chromium/WebKit 17 = **111/111**.
 - Detailed QA/manual preview steps in [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md). No changes to existing `index.html` or `legacy/*`, no main merge/Pages deployment. Entire GATE 3 remains **HOLD** until real team contracts verified.
 - Immediate next work: confirm full integration contracts/actual RSSI, strengthen real-device accessibility/drag ergonomics, and review against GATE conditions before any rollout.
+
+
+## GATE 3 mobile required pin selection / accessibility — 2026-11-11
+
+- Branch `feat/optimizer-required-pin` / [Draft PR #3](https://github.com/jkd04255/wifi/pull/3); parent Draft PR #2 unchanged.
+- [CI #42984403224](https://github.com/jkd04255/wifi/actions/runs/42984403224) on code/test SHA `cb6112a0612d8d3700d0134299d2fb8aa5aba322`: Python **94/94** + Chromium/WebKit desktop/mobile **21/21**, **115/115 PASS**.
+- Added touch hit targets, pointer-drag threshold + single undo, repeated tap to cycle overlapping pins, accessible dropdown/next-pin control, selected-pin outline/status, keyboard-operable radius slider.
+- Tests use real touchscreen taps + simulated touch PointerEvent dragging; no actual iOS Safari hardware claim.
+- See [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for details. `main/index.html`, legacy v1.6, Pages unchanged. Team 1/2/3 data contracts unverified: **GATE 3 HOLD; no merge/deploy**.
+- Next safe work: team source contracts/real RSSI calibration + field QA; further UX fixes only on feature branch and with complete regression.
