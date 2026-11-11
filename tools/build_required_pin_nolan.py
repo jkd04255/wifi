@@ -386,6 +386,8 @@ source=source.replace(
 # No radius controls or informational wording should be left in the shipped UI.
 source=source.replace("핀마다 중심·안쪽·둘레의 17개 표본점", "핀마다 지정한 단 하나의 좌표")
 source=source.replace("핀당 17개 표본점", "핀당 지정 좌표 1개")
+# Ensure even historical explanatory strings do not claim a radius or 17 samples.
+source=source.replace("17개 표본점", "정확한 한 좌표")
 
 # All references to radiusM left in the app must be unrelated brush/eraser settings.
 assert 'id="requiredRadius"' not in source
