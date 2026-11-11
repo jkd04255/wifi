@@ -35,6 +35,8 @@ assert.equal(found.status,"ok",JSON.stringify(found));
 assert.equal(found.requiredAreaSatisfied,true);
 assert.equal(found.requiredAreaSampleCount,17);
 assert(found.best && typeof found.best.x==="number");
+assert(found.best.x>=.2&&found.best.x<=good.width-.2);
+assert(found.best.z>=.2&&found.best.z<=good.depth-.2);
 const trial={...good,router:{...good.router,...found.best}};
 const min=Math.min(...samples(good.requiredPins[0]).map(p=>calcQ(engine.value(trial,p.x,p.z))));
 assert(min>=70-1e-8, "Recommended point violates mandatory pin: "+min);
