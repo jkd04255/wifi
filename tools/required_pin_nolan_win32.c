@@ -68,11 +68,13 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE old,LPWSTR cmdline,int show){
     if(!check){error_box(L"Out of memory");return 5;}
     memcpy(check,bytes,length);check[length]=0;
     int valid=has_text(check,"data-tool=\"required\"")
-      && has_text(check,"id=\"requiredRadius\"")
+      && has_text(check,"id=\"requiredPinSelect\"")
       && has_text(check,"function requiredSamples")
       && has_text(check,"requiredAreaSatisfied")
       && !has_text(check,"data-tool=\"zone\"")
       && !has_text(check,"id=\"roomDrawer\"")
+      && !has_text(check,"id=\"requiredRadius\"")
+      && !has_text(check,"id=\"selectedRequiredRadius\"")
       && !has_text(check,"id=\"g3LanX\"")
       && !has_text(check,"id=\"g3Cable\"");
     free(check);
