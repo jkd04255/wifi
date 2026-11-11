@@ -318,7 +318,8 @@ class Stage3BrowserTests(unittest.TestCase):
         canvas = page.locator("#editorCanvas")
         rect = canvas.bounding_box()
         canvas.click(position={"x": rect["width"] * .5, "y": rect["height"] * .5})
-        self.assertIn("필수영역", page.locator("#elementList").inner_text())
+        # <details> is initially collapsed: inner_text() hides children; text_content reads the DOM.
+        self.assertIn("필수영역", page.locator("#elementList").text_content())
         self.assertEqual(page.locator("#g3Mode").input_value(), "local")
         page.locator("#applyBottomBtn").click()
         page.wait_for_function("document.body.dataset.view === 'analysis'", timeout=10000)
