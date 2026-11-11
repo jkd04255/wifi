@@ -1,0 +1,66 @@
+name: Rebuild preserved v1.6 app-window EXE and HTML
+
+on:
+  push:
+    branches:
+      - feat/optimizer-legacy-downloads
+    paths:
+      - tools/wifi_offline_launcher.py
+      - legacy/WiFi_Placement_Studio_v1.6_offline.html
+      - .github/workflows/legacy-windows-package.yml
+      - docs/LEGACY_ARTIFACTS.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-offline:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated Windows packager
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+      - name: Build Edge/Chrome app-mode Windows EXE preserving original HTML
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name WiFi_Placement_Studio_v1.6_App_Window --add-data "legacy/WiFi_Placement_Studio_v1.6_offline.html;." tools/wifi_offline_launcher.py
+      - name: Validate genuine PE EXE, bundled HTML, and reproducible source hash
+        shell: pwsh
+        run: |
+          @'
+          import hashlib
+          import pathlib
+          import struct
+          import subprocess
+
+          exe = pathlib.Path("dist/WiFi_Placement_Studio_v1.6_App_Window.exe")
+          html = pathlib.Path("legacy/WiFi_Placement_Studio_v1.6_offline.html")
+          data = exe.read_bytes()
+          assert len(data) > 2_000_000, "Windows launcher unexpectedly small"
+          assert data[:2] == b"MZ", "Not a Windows PE executable"
+          pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+          assert data[pe_offset:pe_offset+4] == b"PE\x00\x00", "PE header missing"
+          original = html.read_bytes()
+          assert len(original) > 50_000 and b"WifiEngine" in original
+          # Self-test must verify bundled HTML and available Edge/Chrome app-mode command.
+          subprocess.run([str(exe.resolve()), "--self-test"], check=True, timeout=120)
+          print("WINDOWS_PE_OK", len(data))
+          print("ORIGINAL_HTML_SHA256", hashlib.sha256(original).hexdigest())
+          print("REBUILT_EXE_SHA256", hashlib.sha256(data).hexdigest())
+          '@ | python -
+      - name: Upload Windows EXE and original offline HTML together
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiFi_Placement_Studio_v1.6_AppWindow_and_HTML
+          path: |
+            dist/WiFi_Placement_Studio_v1.6_App_Window.exe
+            legacy/WiFi_Placement_Studio_v1.6_offline.html
+            docs/LEGACY_ARTIFACTS.md
+          if-no-files-found: error
+          retention-days: 90
