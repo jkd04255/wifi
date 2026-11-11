@@ -156,3 +156,13 @@
 - [x] 신규 Chromium/WebKit 모바일 회귀 4개; Python 94/94 + 브라우저 25/25 = **119/119 PASS** ([Actions #42986058154](https://github.com/jkd04255/wifi/actions/runs/42986058154), code SHA `edd06870fe22c2b55945dd873f5a0e909c7b2017`).
 - [ ] 실제 iPhone Safari 및 VoiceOver, 팀 1/2/3 계약·보정 데이터 정합성, 실제 외곽, 70점 실측 검증.
 - [ ] PR #2/#3 정식 병합과 Pages 재배포 — **GATE 3 HOLD**.
+
+
+### GATE 3 Undo history and keyboard boundary follow-up (2026-11-11)
+
+- [x] Fix full 30-entry Undo history eviction when a required-pin touch drag is cancelled: stage snapshot during drag, commit only on pointerup, pointercancel restores X-Z without mutating history.
+- [x] Add regression for 30-entry Undo history preservation after cancellation (Chromium/WebKit).
+- [x] Add exact right/lower pin-radius boundary test; no-op keyboard movement must not create Undo entry.
+- [x] Latest CI [#42987876155](https://github.com/jkd04255/wifi/actions/runs/42987876155): Python 94/94 + Chromium/WebKit browser 27/27 PASS; HEAD `ee542b751b9eda123fe13d3bfefb41a3ec3ca928`.
+- [ ] Actual iPhone Safari/VoiceOver, real RF measurements and team 1/2/3 signed-off schemas.
+- [ ] PR #2/#3 merge and Pages deployment — **GATE 3 HOLD**.
