@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-html = Path("dist/WiFi_Placement_RequiredPin_70_NoLAN.html").resolve()
+html = Path("dist/WiFi_Placement_RequiredPoint_70_NoLAN.html").resolve()
 assert html.exists()
 
 with sync_playwright() as play:
