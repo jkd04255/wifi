@@ -732,13 +732,18 @@ async function g3LocalOptimize(){
   probes.push({x,z,priorityPct:w>=1.5?100:w<.5?-100:0,targetDbm:w>=1.5?-60:-67});
  }
  if(probes.every(p=>p.priorityPct===-100))probes[0].priorityPct=0;
+ for(const pin of (L.requiredPins||[]))for(const sample of requiredSamples(pin)){
+  probes.push({x:+sample.x.toFixed(6),z:+sample.z.toFixed(6),priorityPct:100,targetDbm:-51.5,minQualityScore:PIN_MIN_QUALITY});
+ }
+ if(probes.length>512)throw Error('필수영역 표본점이 최대 512개를 초과했습니다.');
  const predict=position=>{const trial={...L,router:{...L.router,x:position.x,z:position.z,y:position.y}};
    return {position,rssisDbm:probes.map(p=>+window.WifiEngine.value(trial,p.x,p.z).toFixed(2))};};
  const candidates=c.positions.map(item=>predict({x:item.x,z:item.z,y:item.y}));
  const current=predict({x:L.router.x,z:L.router.z,y:L.router.y});
  const r=await api('/optimize',{floor,lanPort,probes,candidates,current,routeGridStepM:.4});
- if(r.status!=='ok'||!r.recommendedPosition)throw Error('조건에 맞는 추천 위치를 찾지 못했습니다.');
- return {best:r.recommendedPosition,bestStats:{qualityScore:r.scoreAfter},currentStats:{qualityScore:r.scoreBefore},improvementPoints:r.deltaScore,candidates:r.feasibleCandidatesCount,weightsUsed:true,stage3:true,estimatedCableLengthM:r.estimatedCableLengthM,additionalApAdvised:r.additionalApAdvised,criticalCoveragePct:r.criticalCoveragePct,signalSource:'v1.6_local_estimate',reason:r.reason};
+ if(r.status!=='ok'||!r.recommendedPosition)throw Error((L.requiredPins||[]).length?'필수영역 예상 품질 70점과 설치·랜선 조건을 모두 만족하는 후보가 없습니다. 핀의 반경 또는 위치를 조정해 주세요.':'조건에 맞는 추천 위치를 찾지 못했습니다.');
+ if((L.requiredPins||[]).length&&r.requiredAreaSatisfied!==true)throw Error('필수영역 품질 조건이 확인되지 않아 추천을 중단했습니다.');
+ return {best:r.recommendedPosition,bestStats:{qualityScore:r.scoreAfter},currentStats:{qualityScore:r.scoreBefore},improvementPoints:r.deltaScore,candidates:r.feasibleCandidatesCount,weightsUsed:true,stage3:true,estimatedCableLengthM:r.estimatedCableLengthM,additionalApAdvised:r.additionalApAdvised,criticalCoveragePct:r.criticalCoveragePct,signalSource:'v1.6_local_estimate',requiredAreaSatisfied:r.requiredAreaSatisfied,requiredAreaMinimumQualityScore:r.requiredAreaMinimumQualityScore,requiredAreaSampleCount:r.requiredAreaSampleCount,reason:r.reason};
 }
 $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='공유기 후보 위치를 탐색 중입니다…';
@@ -746,6 +751,7 @@ $('optimizeBtn').onclick=async()=>{
  try{
   let resultBest;
   const objectiveWeighted=weighted||(L.zones||[]).length>0||(L.importanceStrokes||[]).length>0;
+  if((L.requiredPins||[]).length&&$('g3Mode').value!=='local')throw Error('필수영역 70점 조건은 4번 Python API 로컬 시연에서만 검증합니다. 해당 모드를 선택하세요.');
   if($('g3Mode').value==='local'){
     resultBest=await g3LocalOptimize();
     $('engineMode').textContent='4번 Python API · v1.6 예측값 시연 (미보정)';
@@ -769,6 +775,7 @@ $('optimizeBtn').onclick=async()=>{
     const warning=document.createElement('div');
     warning.textContent='v1.6 로컬 예측 시연이며 2번 RSSI 서버/3번 실측 보정 데이터와 연동되지 않았습니다. 집 외곽은 직사각형으로 가정합니다.';
     note.style.fontWeight='600';warning.style.color='#a34a35';box.append(note,warning);
+    if((L.requiredPins||[]).length){const mandatory=document.createElement('div');mandatory.style.fontWeight='700';mandatory.style.color='#168060';mandatory.textContent='필수영역 '+L.requiredPins.length+'곳 · '+best.requiredAreaSampleCount+'개 표본점 모두 70점 이상 · 최소 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점 (예측값)';box.append(mandatory);}
   }
   $('recommendation').hidden=false;
   $('statusLine').textContent=best.stage3?'4번 API 기반 추천 완료 (v1.6 미보정 예측값 시연)':'추천 위치를 찾았습니다. 보라색 BEST 마커를 확인하세요.';
@@ -792,7 +799,13 @@ $('importFile').onchange=async e=>{
   const r=converted.router;
   if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
   const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete',...(q.heightM==null?{}:{heightM:clamp(cleanNum(q.heightM,roomHeightM),.1,roomHeightM)})}));
-  const zones=(Array.isArray(converted.zones)?converted.zones:[]).map((q,i)=>({id:String(q.id||'zone-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),label:String(q.label||'중요 구역').slice(0,25),weightPct:brushInfo(q.weightPct==null?(cleanNum(q.weight,1)-1)*100:Number(q.weightPct)).pct}));
+  const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
+  if(rawPins.length>PIN_MAX_COUNT)throw Error('필수영역은 최대 12개까지입니다.');
+  const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth),radius=Number(pin.radiusM);
+   if(!Number.isFinite(radius)||radius<0.3||radius>3||x-radius<0||x+radius>w||z-radius<0||z+radius>depth)throw Error('필수영역 핀의 좌표 또는 반경이 유효하지 않습니다.');
+   return {id:String(pin.id||'required-'+i),x,z,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};});
+  // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
+  const zones=[];
   const readPaths=(key,min,parse)=>{const arr=Array.isArray(converted[key])?converted[key]:[];
    if(arr.length>300)throw Error('도면에 너무 많은 '+key+' 항목이 있습니다.');
    return arr.map((q,i)=>{if(!Array.isArray(q.points)||q.points.length<min||q.points.length>1500)throw Error('좌표열이 잘못됐습니다.');
@@ -809,7 +822,7 @@ $('importFile').onchange=async e=>{
   });
   pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
     router:{x:val(r.x,w),y:val(r.y,roomHeightM),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20)},
-    walls,zones,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
+    walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
   probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.');switchView('design');
