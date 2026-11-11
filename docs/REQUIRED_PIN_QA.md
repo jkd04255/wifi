@@ -53,3 +53,16 @@ Initial relevant GitHub Actions CI: https://github.com/jkd04255/wifi/actions/run
 Main branch and deployed Pages remain unchanged. PR #3 is Draft and based on Draft PR #2. Do **not** merge or deploy until integration contracts, real signal source, exterior footprint and full approval are verified. The proposed `minQualityScore` is compatible with requests that omit it.
 
 Remaining decisions: Continuous-area accuracy sampling vs verification, 2/3-team actual contracts, real measured RSSI calibration, physical phone QA and deployment architecture.
+
+
+## Final regression after JSON roundtrip coverage — 2026-11-11
+
+**Final functional/code SHA:** `68b5622b85192cad4ef49a94f49859b7a01e3f51`  
+**GitHub Actions:** https://github.com/jkd04255/wifi/actions/runs/42978598628 — `completed / success`.
+
+- Python unittest **94/94** passed.
+- Browser Playwright Chromium/WebKit **13/13** passed.
+- **Total 107/107** checks passed.
+- New browser case `test_import_export_preserves_required_pins_and_drops_old_rooms` confirms required pins persist in JSON and legacy room-purpose zones are not restored.
+- Old wall/brush/RSSI prediction and local optimizer regressions also passed.
+- Hardware/real RSSI and full continuously sampled disk are **not verified**. Draft PR #3 and parent PR #2 remain HOLD.
