@@ -105,3 +105,17 @@ Open `http://127.0.0.1:8001/preview/stage3.html`. Click the **필수영역** too
 - All scores are from v1.6 synthetic/un-calibrated predictions, and 17 discrete samples do not guarantee the quality of every point inside the continuous disk.
 - 1/2/3 teammate real data contracts, real wall/floor footprint, field measurements, actual iPhone Safari and Python production deployment remain unverified.
 - **Draft PR #3 stays unmerged. Main and GitHub Pages remain v1.6 and must NOT be updated under this gate.**
+
+
+## Mobile interaction and accessibility QA — 2026-11-11
+
+**Code/test SHA:** `cb6112a0612d8d3700d0134299d2fb8aa5aba322`  
+**GitHub Actions:** https://github.com/jkd04255/wifi/actions/runs/42984403224 — **completed/success**.
+
+- Python unit/contracts **94/94 PASS**; Playwright Chromium and WebKit desktop/mobile **21/21 PASS**; **115/115 total**.
+- `preview/stage3.html` **touch interaction**: CSS `touch-action:none` on drawing canvas, touch-aware hit target radius (34 CSS px vs mouse 19px); one primary pointer at a time, 10px touch / 5px mouse movement threshold to prevent accidental drags and unnecessary undo. Continuous drag follows unsnapped X-Z coordinates, maintains finger-to-center offset, clamps center to floor by pin radius, and commits exactly one Undo on movement. Pointer cancellation restores prior coordinate.
+- **Overlapping pins**: repeated taps cycle through hit-tested pins without making duplicate pins. Drag moves the selected pin; an explicit labeled select and “다음 핀” button provide deterministic selection even when pins overlap. Selected pin receives a higher contrast outline; status reads number and coordinates.
+- **Accessibility**: `#requiredPinSelect` and `#requiredNextPin` have 44px minimum target height; selected radius input has `aria-label`, description link, value text, keyboard arrow-key support and visible focus. The active selection status is announced via a polite live region.
+- **Browser tests added**: `test_mobile_touch_pin_drag_and_single_step_undo_both_engines`, `test_mobile_overlapping_pins_cycle_and_explicit_picker_both_engines`, `test_mobile_pin_accessibility_keyboard_radius_and_touch_targets`, `test_mobile_touch_jitter_does_not_create_undo_move`. Mobile tests use an emulated touchscreen for true taps and synthetic PointerEvent sequences to check drag handlers; **they do not substitute actual iPhone Safari/device tests**.
+- Existing wall/sketch, brush (+100/0/-100), 17 mandatory samples, 70/100 hard constraints, local API and JSON import/export regression tests retained.
+- No `index.html`/v1.6 legacy change, no GitHub Pages deployment and no main merge. Parent Draft PR #2 and this Draft PR #3 remain **GATE 3 HOLD** until 1/2/3-team contracts and physical verification are provided.
