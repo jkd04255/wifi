@@ -93,9 +93,45 @@ def main():
     try:
         verify_package()
         if "--self-test" in sys.argv:
-            print("REQUIRED_PIN_70_HARD_CONSTRAINT_OK")
+            # Import the *actual Windows backend* too, not just FastAPI/Pydantic.
+            # A compact PyInstaller package may be missing pythonnet CLR DLLs
+            # even though the optimizer itself still imports successfully.
+            import webview
+            from webview.platforms import edgechromium
+            print("REQUIRED_PIN_70_HARD_CONSTRAINT_AND_WEBVIEW_IMPORT_OK")
             return 0
-        # Import the GUI only after --self-test, to avoid booting WebView in CI.
+        if "--integration-test" in sys.argv:
+            import json
+            from urllib.request import Request, urlopen
+            port = choose_free_local_port()
+            server, thread = start_local_server(port)
+            try:
+                root = f"http://127.0.0.1:{port}"
+                with urlopen(root + "/preview/stage3.html", timeout=15) as response:
+                    preview = response.read()
+                    assert response.status == 200 and b'data-tool="required"' in preview
+                    assert b'data-tool="zone"' not in preview
+                payload = {
+                    "floor": {"widthM": 4, "depthM": 3, "walls": []},
+                    "lanPort": {"x": .5, "z": .5, "y": .3, "maxCableLengthM": 20},
+                    "probes": [{"x": 1., "z": 1., "priorityPct": 100,
+                                "targetDbm": -51.5, "minQualityScore": 70}],
+                    "candidates": [{"position": {"x": 2., "z": 1.5, "y": 1.2},
+                                    "rssisDbm": [-80]}]
+                }
+                request = Request(root + "/optimize",
+                                  data=json.dumps(payload).encode("utf-8"),
+                                  headers={"Content-Type": "application/json"}, method="POST")
+                with urlopen(request, timeout=20) as response:
+                    output = json.loads(response.read())
+                if output["status"] != "no_feasible_candidate" or output["requiredAreaSatisfied"] is not False:
+                    raise AssertionError("Local FastAPI hard-constraint contract failed")
+                print("LOCAL_HTTP_REQUIRED_PIN_70_ENFORCED")
+            finally:
+                server.should_exit = True
+                thread.join(timeout=6)
+            return 0
+        # Start UI only after explicit CI smoke paths.
         import webview
         port = choose_free_local_port()
         server, thread = start_local_server(port)
