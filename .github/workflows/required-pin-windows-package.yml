@@ -1,4 +1,4 @@
-name: Package tiny single-point mandatory 70 EXE and HTML
+name: Package tiny single-point 70 EXE and HTML without height limit
 
 on:
   push:
@@ -38,15 +38,15 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path build,dist | Out-Null
           rc.exe /nologo /fo build\required_pin_nolan.res tools\required_pin_nolan.rc
-          cl.exe /nologo /utf-8 /W3 /O1 /MT /DUNICODE /D_UNICODE tools\required_pin_nolan_win32.c build\required_pin_nolan.res /Fe:dist\WiFi_Placement_RequiredPoint_70_NoLAN.exe /link /SUBSYSTEM:WINDOWS shlwapi.lib user32.lib advapi32.lib
+          cl.exe /nologo /utf-8 /W3 /O1 /MT /DUNICODE /D_UNICODE tools\required_pin_nolan_win32.c build\required_pin_nolan.res /Fe:dist\WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe /link /SUBSYSTEM:WINDOWS shlwapi.lib user32.lib advapi32.lib
       - name: Validate native PE signature and embedded no-LAN HTML
         shell: pwsh
         run: |
           @'
           from pathlib import Path
           import struct,subprocess,hashlib
-          exe=Path("dist/WiFi_Placement_RequiredPoint_70_NoLAN.exe")
-          html=Path("dist/WiFi_Placement_RequiredPoint_70_NoLAN.html")
+          exe=Path("dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe")
+          html=Path("dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.html")
           data=exe.read_bytes()
           assert data[:2]==b"MZ"
           assert data[struct.unpack_from("<I",data,0x3c)[0]:][:4]==b"PE\x00\x00"
@@ -69,10 +69,10 @@ jobs:
       - name: Upload tiny native EXE and standalone fully-functional HTML
         uses: actions/upload-artifact@v4
         with:
-          name: WiFi_RequiredPoint_70_NoLAN_EXE_HTML
+          name: WiFi_RequiredPoint_70_NoHeightLimit_EXE_HTML
           path: |
-            dist/WiFi_Placement_RequiredPoint_70_NoLAN.exe
-            dist/WiFi_Placement_RequiredPoint_70_NoLAN.html
+            dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe
+            dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.html
             docs/REQUIRED_PIN_DESKTOP.md
           retention-days: 90
           if-no-files-found: error
