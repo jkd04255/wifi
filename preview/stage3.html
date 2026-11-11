@@ -573,6 +573,13 @@ function finishEraser(p){
  eraseChanged=false;
 }
 editor.addEventListener('pointerdown',e=>{if(e.button!==0)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);editor.setPointerCapture(e.pointerId);pointerId=e.pointerId;
+ if(tool==='required'){
+ pointerId=null;const radius=Number($('requiredRadius').value);
+ if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
+ if(!Number.isFinite(radius)||p.x-radius<0||p.x+radius>L.width||p.y-radius<0||p.y+radius>L.depth){toast('반경이 도면 밖으로 나갑니다. 핀을 옮기거나 반경을 줄여주세요.');return;}
+ pushUndo();L.requiredPins=L.requiredPins||[];L.requiredPins.push({id:uid('required'),x:p.x,z:p.y,radiusM:radius,minQualityScore:PIN_MIN_QUALITY});
+ $('g3Mode').value='local';changed('필수영역 추가 · 핀 반경 17개 표본점의 예측 품질 70점 이상 필수');renderElements();renderEditor();return;
+ }
  if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
  start=p;preview=p;hoverPoint=p;
  if(tool==='sketch')currentPath={tool:'sketch',points:[[p.x,p.y]],material:'concrete'};
@@ -582,7 +589,7 @@ editor.addEventListener('pointermove',e=>{const raw=positions(editor,e),p=['sket
  $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
  if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
  if(start){preview=p;if(currentPath){const pts=currentPath.points,last=pts[pts.length-1];if(pts.length<1400&&Math.hypot(p.x-last[0],p.y-last[1])>.065)pts.push([p.x,p.y]);}renderEditor();}
- else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':'crosshair';if(tool==='brush'||tool==='erase')renderEditor();}});
+ else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
 function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);pointerId=null;
  if(tool==='erase'){finishEraser(p);return;}
  if(!start){currentPath=null;return;}
@@ -599,10 +606,10 @@ function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['
   if(sides.length){pushUndo();L.walls.push(...sides);changed('직사각형 벽 4면을 그렸습니다. 바로 Apply로 분석할 수 있습니다.');}
   else toast('직사각형은 가로·세로 각각 최소 0.25m 이상 드래그해 주세요.');
  }
- else if(tool==='zone'&&Math.abs(p.x-a.x)>=.5&&Math.abs(p.y-a.y)>=.5){pushUndo();L.zones.push({id:uid('zone'),x1:a.x,z1:a.y,x2:p.x,z2:p.y,label:$('zoneLabel').value.trim()||'중요 구역',weightPct:Number($('zoneWeight').value)});changed();}
+
  currentPath=null;renderEditor();}
 editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
-editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase')renderEditor()}});
+editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
 heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
 function togglePalette(open){
  $('editorWorkarea').classList.toggle('palette-collapsed',!open);
@@ -616,9 +623,9 @@ for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>
  tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];
  document.querySelectorAll('[data-tool]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
- if(tool==='zone'){togglePalette(true);$('roomDrawer').open=true;}
+ if(tool==='required'){togglePalette(true);$('requiredDrawer').open=true;}
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
- renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',zone:'방의 영역을 사각형으로 지정하세요.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
+ renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 반경 품질 70점 이상이 필요한 핀이 추가됩니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
 };
 for(const button of document.querySelectorAll('.palette-choice'))button.onclick=()=>{
  selectedWeight=Number(button.dataset.weight);const color=brushInfo(selectedWeight);
@@ -626,6 +633,7 @@ for(const button of document.querySelectorAll('.palette-choice'))button.onclick=
  $('brushWeightValue').textContent=`${color.label} · ${selectedWeight>=0?'+':''}${selectedWeight}%`;
  tool='brush';document.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool==='brush';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
  renderEditor();};
+$('requiredRadius').oninput=e=>{$('requiredRadiusValue').textContent=fmt(e.target.value)+' m';renderEditor()};
 $('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
 $('eraserSize').oninput=e=>{$('eraserSizeValue').textContent=fmt(e.target.value,2)+' m';renderEditor()};
 $('orthogonalizeBtn').onclick=()=>{
@@ -659,7 +667,8 @@ function applyArea(){
  const oldW=L.width,oldH=L.depth,{width,height}=sizeForPyeong(p),sx=width/oldW,sy=height/oldH;
  pushUndo();L.width=width;L.depth=height;L.areaPyeong=p;
  L.router.x*=sx;L.router.z*=sy;probe.x*=sx;probe.z*=sy;
- for(const v of [...L.walls,...L.zones]){v.x1*=sx;v.x2*=sx;v.z1*=sy;v.z2*=sy;}
+ for(const v of L.walls){v.x1*=sx;v.x2*=sx;v.z1*=sy;v.z2*=sy;}
+ for(const pin of (L.requiredPins||[])){pin.x*=sx;pin.z*=sy;pin.radiusM*=Math.sqrt(sx*sy);}
  for(const path of [...(L.sketches||[]),...(L.importanceStrokes||[])]){
   if(path.points)path.points=path.points.map(([x,y])=>[x*sx,y*sy]);
   if('radiusM' in path)path.radiusM*=Math.sqrt(sx*sy);
