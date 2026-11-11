@@ -120,3 +120,9 @@
 - [ ] 후속 문구 보완 HEAD 전체 회귀 CI 확인.
 - [ ] 실측 데이터 계약, 실제 외곽, 연속 원판 범위의 정확성 검증.
 - [ ] 본 Draft PR #3 및 기반 Draft PR #2의 병합/Pages 배포 — **HOLD**.
+
+
+### Required pin QA finalized (2026-11-11)
+- [x] Final code commit `68b5622b85192cad4ef49a94f49859b7a01e3f51` Python 94/94 + browser 13/13 = **107 PASS** ([Actions #42978598628](https://github.com/jkd04255/wifi/actions/runs/42978598628)).
+- [x] JSON round-trip pin survival and imported legacy room-purpose removal.
+- [ ] Full GATE 3 approval and public deployment — **HOLD**.
