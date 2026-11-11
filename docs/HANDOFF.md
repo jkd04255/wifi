@@ -166,3 +166,17 @@
 - Browser tests use emulated touchscreen taps plus synthetic touch pointer events; **not real iPhone Safari/VoiceOver QA**. Read [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for test and local preview instructions.
 - **No changes** to legacy v1.6 or main, no PR merge and no Pages deployment. GATE 3 HOLD until team 1/2/3 signed-off data schemas, real measurement comparison and physical verification.
 - Next suggested scoped work: additional touch edge/cancel and keyboard boundary/focus QA, or team API adapter only after real contracts are committed.
+
+
+## 2026-11-11 — Undo-capacity cancellation fix and keyboard floor-edge QA
+
+- Latest branch HEAD: `ee542b751b9eda123fe13d3bfefb41a3ec3ca928`; feature branch `feat/optimizer-required-pin`, Draft PR #3 remains open/draft.
+- Confirmed a real history bug: cancelling a pin drag after the 30-entry Undo stack was full removed the staged drag snapshot but could not restore the oldest entry that `pushUndo()` had already evicted.
+- Fixed by staging the pre-drag JSON snapshot on the drag state, committing it to bounded Undo history only on successful pointerup, and restoring coordinates without changing history on pointercancel.
+- Added browser regression `test_cancelled_drag_preserves_full_undo_history`: fill 30 Undo entries, cancel a threshold-crossing touch drag, and verify both the 29th and 30th Undo states.
+- Added `test_keyboard_nudge_stops_at_pin_radius_and_noop_keeps_undo`: keyboard X/Z nudge stops at the radius-adjusted floor boundary; further no-op movement does not add an Undo entry.
+- Exact latest HEAD CI: [Actions #42987876155](https://github.com/jkd04255/wifi/actions/runs/42987876155) completed/success — Python **94/94** and Chromium/WebKit browser suite **27/27**, all pass.
+- The previous multitouch, drag-cancel, overlapping-pin selection, selection restore, and keyboard movement regressions remain in the same suite.
+- Actual iPhone Safari/VoiceOver and physical RF measurement remain unverified. Team 1/2/3 contracts still absent; no actual RSSI adapter/calibration is claimed.
+- Preserve legacy v1.6, `main`, concrete walls, importance brush and 70-point hard requirement. **GATE 3 HOLD; do not merge PR #2/#3 or deploy Pages.**
+- Next scoped work: continue focused selection/focus-return and multi-touch interruption QA; integrate actual team adapters only after signed-off source/schema and sample data are committed.
