@@ -84,7 +84,8 @@ engine = r"""
      return min;
    }
    function feasible(x,z){
-     if(x<0||x>L.width||z<0||z>L.depth)return false;
+     // Keep the access point physically inside the floor, never on its edge.
+     if(x<.2||x>L.width-.2||z<.2||z>L.depth-.2)return false;
      for(const a of L.walls||[]){
        const dx=a.x2-a.x1,dz=a.z2-a.z1,d2=dx*dx+dz*dz;
        const t=d2?clamp(((x-a.x1)*dx+(z-a.z1)*dz)/d2,0,1):0;
