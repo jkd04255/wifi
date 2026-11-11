@@ -135,3 +135,13 @@
 - [x] Python 94 + Chromium/WebKit 17 = **111/111 PASS** ([GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205), code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`).
 - [ ] 실제 팀원 1·2·3 계약, 예측/실측 보정 비교, 연속 면적 품질 및 실기기 검증.
 - [ ] Draft PR #3/#2 main 병합 및 GitHub Pages 배포 — **GATE HOLD**.
+
+
+### GATE 3 모바일 필수영역 핀 조작성 / 접근성 (2026-11-11)
+
+- [x] 터치 드래그 허용 범위 확장, 터치 손떨림 오동작 방지, 한 번의 Undo / 취소 동작.
+- [x] 겹친 핀 반복 터치 선택 순환, 핀 목록과 다음 핀 버튼, 선택 테두리 표시.
+- [x] 선택 핀 반경의 키보드·스크린리더 설명, 터치 목표 크기 개선.
+- [x] 모바일 Chromium/WebKit 테스트 4종 추가; 전체 Python 94 + browser 21 = **115 PASS** ([Actions #42984403224](https://github.com/jkd04255/wifi/actions/runs/42984403224)).
+- [ ] 1/2/3팀 데이터 계약, 예측/실측 정합성, 실제 iPhone Safari 터치 동작 및 실내 외곽 정확성 검증.
+- [ ] GATE 3 완료, PR #2/#3 병합 및 Pages 재배포 — **HOLD**.
