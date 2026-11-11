@@ -375,6 +375,18 @@ replace_once(
     x:val(pin.x,w),z:val(pin.z,depth),minQualityScore:PIN_MIN_QUALITY}));""",
     "legacy radius import ignored")
 
+# Floor size editing must scale the point coordinate, NOT an old radius.
+replace_once(
+    "for(const pin of (L.requiredPins||[])){pin.x*=sx;pin.z*=sy;pin.radiusM*=Math.sqrt(sx*sy);}",
+    "for(const pin of (L.requiredPins||[])){pin.x*=sx;pin.z*=sy;}",
+    "resizing point-only pins")
+source=source.replace(
+    "필수영역 없음 · 기준은 반경 17개 표본점의 예상 품질 ≥70점입니다.",
+    "필수영역 없음 · 각 지정 좌표의 예상 품질이 70점 이상이어야 합니다.")
+# No radius controls or informational wording should be left in the shipped UI.
+source=source.replace("핀마다 중심·안쪽·둘레의 17개 표본점", "핀마다 지정한 단 하나의 좌표")
+source=source.replace("핀당 17개 표본점", "핀당 지정 좌표 1개")
+
 # All references to radiusM left in the app must be unrelated brush/eraser settings.
 assert 'id="requiredRadius"' not in source
 assert 'id="selectedRequiredRadius"' not in source
