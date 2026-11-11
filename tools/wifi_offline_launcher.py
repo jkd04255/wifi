@@ -67,7 +67,7 @@ def supported_app_browser() -> Path:
         import winreg
         for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for executable in ("msedge.exe", "chrome.exe"):
-                key_path = rf"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\{executable}"
+                key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\" + executable
                 try:
                     with winreg.OpenKey(root, key_path) as key:
                         location, _ = winreg.QueryValueEx(key, None)
