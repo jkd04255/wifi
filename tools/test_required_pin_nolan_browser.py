@@ -41,7 +41,7 @@ with sync_playwright() as p:
             recommendation=page.locator("#recommendBody").inner_text()
             assert "70점 이상" in recommendation,recommendation
             assert "총 17개 표본점" in recommendation,recommendation
-            assert "배선 제약" in recommendation,recommendation
+            assert "조건 없이 계산" in recommendation,recommendation
             results=page.locator("#requiredResults").inner_text()
             assert "추천 최소" in results,results
             assert "70점 충족" in results,results
