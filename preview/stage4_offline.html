@@ -473,10 +473,7 @@ function syncSelectedRequired(){
  select.value=pin.id;
  const n=pins.indexOf(pin)+1;
  $('requiredSelectedName').textContent='필수영역 '+n+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';
- $('selectedRequiredRadius').value=String(pin.radiusM);
- $('selectedRequiredRadius').setAttribute('aria-valuetext',fmt(pin.radiusM)+'미터');
- $('selectedRequiredRadiusValue').textContent=fmt(pin.radiusM)+' m';
- $('requiredSelectedHint').textContent='선택된 필수영역 '+n+'의 반경을 수정합니다. 키보드 방향키로도 조절할 수 있습니다.';
+ $('requiredSelectedHint').textContent='선택한 점의 위치만 변경할 수 있습니다.';
  $('requiredSelectionStatus').textContent='필수영역 '+n+' 선택됨 · 핀 중심을 드래그해 이동 · 겹친 핀은 반복 터치 또는 목록으로 선택';
 }
 function selectRequiredPin(id){
@@ -668,12 +665,12 @@ editor.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
  e.preventDefault();
  if(!(L.requiredPins||[]).length){
-  const radius=Number($('requiredRadius').value);
+  const radius=0;
   const x=L.width/2,z=L.depth/2;
   if(!(radius>=.3&&radius<=3&&x>=radius&&L.width-x>=radius&&z>=radius&&L.depth-z>=radius)){
    toast('도면 크기에 비해 핀 반경이 큽니다. 반경을 줄여 주세요.');return;
   }
-  pushUndo();const pin={id:uid('required'),x,z,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};
+  pushUndo();const pin={id:uid('required'),x,z,minQualityScore:PIN_MIN_QUALITY};
   L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
   changed('키보드로 필수영역 핀을 도면 중앙에 추가했습니다.');
  }else{
@@ -764,7 +761,7 @@ for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
  if(tool==='required'){togglePalette(true);$('requiredDrawer').open=true;}
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
- renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 반경 품질 70점 이상이 필요한 핀이 추가됩니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
+ renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 해당 한 점의 예상 품질 70점 이상을 요구합니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
 };
 for(const button of document.querySelectorAll('.palette-choice'))button.onclick=()=>{
  selectedWeight=Number(button.dataset.weight);const color=brushInfo(selectedWeight);
@@ -839,7 +836,7 @@ $('resetBtn').onclick=()=>{pushUndo();L=sample();selectedRequiredId=null;require
 function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
 $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 위치가 변경되었습니다. Apply로 다시 계산하세요.')};
 $('receiverY').onchange=e=>{
- const n=Number(e.target.value);if(!Number.isFinite(n)||n<0||n>L.roomHeightM){toast('수신기 높이는 바닥부터 천장 사이여야 합니다.');syncLayout();return;}
+ const n=Number(e.target.value);if(!Number.isFinite(n)||n<0){toast('수신기 높이는 0 이상으로 지정하세요.');syncLayout();return;}
  L.receiverY=n;changed('수신기 높이(Y)를 변경했습니다.');};
 $('roomHeightM').onchange=e=>{
  const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>10){toast('천장 높이는 1–10m입니다.');syncLayout();return;}
@@ -956,9 +953,9 @@ $('importFile').onchange=async e=>{
   const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete'}));
   const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
   if(rawPins.length>PIN_MAX_COUNT)throw Error('필수영역은 최대 12개까지입니다.');
-  const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth),radius=Number(pin.radiusM);
-   if(!Number.isFinite(radius)||radius<0.3||radius>3||x-radius<0||x+radius>w||z-radius<0||z+radius>depth)throw Error('필수영역 핀의 좌표 또는 반경이 유효하지 않습니다.');
-   return {id:String(pin.id||'required-'+i),x,z,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};});
+  const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth);
+   if(x<0||x>w||z<0||z>depth)throw Error('필수영역 핀의 좌표 또는 반경이 유효하지 않습니다.');
+   return {id:String(pin.id||'required-'+i),x,z,minQualityScore:PIN_MIN_QUALITY};});
   // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
   const zones=[];
   const readPaths=(key,min,parse)=>{const arr=Array.isArray(converted[key])?converted[key]:[];
@@ -1003,6 +1000,41 @@ $('backToEditorBtn').onclick=()=>switchView('design');
 $('analysisTab').onclick=enterAnalysis;
 $('applyFromEditorBtn').onclick=enterAnalysis;
 $('applyBottomBtn').onclick=enterAnalysis;
+
+// Isolated offline mode. One sample per pin; no LAN/cable/ceiling constraints.
+async function optimizeOfflinePins(){
+ const pins=L.requiredPins||[],step=Math.max(.65,Math.max(L.width,L.depth)/12),search=Math.max(.5,Math.max(L.width,L.depth)/14),sample=[];
+ const isWeighted=weighted||(L.importanceStrokes||[]).length>0;
+ for(let z=step/2;z<L.depth;z+=step)for(let x=step/2;x<L.width;x+=step)sample.push({x,z,w:isWeighted?window.WifiEngine.weight(L,x,z):1});
+ if(!sample.some(s=>s.w>0))for(const s of sample)s.w=1;
+ const sumW=sample.reduce((n,s)=>n+s.w,0);
+ const score=(x,z)=>{const trial={...L,router:{...L.router,x,z}},cfg=window.WifiEngine.settings(L);let sum=0,weak=0;
+  for(const p of sample){const v=window.WifiEngine.value(trial,p.x,p.z,cfg);sum+=qualityPoint(v)*p.w;if(v< -75)weak+=p.w;}
+  return {quality:sum/sumW,objective:(sum-12*weak)/sumW};};
+ const before=score(L.router.x,L.router.z),valid=(x,z)=>(L.walls||[]).every(w=>{
+   const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
+ let bestPoint=null,candidates=0;
+ const check=(x,z)=>{if(!valid(x,z))return;candidates++;if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<PIN_MIN_QUALITY-1e-8))return;
+  const current=score(x,z);if(!bestPoint||current.objective>bestPoint.score.objective)bestPoint={x,z,score:current};};
+ const nx=Math.max(2,Math.ceil(L.width/search)),nz=Math.max(2,Math.ceil(L.depth/search));
+ for(let z=0;z<=nz;z++)for(let x=0;x<=nx;x++)check(L.width*x/nx,L.depth*z/nz);
+ check(L.router.x,L.router.z);
+ if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
+ if(!bestPoint)throw Error(pins.length?'필수 지정점의 예상 품질 70점 조건을 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.');
+ const min=pins.length?Math.min(...pins.map(pin=>requiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+before.quality.toFixed(1)},bestStats:{qualityScore:+bestPoint.score.quality.toFixed(1)},improvementPoints:+(bestPoint.score.objective-before.objective).toFixed(1),stage3:true,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:min,requiredAreaSampleCount:pins.length,candidates,weightsUsed:isWeighted};
+}
+$('optimizeBtn').onclick=async()=>{
+ setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
+ await new Promise(resolve=>setTimeout(resolve,25));
+ try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
+ const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m','품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점','후보 '+best.candidates+'개 검토 · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'필수 지정점 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 최소 예상 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점 (70 이상)':''),'LAN·케이블·천장·벽 높이 제한 미적용. RSSI 미보정 예측값'];
+ for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
+ $('recommendation').hidden=false;$('statusLine').textContent='오프라인 공유기 추천 완료';$('engineMode').textContent='오프라인 JS · 미보정 예측';renderHeat();renderRequiredStatus();
+ }catch(err){best=null;$('recommendation').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
+ finally{setBusy(false)}
+};
+
 switchView('design');
 })();
 
