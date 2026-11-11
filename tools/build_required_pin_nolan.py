@@ -43,14 +43,7 @@ engine = r"""
  function optimize(layout,gridStep=.35,searchStep=.75,weighted=true){
    const L=normalizeLayout(layout),p=settings(L),sample=[];
    const pins=L.requiredPins||[],mandatory=[];
-   for(const pin of pins){
-     mandatory.push({x:pin.x,z:pin.z,minimum:70});
-     for(const scale of [0.5,1])for(let i=0;i<8;i++){
-       const a=2*Math.PI*i/8;
-       mandatory.push({x:pin.x+Math.cos(a)*pin.radiusM*scale,
-                       z:pin.z+Math.sin(a)*pin.radiusM*scale,minimum:70});
-     }
-   }
+   for(const pin of pins)mandatory.push({x:pin.x,z:pin.z,minimum:70});
    const columns=Math.max(1,Math.ceil(L.width/gridStep)),rows=Math.max(1,Math.ceil(L.depth/gridStep));
    for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
      const x=Math.min(L.width,(col+.5)*gridStep),z=Math.min(L.depth,(row+.5)*gridStep);
@@ -235,12 +228,171 @@ source=source.replace('Wi-Fi Placement Studio v1.6 · Offline + Python API',
 source=source.replace('추천하려면 4번 Python 로컬 API 실행과 LAN 포트·랜선 길이 입력이 필요합니다.',
                       '추천은 로컬 RSSI 모델로 실행되며 별도 배선 정보 입력은 필요하지 않습니다.')
 
+
+# Point-only mandatory pins: every pin tests exactly its X/Z coordinate.
+# Keep the pre-existing wall/importance tools and 70-point hard feasibility.
+def replace_section(begin: str, finish: str, replacement: str, label: str) -> None:
+    global source
+    first=source.find(begin)
+    assert first>=0, f"{label}: beginning anchor not found"
+    last=source.find(finish,first+len(begin))
+    assert last>first, f"{label}: end anchor not found"
+    source=source[:first]+replacement+source[last:]
+
+
+replace_section(
+    '<details class="palette-drawer" id="requiredDrawer">',
+    '<details class="palette-drawer" id="elementsDrawer">',
+    """<details class="palette-drawer" id="requiredDrawer">
+    <summary><span>◎ 필수영역 · 지정 점 예상 품질 70점 이상</span><span class="summary-meta">위치 핀</span></summary>
+    <div class="drawer-content">
+      <p>필수영역은 <b>정확히 지정한 점 1곳</b>에서 예상 Wi-Fi 품질 70점 이상을 요구합니다. 반경이나 면적 검사는 없습니다.</p>
+      <p>도면에서 핀을 클릭해 추가하고 중심을 드래그해 이동할 수 있습니다. 기존 핀을 여러 개 지정할 수도 있습니다.</p>
+      <div id="requiredPinPicker" hidden style="border-top:1px solid #dce5ef;padding-top:10px;margin-top:10px">
+        <label class="field-label" for="requiredPinSelect">편집할 필수영역 핀</label>
+        <div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 필수영역 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary" aria-label="다음 필수영역 핀 선택">다음 핀</button></div>
+        <p id="requiredSelectionStatus" role="status" aria-live="polite" class="required-selection-hint">핀을 드래그해 이동하세요. 겹친 핀은 반복 터치하거나 목록에서 선택할 수 있습니다.</p>
+      </div>
+      <div id="requiredSelectedControls" hidden style="border-top:1px solid #dce5ef;margin-top:12px;padding-top:12px">
+        <strong id="requiredSelectedName">선택된 필수영역</strong><p id="requiredSelectedHint" style="font-size:11px">선택 핀의 좌표를 드래그·방향키로 변경할 수 있습니다.</p>
+      </div>
+      <p>기존 벽과 중요도 브러시는 그대로 반영합니다. 별도의 랜 포트·랜선 정보는 필요하지 않습니다. 최대 12개.</p>
+    </div>
+  </details>
+  """,
+    "required pin drawer")
+
+replace_section(
+    'function requiredSamples(pin){',
+    'function qualityPoint(rssi)',
+    """function requiredSamples(pin){return [{x:pin.x,z:pin.z}];}
+""", "single exact location")
+
+replace_section(
+    "function drawRequiredPin(ctx,pin,sx,sy,passed=null){",
+    "function renderRequiredStatus(){",
+    """function drawRequiredPin(ctx,pin,sx,sy,passed=null){
+ const x=pin.x*sx,y=pin.z*sy;
+ const color=passed===true?'#138b66':passed===false?'#c85448':'#6949c6';
+ ctx.save();
+ ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);
+ ctx.fillStyle='rgba(255,255,255,.85)';ctx.fill();
+ ctx.strokeStyle=color;ctx.lineWidth=1.6;ctx.stroke();
+ ctx.beginPath();ctx.arc(x,y-5,7,Math.PI,0);
+ ctx.lineTo(x,y+10);ctx.closePath();ctx.fillStyle=color;ctx.fill();
+ ctx.beginPath();ctx.arc(x,y-5,2.5,0,Math.PI*2);
+ ctx.fillStyle='#fff';ctx.fill();
+ ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillStyle=color;
+ ctx.fillText('70+',x+15,y-14);
+ if(pin.id&&pin.id===selectedRequiredId&&ctx===eCtx){
+  ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);
+  ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,21,0,Math.PI*2);
+  ctx.strokeStyle='#3c228e';ctx.lineWidth=2.5;ctx.stroke();
+ }
+ ctx.restore();
+}
+""", "visible point pin without radius circle")
+
+replace_once(
+    """ $('selectedRequiredRadius').value=String(pin.radiusM);
+ $('selectedRequiredRadius').setAttribute('aria-valuetext',fmt(pin.radiusM)+'미터');
+ $('selectedRequiredRadiusValue').textContent=fmt(pin.radiusM)+' m';
+ $('requiredSelectedHint').textContent='선택된 필수영역 '+n+'의 반경을 수정합니다. 키보드 방향키로도 조절할 수 있습니다.';""",
+    """ $('requiredSelectedHint').textContent='선택한 핀의 정확한 좌표가 품질 70점 이상인지 검증합니다. 방향키로 이동할 수 있습니다.';""",
+    "remove selected pin radius state")
+
+replace_once(
+    " $('requiredStatus').textContent='필수영역 없음 · 반경의 17개 표본점당 예상 품질 ≥70';",
+    " $('requiredStatus').textContent='필수영역 없음 · 지정한 각 점의 예상 품질 ≥70';",
+    "point-only status")
+replace_once(
+    "  name.textContent='◎ 필수영역 '+(i+1)+' · 반경 '+fmt(pin.radiusM)+'m';",
+    "  name.textContent='◎ 필수영역 '+(i+1)+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';",
+    "per-point result title") if "  name.textContent='◎ 필수영역 '+(i+1)+' · 반경 '+fmt(pin.radiusM)+'m';" in source else None
+source=source.replace(
+    "name.textContent='◎ 필수영역 '+(i+1)+' · 반경 '+fmt(pin.radiusM)+'m';",
+    "name.textContent='◎ 필수영역 '+(i+1)+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';")
+source=source.replace(
+    "caveat.textContent='핀당 17개 표본점의 RSSI 모델 예측이며, 원형 전체나 실측 품질 보장이 아닙니다.';",
+    "caveat.textContent='각 핀의 정확한 한 좌표에 대한 미보정 RSSI 예측값입니다. 실제 측정 품질은 다를 수 있습니다.';")
+source=source.replace(
+    "textContent='필수영역 없음 · 기준은 반경 17개 표본점의 예상 품질 ≥70점입니다.'",
+    "textContent='필수영역 없음 · 기준은 지정한 각 좌표의 예상 품질 ≥70점입니다.'")
+source=source.replace(
+    "· 반경 '+fmt(item.radiusM)+'m'",
+    "") if False else source
+replace_once(
+    "item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 반경 '+fmt(item.radiusM)+'m'",
+    "item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 정확한 점 1곳'",
+    "element summary without radius")
+
+replace_once(
+    "if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);",
+    "if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y},sx,sy);",
+    "pointer hover no radius")
+replace_once(
+    "const x=clamp(point.x+drag.offsetX,pin.radiusM,L.width-pin.radiusM);",
+    "const x=clamp(point.x+drag.offsetX,0,L.width);",
+    "drag x bounds")
+replace_once(
+    "const z=clamp(point.y+drag.offsetZ,pin.radiusM,L.depth-pin.radiusM);",
+    "const z=clamp(point.y+drag.offsetZ,0,L.depth);",
+    "drag z bounds")
+replace_once(
+    "const x=+clamp(pin.x+d[0]*step,pin.radiusM,L.width-pin.radiusM).toFixed(3);",
+    "const x=+clamp(pin.x+d[0]*step,0,L.width).toFixed(3);",
+    "keyboard x bounds")
+replace_once(
+    "const z=+clamp(pin.z+d[1]*step,pin.radiusM,L.depth-pin.radiusM).toFixed(3);",
+    "const z=+clamp(pin.z+d[1]*step,0,L.depth).toFixed(3);",
+    "keyboard z bounds")
+replace_section(
+    "  const radius=Number($('requiredRadius').value);",
+    "  changed('키보드로 필수영역 핀을 도면 중앙에 추가했습니다.');",
+    """  const x=L.width/2,z=L.depth/2;
+  pushUndo();const pin={id:uid('required'),x,z,minQualityScore:PIN_MIN_QUALITY};
+  L.requiredPins.push(pin);selectedRequiredId=pin.id;
+""", "keyboard pin creation")
+replace_section(
+    "   pointerId=null;const place=snapped(raw),radius=Number($('requiredRadius').value);",
+    "   changed('필수영역 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');",
+    """   pointerId=null;const place=snapped(raw);
+   if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
+   pushUndo();L.requiredPins=L.requiredPins||[];
+   const pin={id:uid('required'),x:clamp(place.x,0,L.width),z:clamp(place.y,0,L.depth),minQualityScore:PIN_MIN_QUALITY};
+   L.requiredPins.push(pin);selectedRequiredId=pin.id;
+""", "pointer pin creation")
+replace_section(
+    "$('requiredRadius').oninput=e=>",
+    "$('brushSize').oninput=e=>",
+    "", "remove both radius sliders")
+replace_once(
+    "  const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth),radius=Number(pin.radiusM);\n   if(!Number.isFinite(radius)||radius<0.3||radius>3||x-radius<0||x+radius>w||z-radius<0||z+radius>depth)throw Error('필수영역 핀의 좌표 또는 반경이 유효하지 않습니다.');\n   return {id:String(pin.id||'required-'+i),x,z,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};});",
+    """  // Earlier layouts may have a radiusM field. Ignore it and retain only
+  // the exact point coordinates so old drawings can be opened safely.
+  const requiredPins=rawPins.map((pin,i)=>({id:String(pin.id||'required-'+i),
+    x:val(pin.x,w),z:val(pin.z,depth),minQualityScore:PIN_MIN_QUALITY}));""",
+    "legacy radius import ignored")
+
+# All references to radiusM left in the app must be unrelated brush/eraser settings.
+assert 'id="requiredRadius"' not in source
+assert 'id="selectedRequiredRadius"' not in source
+assert "$('requiredRadius')" not in source
+assert "$('selectedRequiredRadius')" not in source
+assert "pin.radiusM" not in source
+assert "17개 표본점" not in source
+assert "반경 설정" not in source
+assert "필수영역 핀의 좌표 또는 반경" not in source
+
+
 # Build-time checks protect the full no-LAN interaction and original drawing tool set.
-for marker in ('data-tool="required"','id="requiredRadius"','minQualityScore',
+for marker in ('data-tool="required"','id="requiredPinSelect"','minQualityScore',
                'function requiredSamples','function optimize(layout','data-tool="brush"',
                'data-tool="sketch"','data-tool="erase"'):
     assert marker in source, marker
-for marker in ('id="g3LanX"','id="g3LanZ"','id="g3LanY"','id="g3Cable"',
+for marker in ('id="requiredRadius"','id="selectedRequiredRadius"',
+               'id="g3LanX"','id="g3LanZ"','id="g3LanY"','id="g3Cable"',
                'id="g3Mode"','id="g3Settings"','async function g3LocalOptimize',
                "api('/candidate-locations'", "api('/optimize'",
                'data-tool="zone"','id="roomDrawer"'):
