@@ -155,3 +155,14 @@
 - Tests use real touchscreen taps + simulated touch PointerEvent dragging; no actual iOS Safari hardware claim.
 - See [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for details. `main/index.html`, legacy v1.6, Pages unchanged. Team 1/2/3 data contracts unverified: **GATE 3 HOLD; no merge/deploy**.
 - Next safe work: team source contracts/real RSSI calibration + field QA; further UX fixes only on feature branch and with complete regression.
+
+
+## 2026-11-11 — GATE 3 mobile gesture cancellation / keyboard QA
+
+- Reviewed current [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), current `docs/REQUIRED_PIN_QA.md`, repo file/branch/PR tree; **no confirmed 1/2/3-team implementation/response contracts** were found, only template plus synthetic adapters. Do not claim real RSSI integration.
+- On `feat/optimizer-required-pin`, constrained secondary multitouch events so they do not interfere with the active drag. Tested pointercancel rollback + Undo cleanup + resumed touch. Imported/deleted selected pins reconcile the picker, and overlapping pins show the selected ring last.
+- Added keyboard focus to editor canvas; Enter/Space adds initial center pin, arrows nudge selected pin 0.1m or Shift+arrows 0.5m within its radius and floor boundaries. Existing radius slider and accessible picker remain.
+- **Verified exact code SHA** `edd06870fe22c2b55945dd873f5a0e909c7b2017`, [Actions #42986058154](https://github.com/jkd04255/wifi/actions/runs/42986058154): Python **94/94** + Chromium/WebKit **25/25**, total **119/119 PASS**.
+- Browser tests use emulated touchscreen taps plus synthetic touch pointer events; **not real iPhone Safari/VoiceOver QA**. Read [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md) for test and local preview instructions.
+- **No changes** to legacy v1.6 or main, no PR merge and no Pages deployment. GATE 3 HOLD until team 1/2/3 signed-off data schemas, real measurement comparison and physical verification.
+- Next suggested scoped work: additional touch edge/cancel and keyboard boundary/focus QA, or team API adapter only after real contracts are committed.
