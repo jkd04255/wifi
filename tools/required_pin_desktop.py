@@ -1,4 +1,4 @@
-"""Local-only GATE 3 desktop package: real 70-point mandatory-pin optimizer.
+"""Lightweight local-only desktop EXE: hard 70-point required-pin optimizer.
 
 Unlike the historical v1.6 desktop package, this is a separately rebuilt EXE.
 No third-party/team 2/3 prediction source is connected: RSSI comes from the
@@ -6,8 +6,12 @@ v1.6 estimate embedded in the exact Stage 3 HTML. No cloud connection.
 """
 from __future__ import annotations
 
+import os
+import shutil
 import socket
+import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -81,6 +85,48 @@ def start_local_server(port: int):
     raise RuntimeError("Local Wi-Fi optimizer server did not become ready")
 
 
+def find_windows_app_browser() -> Path:
+    """Use installed Edge/Chrome to avoid shipping an embedded .NET WebView runtime."""
+    if os.name != "nt":
+        raise RuntimeError("The Windows app-window launcher requires Windows")
+    roots = [
+        Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")),
+        Path(os.environ.get("PROGRAMFILES", "C:/Program Files")),
+        Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))),
+    ]
+    for base in roots:
+        for relative in ("Microsoft/Edge/Application/msedge.exe",
+                         "Google/Chrome/Application/chrome.exe"):
+            browser = base / relative
+            if browser.is_file():
+                return browser
+    for name in ("msedge.exe", "chrome.exe"):
+        located = shutil.which(name)
+        if located:
+            return Path(located)
+    try:
+        import winreg
+        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            for name in ("msedge.exe", "chrome.exe"):
+                key_path = "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\" + name
+                try:
+                    with winreg.OpenKey(hive, key_path) as key:
+                        path, _ = winreg.QueryValueEx(key, None)
+                        if Path(path).is_file():
+                            return Path(path)
+                except OSError:
+                    continue
+    except ImportError:
+        pass
+    raise FileNotFoundError("Microsoft Edge 또는 Google Chrome이 필요합니다.")
+
+
+def app_window_command(browser: Path, url: str, profile: Path) -> list[str]:
+    return [str(browser), "--app=" + url, "--user-data-dir=" + str(profile),
+            "--no-first-run", "--no-default-browser-check",
+            "--disable-background-mode", "--window-size=1440,920"]
+
+
 def show_error(error: Exception):
     try:
         import ctypes
@@ -93,12 +139,11 @@ def main():
     try:
         verify_package()
         if "--self-test" in sys.argv:
-            # Import the *actual Windows backend* too, not just FastAPI/Pydantic.
-            # A compact PyInstaller package may be missing pythonnet CLR DLLs
-            # even though the optimizer itself still imports successfully.
-            import webview
-            from webview.platforms import edgechromium
-            print("REQUIRED_PIN_70_HARD_CONSTRAINT_AND_WEBVIEW_IMPORT_OK")
+            browser = find_windows_app_browser()
+            cmd = app_window_command(browser, "http://127.0.0.1:12345/preview/stage3.html", Path("test-profile"))
+            if not any(arg.startswith("--app=http://127.0.0.1:") for arg in cmd):
+                raise AssertionError("App window launch command missing")
+            print("REQUIRED_PIN_70_HARD_CONSTRAINT_AND_APP_BROWSER_OK")
             return 0
         if "--integration-test" in sys.argv:
             import json
@@ -131,20 +176,21 @@ def main():
                 server.should_exit = True
                 thread.join(timeout=6)
             return 0
-        # Start UI only after explicit CI smoke paths.
-        import webview
+        # Keep the real local Python optimizer alive for the full lifetime
+        # of an isolated Edge/Chrome *app-window* process.
+        browser = find_windows_app_browser()
         port = choose_free_local_port()
         server, thread = start_local_server(port)
-        try:
-            webview.create_window(
-                TITLE, f"http://127.0.0.1:{port}/preview/stage3.html",
-                width=1440, height=920, min_size=(850, 620),
-                confirm_close=False
-            )
-            webview.start(gui="edgechromium", debug=False)
-        finally:
-            server.should_exit = True
-            thread.join(timeout=5)
+        with tempfile.TemporaryDirectory(prefix="WifiRequired70_") as temporary:
+            profile = Path(temporary) / "browser-profile"
+            try:
+                args = app_window_command(
+                    browser, f"http://127.0.0.1:{port}/preview/stage3.html", profile
+                )
+                subprocess.run(args, check=True)
+            finally:
+                server.should_exit = True
+                thread.join(timeout=5)
         return 0
     except Exception as exc:
         show_error(exc)
