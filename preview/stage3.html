@@ -541,7 +541,7 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
  if(currentPath?.tool==='brush')paintBrush(eCtx,{points:currentPath.points,weightPct:currentPath.weightPct,radiusM:currentPath.radiusM},sx,sy);
  if(currentPath?.tool==='sketch')drawSketch(eCtx,currentPath,sx,sy);
  if(tool==='erase'&&hoverPoint){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('eraserSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.fillStyle='rgba(255,255,255,.50)';eCtx.fill();eCtx.setLineDash([4,3]);eCtx.strokeStyle='#e44e57';eCtx.lineWidth=1.7;eCtx.stroke();eCtx.restore();}
- if(tool==='required'&&hoverPoint&&!start)drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
+ if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
  if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
  drawWalls(eCtx,sx,sy);drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
  if(preview&&start){const a={x:start.x*sx,y:start.y*sy},b={x:preview.x*sx,y:preview.y*sy};
@@ -618,13 +618,28 @@ function finishEraser(p){
  else renderEditor();
  eraseChanged=false;
 }
+function moveRequiredDrag(point){
+ const drag=requiredDrag;if(!drag)return;
+ const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);
+ if(!pin)return;
+ const x=clamp(point.x,pin.radiusM,L.width-pin.radiusM),z=clamp(point.y,pin.radiusM,L.depth-pin.radiusM);
+ if(Math.hypot(x-drag.startX,z-drag.startZ)>0.03&&!drag.moved){pushUndo();drag.moved=true;}
+ if(drag.moved){pin.x=+x.toFixed(3);pin.z=+z.toFixed(3);}
+}
 editor.addEventListener('pointerdown',e=>{if(e.button!==0)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);editor.setPointerCapture(e.pointerId);pointerId=e.pointerId;
  if(tool==='required'){
+ const existing=hitRequiredPin(p);
+ if(existing){
+   selectedRequiredId=existing.id;
+   requiredDrag={id:existing.id,startX:existing.x,startZ:existing.z,moved:false};
+   syncSelectedRequired();renderEditor();return;
+ }
  pointerId=null;const radius=Number($('requiredRadius').value);
  if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
  if(!Number.isFinite(radius)||p.x-radius<0||p.x+radius>L.width||p.y-radius<0||p.y+radius>L.depth){toast('반경이 도면 밖으로 나갑니다. 핀을 옮기거나 반경을 줄여주세요.');return;}
- pushUndo();L.requiredPins=L.requiredPins||[];L.requiredPins.push({id:uid('required'),x:p.x,z:p.y,radiusM:radius,minQualityScore:PIN_MIN_QUALITY});
- $('g3Mode').value='local';changed('필수영역 추가 · 핀 반경 17개 표본점의 예측 품질 70점 이상 필수');renderElements();renderEditor();return;
+ pushUndo();L.requiredPins=L.requiredPins||[];const pin={id:uid('required'),x:p.x,z:p.y,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};L.requiredPins.push(pin);
+ selectedRequiredId=pin.id;$('g3Mode').value='local';
+ changed('필수영역 추가 · 핀 중심을 드래그해 위치를 수정할 수 있습니다.');return;
  }
  if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
  start=p;preview=p;hoverPoint=p;
@@ -633,10 +648,12 @@ editor.addEventListener('pointerdown',e=>{if(e.button!==0)return;const raw=posit
  renderEditor();});
 editor.addEventListener('pointermove',e=>{const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
  $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
+ if(requiredDrag){moveRequiredDrag(p);editor.style.cursor='grabbing';renderEditor();return;}
  if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
  if(start){preview=p;if(currentPath){const pts=currentPath.points,last=pts[pts.length-1];if(pts.length<1400&&Math.hypot(p.x-last[0],p.y-last[1])>.065)pts.push([p.x,p.y]);}renderEditor();}
  else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
 function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['sketch','brush','erase'].includes(tool)?raw:snapped(raw);pointerId=null;
+ if(requiredDrag){moveRequiredDrag(p);const moved=requiredDrag.moved;requiredDrag=null;if(moved)changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');else{syncSelectedRequired();renderEditor();}return;}
  if(tool==='erase'){finishEraser(p);return;}
  if(!start){currentPath=null;return;}
  const a=start;start=null;preview=null;
@@ -654,7 +671,7 @@ function finish(e){if(pointerId===null)return;const raw=positions(editor,e),p=['
  }
 
  currentPath=null;renderEditor();}
-editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
+editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;undoStack.pop();}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
 editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
 heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
 function togglePalette(open){
@@ -666,7 +683,7 @@ function togglePalette(open){
 }
 $('paletteToggleBtn').onclick=()=>togglePalette($('toolsRail').hidden);
 for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>{
- tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];
+ tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];requiredDrag=null;pointerId=null;
  document.querySelectorAll('[data-tool]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
  if(tool==='required'){togglePalette(true);$('requiredDrawer').open=true;}
@@ -680,6 +697,16 @@ for(const button of document.querySelectorAll('.palette-choice'))button.onclick=
  tool='brush';document.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool==='brush';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
  renderEditor();};
 $('requiredRadius').oninput=e=>{$('requiredRadiusValue').textContent=fmt(e.target.value)+' m';renderEditor()};
+$('selectedRequiredRadius').oninput=e=>{$('selectedRequiredRadiusValue').textContent=fmt(e.target.value)+' m'};
+$('selectedRequiredRadius').onchange=e=>{
+ const pin=getSelectedRequiredPin();if(!pin)return;
+ const radius=Number(e.target.value),maxFit=Math.min(3,pin.x,L.width-pin.x,pin.z,L.depth-pin.z);
+ if(!Number.isFinite(radius)||radius<.3||radius>3||radius>maxFit+1e-8){
+  toast('반경이 도면 밖으로 나갑니다. 핀 중심을 이동하거나 반경을 줄여주세요.');syncSelectedRequired();return;
+ }
+ if(Math.abs(pin.radiusM-radius)>.001){pushUndo();pin.radiusM=radius;changed('선택한 필수영역 반경을 '+fmt(radius)+'m로 수정했습니다.');}
+ else syncSelectedRequired();
+};
 $('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
 $('eraserSize').oninput=e=>{$('eraserSizeValue').textContent=fmt(e.target.value,2)+' m';renderEditor()};
 $('orthogonalizeBtn').onclick=()=>{
