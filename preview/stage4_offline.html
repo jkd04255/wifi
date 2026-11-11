@@ -450,7 +450,7 @@ function drawZone(ctx,z,sx,sy,active=false){const x=Math.min(z.x1,z.x2)*sx,y=Mat
 const PIN_MIN_QUALITY=64,PIN_MAX_COUNT=12;
 const SIGNAL_LEVELS=Object.freeze({4:64,3:42,2:27,1:9,0:0});
 function signalBarsFromScore(score){
- const value=Number(score);
+ const value=score==null?NaN:Number(score);
  return Number.isFinite(value)?([4,3,2,1,0].find(b=>value>=SIGNAL_LEVELS[b])??0):4;
 }
 function signalBars(pin){
@@ -760,12 +760,16 @@ function togglePalette(open){
  $('paletteToggleBtn').setAttribute('aria-expanded',String(open));
  requestAnimationFrame(renderEditor);
 }
-$('paletteToggleBtn').onclick=()=>togglePalette($('toolsRail').hidden);
+$('paletteToggleBtn').onclick=()=>{
+ const willOpen=$('toolsRail').hidden;
+ togglePalette(willOpen);
+ if(willOpen&&tool==='required')$('requiredDrawer').open=true;
+};
 for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>{
  tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];requiredDrag=null;pointerId=null;
  document.querySelectorAll('[data-tool]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
- if(tool==='required'){togglePalette(true);$('requiredDrawer').open=true;}
+ if(tool==='required'&&!$('toolsRail').hidden)$('requiredDrawer').open=true;
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
  renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 기본 4칸(64점 이상) 핀이 추가됩니다. 팔레트에서 선택한 핀의 칸수를 변경할 수 있습니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
 };
@@ -955,10 +959,18 @@ $('importFile').onchange=async e=>{
   if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
   const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete'}));
   const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
-  if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기은 최대 12개까지입니다.');
-  const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth);
+  if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기 핀은 최대 12개까지 지정할 수 있습니다.');
+  const importedPinIds=new Set();
+  const requiredPins=rawPins.map((pin,i)=>{
+   if(!pin||typeof pin!=='object'||Array.isArray(pin))throw Error('신호 세기 핀 데이터가 잘못됐습니다.');
+   const x=val(pin.x,w),z=val(pin.z,depth);
    if(x<0||x>w||z<0||z>depth)throw Error('신호 세기 핀 좌표가 도면 밖입니다.');
-   const bars=signalBars(pin);return {id:String(pin.id||'required-'+i),x,z,signalBars:bars,minQualityScore:SIGNAL_LEVELS[bars]};});
+   const bars=signalBars(pin);
+   let id=typeof pin.id==='string'&&pin.id.trim()?pin.id.trim():'required-import-'+(i+1);
+   if(importedPinIds.has(id)){id='required-import-'+(i+1);while(importedPinIds.has(id))id+='-unique';}
+   importedPinIds.add(id);
+   return {id,x,z,signalBars:bars,minQualityScore:SIGNAL_LEVELS[bars]};
+  });
   // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
   const zones=[];
   const readPaths=(key,min,parse)=>{const arr=Array.isArray(converted[key])?converted[key]:[];
