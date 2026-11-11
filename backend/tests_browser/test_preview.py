@@ -696,5 +696,139 @@ class Stage3BrowserTests(unittest.TestCase):
 
 
 
+    def test_mobile_secondary_touch_does_not_steal_active_pin_drag(self):
+        """A secondary pointer never changes the active drag, undo or pin count."""
+        for engine in ("chromium", "webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self._mobile_touch_editor(engine)
+                try:
+                    bounds = page.locator("#editorCanvas").bounding_box()
+                    page.touchscreen.tap(bounds["x"] + bounds["width"]*.5,
+                                         bounds["y"] + bounds["height"]*.5)
+                    before = self._export_current_layout(page)
+                    pin = before["requiredPins"][0]
+                    px = bounds["x"] + bounds["width"]*pin["x"]/before["width"]
+                    py = bounds["y"] + bounds["height"]*pin["z"]/before["depth"]
+                    canvas = page.locator("#editorCanvas")
+                    primary = {"pointerId":91, "pointerType":"touch",
+                               "isPrimary":True, "button":0, "buttons":1}
+                    secondary = {"pointerId":92, "pointerType":"touch",
+                                 "isPrimary":False, "button":0, "buttons":1}
+                    canvas.dispatch_event("pointerdown", {**primary,"clientX":px,"clientY":py})
+                    canvas.dispatch_event("pointermove", {**primary,"clientX":px+22,"clientY":py+14})
+                    # Secondary finger tries to select another location, move and cancel.
+                    canvas.dispatch_event("pointerdown", {**secondary,"clientX":px+80,"clientY":py+65})
+                    canvas.dispatch_event("pointermove", {**secondary,"clientX":px+120,"clientY":py+90})
+                    canvas.dispatch_event("pointercancel", {**secondary,"buttons":0,"clientX":px+120,"clientY":py+90})
+                    canvas.dispatch_event("pointermove", {**primary,"clientX":px+46,"clientY":py+25})
+                    canvas.dispatch_event("pointerup", {**primary,"buttons":0,"clientX":px+46,"clientY":py+25})
+                    after = self._export_current_layout(page)
+                    self.assertEqual(len(after["requiredPins"]),1)
+                    self.assertEqual(after["requiredPins"][0]["id"], pin["id"])
+                    self.assertGreater(after["requiredPins"][0]["x"],pin["x"]+.1)
+                    self.assertGreater(after["requiredPins"][0]["z"],pin["z"]+.1)
+                    page.locator("#undoBtn").click()
+                    restored = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(restored["x"],pin["x"],delta=.001)
+                    self.assertAlmostEqual(restored["z"],pin["z"],delta=.001)
+                    self.assertEqual(errors, [])
+                finally:
+                    browser.close()
+
+    def test_mobile_cancelled_drag_restores_pin_without_extra_undo(self):
+        """Cancelling a touch move rolls back position and its transient undo entry."""
+        for engine in ("chromium", "webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self._mobile_touch_editor(engine)
+                try:
+                    bounds = page.locator("#editorCanvas").bounding_box()
+                    page.touchscreen.tap(bounds["x"] + bounds["width"]*.5,
+                                         bounds["y"] + bounds["height"]*.5)
+                    original = self._export_current_layout(page)
+                    pin = original["requiredPins"][0]
+                    px = bounds["x"] + bounds["width"]*pin["x"]/original["width"]
+                    py = bounds["y"] + bounds["height"]*pin["z"]/original["depth"]
+                    canvas = page.locator("#editorCanvas")
+                    primary = {"pointerId":94,"pointerType":"touch",
+                               "isPrimary":True,"button":0,"buttons":1}
+                    canvas.dispatch_event("pointerdown",{**primary,"clientX":px,"clientY":py})
+                    canvas.dispatch_event("pointermove",{**primary,"clientX":px+44,"clientY":py+26})
+                    # Cancel after threshold was passed, not a stationary tap cancellation.
+                    canvas.dispatch_event("pointercancel",{**primary,"buttons":0,"clientX":px+44,"clientY":py+26})
+                    self.assertEqual(self._export_current_layout(page)["requiredPins"][0],pin)
+                    self.assertTrue(page.locator("#requiredSelectedControls").is_visible())
+                    # If the cancelled drag leaked an undo item, this wouldn't remove the pin.
+                    page.locator("#undoBtn").click()
+                    self.assertEqual(len(self._export_current_layout(page)["requiredPins"]),0)
+                    # Confirm the cancelled pointer no longer blocks later touches.
+                    page.touchscreen.tap(bounds["x"]+bounds["width"]*.5,
+                                         bounds["y"]+bounds["height"]*.5)
+                    self.assertEqual(len(self._export_current_layout(page)["requiredPins"]),1)
+                    self.assertEqual(errors, [])
+                finally:
+                    browser.close()
+
+    def test_required_pin_keyboard_create_nudge_boundary_and_undo(self):
+        """Focused canvas supports keyboard-only pin creation and X-Z nudge."""
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self._mobile_touch_editor(engine)
+                try:
+                    canvas = page.locator("#editorCanvas")
+                    self.assertEqual(canvas.get_attribute("tabindex"),"0")
+                    self.assertEqual(canvas.get_attribute("aria-describedby"),"requiredCanvasHelp")
+                    canvas.focus()
+                    canvas.press("Enter")
+                    layout = self._export_current_layout(page)
+                    self.assertEqual(len(layout["requiredPins"]),1)
+                    self.assertEqual(layout["requiredPins"][0]["minQualityScore"],70)
+                    before = layout["requiredPins"][0]
+                    canvas.press("ArrowRight")
+                    after = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(after["x"]-before["x"],0.1,delta=.001)
+                    canvas.press("Shift+ArrowDown")
+                    shifted = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(shifted["z"]-after["z"],0.5,delta=.001)
+                    self.assertEqual(shifted["minQualityScore"],70)
+                    self.assertIn("키보드로 필수영역 위치",page.locator("#statusLine").inner_text())
+                    page.locator("#undoBtn").click()
+                    restored = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(restored["z"],after["z"],delta=.001)
+                    page.locator("#undoBtn").click()
+                    again = self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(again["x"],before["x"],delta=.001)
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+    def test_imported_overlaps_picker_remains_synced_after_delete(self):
+        """Removing selected pin selects an actual remaining pin, never a phantom default."""
+        import json
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser, page, errors = self._mobile_touch_editor(engine)
+                try:
+                    layout = self._fixture()
+                    layout["requiredPins"] = [
+                        {"id":"one","x":2,"z":2,"radiusM":0.8,"minQualityScore":70},
+                        {"id":"two","x":2,"z":2,"radiusM":0.7,"minQualityScore":70},
+                    ]
+                    page.locator("#importFile").set_input_files({
+                        "name":"pins-only-synthetic.json","mimeType":"application/json",
+                        "buffer":json.dumps(layout).encode("utf-8"),
+                    })
+                    page.wait_for_function("document.body.dataset.view === 'design'",timeout=10000)
+                    self.assertEqual(page.locator("#requiredPinSelect").input_value(),"one")
+                    self.assertTrue(page.locator("#requiredSelectedControls").is_visible())
+                    page.locator("#elementsDrawer summary").click()
+                    page.locator("#elementList .element").filter(has_text="필수영역").first.locator("button").click()
+                    self.assertEqual(len(self._export_current_layout(page)["requiredPins"]),1)
+                    self.assertEqual(page.locator("#requiredPinSelect").input_value(),"two")
+                    self.assertIn("필수영역 1 선택됨",page.locator("#requiredSelectionStatus").inner_text())
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
