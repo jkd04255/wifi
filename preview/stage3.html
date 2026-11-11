@@ -359,7 +359,7 @@ function sample(){const areaPyeong=24.2,{width,height}=sizeForPyeong(areaPyeong)
  router:{x:width/2,y:1.2,z:height/2,frequency:2.4,txPowerDbm:20,antennaGainDbi:0},
  walls:[], zones:[],requiredPins:[],sketches:[],importanceStrokes:[],modelOverrides:{pathLossExponent:2.2,wallScale:1}};}
 let L=sample(),tool='sketch',material='concrete',result=null,weighted=false,best=null,dirty=true,
- probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[];
+ probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[],selectedRequiredId=null,requiredDrag=null;
 const geometry=window.WifiGeometry,cleanup=window.WifiCleanup;
 if(!geometry||!cleanup)throw Error('geometry.js / cleanup.js not loaded');
 const editor=$('editorCanvas'), heat=$('heatmapCanvas'),eCtx=editor.getContext('2d'),hCtx=heat.getContext('2d');
@@ -371,7 +371,7 @@ function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show')
 function pushUndo(){undoStack.push(JSON.stringify(L));if(undoStack.length>30)undoStack.shift()}
 function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
  dirty=true;best=null;$('recommendation').hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
- $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();renderEditor();renderHeat();renderElements();
+ $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
 }
 function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty')}
 function resizeCanvas(canvas,ctx){const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return {w:1,h:1};const dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:rect.width,h:rect.height};}
@@ -465,6 +465,25 @@ function requiredMinimum(pin,router=L.router){
  const trial={...L,router:{...L.router,...router}};
  return Math.min(...requiredSamples(pin).map(p=>qualityPoint(window.WifiEngine.value(trial,p.x,p.z))));
 }
+function getSelectedRequiredPin(){return (L.requiredPins||[]).find(p=>p.id===selectedRequiredId)||null;}
+function syncSelectedRequired(){
+ const pin=getSelectedRequiredPin(),panel=$('requiredSelectedControls');
+ panel.hidden=!pin;
+ if(!pin){selectedRequiredId=null;return;}
+ const n=(L.requiredPins||[]).indexOf(pin)+1;
+ $('requiredSelectedName').textContent='필수영역 '+n+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';
+ $('selectedRequiredRadius').value=String(pin.radiusM);
+ $('selectedRequiredRadiusValue').textContent=fmt(pin.radiusM)+' m';
+ $('requiredSelectedHint').textContent='선택된 핀을 드래그해 이동하거나 아래에서 반경을 수정합니다.';
+}
+function selectRequiredPin(id){
+ selectedRequiredId=id;syncSelectedRequired();renderEditor();
+}
+function hitRequiredPin(point){
+ const size=editor.getBoundingClientRect();
+ const tolerance=Math.max(.18,Math.min(.7,18*Math.max(L.width/Math.max(size.width,1),L.depth/Math.max(size.height,1))));
+ return [...(L.requiredPins||[])].reverse().find(pin=>Math.hypot(pin.x-point.x,pin.z-point.y)<=tolerance)||null;
+}
 function drawRequiredPin(ctx,pin,sx,sy,passed=null){
  const x=pin.x*sx,y=pin.z*sy,r=pin.radiusM*Math.min(sx,sy);
  const color=passed===true?'#138b66':passed===false?'#c85448':'#6949c6';
@@ -473,14 +492,41 @@ function drawRequiredPin(ctx,pin,sx,sy,passed=null){
  ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
  ctx.beginPath();ctx.arc(x,y-7,8,Math.PI,0);ctx.lineTo(x,y+12);ctx.closePath();ctx.fillStyle=color;ctx.fill();
  ctx.beginPath();ctx.arc(x,y-7,3,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();
- ctx.fillStyle=color;ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillText('70+',x+12,y-12);ctx.restore();
+ ctx.fillStyle=color;ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillText('70+',x+12,y-12);
+ if(pin.id&&pin.id===selectedRequiredId&&ctx===eCtx){ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);ctx.strokeStyle='#6949c6';ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();}
+ ctx.restore();
 }
 function renderRequiredStatus(){
- const pins=L.requiredPins||[];
- if(!pins.length){$('requiredStatus').textContent='필수영역 없음 · 반경의 17개 표본점당 예상 품질 ≥70';return;}
- const values=pins.map(p=>requiredMinimum(p)),min=Math.min(...values),ok=values.every(v=>v+1e-8>=PIN_MIN_QUALITY);
- $('requiredStatus').textContent='필수영역 '+pins.length+'곳 · 현재 예상 최소 '+fmt(min,1)+'/100 · '+(ok?'전부 70점 이상':'70점 미달')+' (실측 미보정)';
+ const pins=L.requiredPins||[],box=$('requiredResults');box.replaceChildren();
+ if(!pins.length){
+  box.hidden=true;
+  $('requiredStatus').textContent='필수영역 없음 · 반경의 17개 표본점당 예상 품질 ≥70';
+  $('requiredStatus').style.color='#62788c';return;
+ }
+ const currentScores=pins.map(pin=>requiredMinimum(pin)),min=Math.min(...currentScores);
+ const ok=currentScores.every(v=>v+1e-8>=PIN_MIN_QUALITY);
+ $('requiredStatus').textContent='필수영역 '+pins.length+'곳 · 현재 배치 최소 예상 '+fmt(min,1)+'/100 · '+(ok?'모두 충족':'미달 핀 있음')+' (미보정 예측)';
  $('requiredStatus').style.color=ok?'#15845c':'#ba4e48';
+ const suggestion=best?.stage3&&best.requiredAreaSatisfied===true?best.best:null;
+ const title=document.createElement('div');title.textContent='필수영역 품질 확인';
+ title.style.cssText='font-size:13px;font-weight:700;margin:0 0 7px;color:#293b55';box.appendChild(title);
+ pins.forEach((pin,i)=>{
+  const before=currentScores[i],after=suggestion?requiredMinimum(pin,suggestion):null;
+  const beforeOK=before+1e-8>=PIN_MIN_QUALITY,afterOK=after!==null&&after+1e-8>=PIN_MIN_QUALITY;
+  const row=document.createElement('div');
+  row.style.cssText='border:1px solid #dae3ee;border-radius:10px;padding:10px 12px;margin:7px 0;background:#fff';
+  const head=document.createElement('div');head.style.cssText='display:flex;justify-content:space-between;gap:8px;align-items:center';
+  const name=document.createElement('strong');name.textContent='◎ 필수영역 '+(i+1)+' · 반경 '+fmt(pin.radiusM)+'m';name.style.fontSize='12px';
+  const pill=document.createElement('span');pill.textContent=(after!==null?afterOK:beforeOK)?'70점 충족':'70점 미달';
+  pill.style.cssText='font-size:11px;font-weight:700;border-radius:99px;padding:3px 8px;color:'+( (after!==null?afterOK:beforeOK)?'#147454':'#b74a3c')+';background:'+((after!==null?afterOK:beforeOK)?'#e5f5ec':'#fff0ec');
+  head.append(name,pill);
+  const score=document.createElement('div');score.style.cssText='font-size:12px;margin-top:7px;color:#44556c';
+  score.textContent='현재 최소 '+fmt(before,1)+'점 ('+(beforeOK?'충족':'미달')+')'+(after===null?'':' → 추천 최소 '+fmt(after,1)+'점 ('+(afterOK?'충족':'미달')+')');
+  row.append(head,score);box.appendChild(row);
+ });
+ const caveat=document.createElement('p');caveat.style.cssText='font-size:10px;color:#718096;margin:6px 0 0';
+ caveat.textContent='핀당 17개 표본점의 RSSI 모델 예측이며, 원형 전체나 실측 품질 보장이 아닙니다.';
+ box.appendChild(caveat);box.hidden=false;
 }
 function drawWalls(ctx,sx,sy){for(const wall of L.walls){
  const a={x:wall.x1*sx,y:wall.z1*sy},b={x:wall.x2*sx,y:wall.z2*sy};
