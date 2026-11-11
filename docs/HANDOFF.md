@@ -129,3 +129,10 @@
 - 핀 1개당 **중심/반경 절반/둘레 총 17개 이산 표본점**. 모델 RSSI 점수 70은 약 **−51.5 dBm**. 원형 면적 전체에 대한 보장이나 실제 측정 기반 보정은 아님.
 - 기존 GATE 3 확정 API 계약 미보유 및 Python GitHub Pages 미배포 유지. **정식 GATE 3 HOLD / PR Draft / main·Pages 변경 금지**.
 - [QA 및 로컬 실행 방법](REQUIRED_PIN_QA.md). 초기 94 Python + 12 브라우저 = 106 검증 PASS (Actions #42977957957). 후속 HEAD Actions 확인 필요.
+
+
+### Latest mandatory-pin CI (2026-11-11)
+- Verified SHA `68b5622b85192cad4ef49a94f49859b7a01e3f51`: [Actions run #42978598628](https://github.com/jkd04255/wifi/actions/runs/42978598628) **PASS**, Python **94/94**, Chromium/WebKit **13/13**, **107/107** in total.
+- JSON round-trip preserves `requiredPins`; old room purpose `zones` are retired, with import notice.
+- Public Pages is unchanged. Test the new pin feature locally via `backend/dev_server.py`, not at the old Pages URL.
+- Feature is on [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), based on Draft PR #2, and must not merge/deploy until integration gates clear.
