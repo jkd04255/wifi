@@ -52,7 +52,7 @@ class Stage3BrowserTests(unittest.TestCase):
     def open_page(self, engine="chromium", mobile=False):
         browser = getattr(self.playwright, engine).launch(headless=True)
         page = browser.new_page(viewport={"width": 390, "height": 844} if mobile else
-                                {"width": 1440, "height": 900})
+                                {"width": 1440, "height": 900}, has_touch=mobile)
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         response = page.goto(URL, wait_until="load")
@@ -555,6 +555,145 @@ class Stage3BrowserTests(unittest.TestCase):
             self.assertEqual(errors, [])
         finally:
             browser.close()
+
+
+    # Mobile pointer cases intentionally use has_touch=True for real touchscreen taps.
+    # Drag sequences are synthetic PointerEvents (not actual iPhone hardware gestures).
+    def _mobile_touch_editor(self, engine):
+        browser, page, errors = self.open_page(engine=engine, mobile=True)
+        page.locator("#backToEditorBtn").click()
+        page.wait_for_function("document.body.dataset.view === 'design'", timeout=10000)
+        page.locator('[data-tool="required"]').click()
+        self.assertTrue(page.locator("#requiredDrawer").is_visible())
+        self.assertTrue(page.locator("#requiredRadius").is_visible())
+        self.assertEqual(
+            page.locator("#editorCanvas").evaluate("(el)=>getComputedStyle(el).touchAction"),
+            "none",
+        )
+        return browser, page, errors
+
+    def _touch_pointer_sequence(self, page, start, end, pointer_id=72):
+        canvas=page.locator("#editorCanvas")
+        base={
+            "pointerId":pointer_id, "pointerType":"touch",
+            "isPrimary":True, "button":0, "buttons":1,
+        }
+        canvas.dispatch_event("pointerdown", {**base,"clientX":start[0],"clientY":start[1]})
+        for i in range(1,6):
+            x=start[0]+(end[0]-start[0])*i/5
+            y=start[1]+(end[1]-start[1])*i/5
+            canvas.dispatch_event("pointermove", {**base,"clientX":x,"clientY":y})
+        canvas.dispatch_event("pointerup", {**base,"buttons":0,"clientX":end[0],"clientY":end[1]})
+
+    def test_mobile_touch_pin_drag_and_single_step_undo_both_engines(self):
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser,page,errors=self._mobile_touch_editor(engine)
+                try:
+                    bounds=page.locator("#editorCanvas").bounding_box()
+                    x=bounds["x"]+bounds["width"]*.5
+                    y=bounds["y"]+bounds["height"]*.5
+                    page.touchscreen.tap(x,y)
+                    first=self._export_current_layout(page)
+                    self.assertEqual(len(first["requiredPins"]),1)
+                    self.assertTrue(page.locator("#requiredPinPicker").is_visible())
+                    self.assertTrue(page.locator("#requiredSelectedControls").is_visible())
+                    pin=first["requiredPins"][0]
+                    px=bounds["x"]+bounds["width"]*pin["x"]/first["width"]
+                    py=bounds["y"]+bounds["height"]*pin["z"]/first["depth"]
+                    self._touch_pointer_sequence(page,(px,py),(px+35,py+24))
+                    second=self._export_current_layout(page)
+                    self.assertEqual(len(second["requiredPins"]),1)
+                    self.assertGreater(second["requiredPins"][0]["x"],pin["x"]+.1)
+                    self.assertGreater(second["requiredPins"][0]["z"],pin["z"]+.1)
+                    self.assertIn("위치를 변경",page.locator("#statusLine").inner_text())
+                    page.locator("#undoBtn").click()
+                    restored=self._export_current_layout(page)["requiredPins"][0]
+                    self.assertAlmostEqual(restored["x"],pin["x"],delta=.001)
+                    self.assertAlmostEqual(restored["z"],pin["z"],delta=.001)
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+    def test_mobile_overlapping_pins_cycle_and_explicit_picker_both_engines(self):
+        import json
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser,page,errors=self._mobile_touch_editor(engine)
+                try:
+                    layout=self._fixture()
+                    layout["requiredPins"]=[
+                        {"id":"alpha","x":2.0,"z":2.0,"radiusM":.8,"minQualityScore":70},
+                        {"id":"beta","x":2.0,"z":2.0,"radiusM":.7,"minQualityScore":70},
+                    ]
+                    page.locator("#importFile").set_input_files({
+                        "name":"overlap-synthetic.json","mimeType":"application/json",
+                        "buffer":json.dumps(layout).encode("utf-8"),
+                    })
+                    page.wait_for_function("document.body.dataset.view === 'design'",timeout=10000)
+                    page.locator('[data-tool="required"]').click()
+                    bounds=page.locator("#editorCanvas").bounding_box()
+                    x=bounds["x"]+bounds["width"]*2/layout["width"]
+                    y=bounds["y"]+bounds["height"]*2/layout["depth"]
+                    self.assertEqual(page.locator("#requiredPinSelect option").count(),2)
+                    page.touchscreen.tap(x,y)
+                    first=page.locator("#requiredPinSelect").input_value()
+                    self.assertIn(first,("alpha","beta"))
+                    page.touchscreen.tap(x,y)
+                    second=page.locator("#requiredPinSelect").input_value()
+                    self.assertNotEqual(first,second)
+                    self.assertIn("선택됨",page.locator("#requiredSelectionStatus").inner_text())
+                    page.locator("#requiredNextPin").click()
+                    self.assertEqual(page.locator("#requiredPinSelect").input_value(),first)
+                    page.locator("#requiredPinSelect").select_option(second)
+                    self.assertEqual(page.locator("#requiredPinSelect").input_value(),second)
+                    self.assertEqual(len(self._export_current_layout(page)["requiredPins"]),2)
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+    def test_mobile_pin_accessibility_keyboard_radius_and_touch_targets(self):
+        for engine in ("chromium","webkit"):
+            with self.subTest(engine=engine):
+                browser,page,errors=self._mobile_touch_editor(engine)
+                try:
+                    bounds=page.locator("#editorCanvas").bounding_box()
+                    page.touchscreen.tap(bounds["x"]+bounds["width"]*.5,
+                                         bounds["y"]+bounds["height"]*.5)
+                    slider=page.locator("#selectedRequiredRadius")
+                    self.assertTrue(slider.is_visible())
+                    self.assertIn("필수영역",slider.get_attribute("aria-label"))
+                    self.assertEqual(slider.get_attribute("aria-describedby"),"requiredSelectedHint")
+                    self.assertGreaterEqual(slider.bounding_box()["height"],44)
+                    self.assertGreaterEqual(page.locator("#requiredPinSelect").bounding_box()["height"],44)
+                    self.assertGreaterEqual(page.locator("#requiredNextPin").bounding_box()["height"],44)
+                    slider.focus()
+                    slider.press("ArrowRight")
+                    self.assertGreater(
+                        self._export_current_layout(page)["requiredPins"][0]["radiusM"],.8)
+                    self.assertEqual(page.locator("#selectedRequiredRadius").get_attribute("aria-valuetext"),"0.9미터")
+                    self.assertEqual(errors,[])
+                finally:
+                    browser.close()
+
+    def test_mobile_touch_jitter_does_not_create_undo_move(self):
+        browser,page,errors=self._mobile_touch_editor("webkit")
+        try:
+            bounds=page.locator("#editorCanvas").bounding_box()
+            page.touchscreen.tap(bounds["x"]+bounds["width"]*.5,
+                                 bounds["y"]+bounds["height"]*.5)
+            first=self._export_current_layout(page)
+            p=first["requiredPins"][0]
+            sx=bounds["x"]+bounds["width"]*p["x"]/first["width"]
+            sy=bounds["y"]+bounds["height"]*p["z"]/first["depth"]
+            self._touch_pointer_sequence(page,(sx,sy),(sx+4,sy+3))
+            self.assertEqual(self._export_current_layout(page)["requiredPins"][0],p)
+            page.locator("#undoBtn").click()
+            self.assertEqual(len(self._export_current_layout(page)["requiredPins"]),0)
+            self.assertEqual(errors,[])
+        finally:
+            browser.close()
+
 
 
 if __name__ == "__main__":
