@@ -126,3 +126,12 @@
 - [x] Final code commit `68b5622b85192cad4ef49a94f49859b7a01e3f51` Python 94/94 + browser 13/13 = **107 PASS** ([Actions #42978598628](https://github.com/jkd04255/wifi/actions/runs/42978598628)).
 - [x] JSON round-trip pin survival and imported legacy room-purpose removal.
 - [ ] Full GATE 3 approval and public deployment — **HOLD**.
+
+
+### GATE 3 필수영역 핀 후속 UI/UX 작업 (2026-11-11)
+- [x] 기존 핀을 직접 드래그해 이동, Undo 1회 복구 및 도면 밖 이동 제한.
+- [x] 선택한 핀만 반경(0.3–3m) 수정 및 잘못된 반경 거부.
+- [x] 결과 화면의 핀별 현재/추천 최소 예측 품질, 70점 충족/미달 배지 표시; 수정·API 실패 시 오래된 추천 제거.
+- [x] Python 94 + Chromium/WebKit 17 = **111/111 PASS** ([GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205), code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`).
+- [ ] 실제 팀원 1·2·3 계약, 예측/실측 보정 비교, 연속 면적 품질 및 실기기 검증.
+- [ ] Draft PR #3/#2 main 병합 및 GitHub Pages 배포 — **GATE HOLD**.
