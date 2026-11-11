@@ -90,6 +90,7 @@ jobs:
           assert b'id="roomDrawer"' not in source
           assert b'minQualityScore' in source
           subprocess.run([str(exe.resolve()),"--self-test"],check=True,timeout=180)
+          subprocess.run([str(exe.resolve()),"--integration-test"],check=True,timeout=180)
           print("PIN70_WINDOWS_PE_AND_BACKEND_TEST_PASS")
           print("COMPACT_EXE_BYTES",len(data))
           print("EXE_SHA256",hashlib.sha256(data).hexdigest())
