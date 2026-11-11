@@ -60,7 +60,9 @@ jobs:
         run: python -m unittest discover -s backend/tests_browser -p 'test_stage4_offline.py' -v
 
   win-exe:
-    needs: [html-check, browser-smoke]
+    # Build the signed-off candidate as soon as static checks pass; full browser QA
+    # remains a separate mandatory verification before delivery/merge.
+    needs: [html-check]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
