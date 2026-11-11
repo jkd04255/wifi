@@ -1,4 +1,4 @@
-name: Package mandatory-pin 70 desktop EXE and HTML
+name: Package compact mandatory-pin 70 desktop EXE and HTML
 
 on:
   push:
@@ -66,7 +66,7 @@ jobs:
       - name: Build self-contained local API and WebView Windows executable
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name WiFi_Placement_RequiredPin_70 --paths backend --add-data "release_preview/stage3.html;preview" --hidden-import=uvicorn.protocols.http.h11_impl --hidden-import=uvicorn.loops.asyncio --hidden-import=webview.platforms.edgechromium --collect-all=webview --collect-all=clr_loader --collect-all=pythonnet --collect-all=pydantic --collect-all=pydantic_core --collect-all=uvicorn tools/required_pin_desktop.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --optimize=2 --name WiFi_Placement_RequiredPin_70_Lite --paths backend --add-data "release_preview/stage3.html;preview" --hidden-import=uvicorn.protocols.http.h11_impl --hidden-import=uvicorn.loops.asyncio --hidden-import=uvicorn.lifespan.on --hidden-import=webview.platforms.edgechromium --collect-data=webview --collect-binaries=pythonnet --collect-binaries=clr_loader --exclude-module=watchfiles --exclude-module=rich --exclude-module=webview.platforms.qt --exclude-module=webview.platforms.gtk --exclude-module=webview.platforms.cocoa tools/required_pin_desktop.py
       - name: Validate true Windows EXE and offline 70-point hard constraint
         shell: pwsh
         run: |
@@ -76,10 +76,10 @@ jobs:
           import subprocess
           import struct
 
-          exe = Path("dist/WiFi_Placement_RequiredPin_70.exe")
+          exe = Path("dist/WiFi_Placement_RequiredPin_70_Lite.exe")
           html = Path("dist/WiFi_Placement_RequiredPin_70.html")
           data = exe.read_bytes()
-          assert len(data) > 3_000_000
+          assert 3_000_000 < len(data) < 19_000_000, "Size regression; expected a compact build"
           assert data[:2] == b"MZ"
           offset = struct.unpack_from("<I",data,0x3C)[0]
           assert data[offset:offset+4] == b"PE\x00\x00"
@@ -91,15 +91,16 @@ jobs:
           assert b'minQualityScore' in source
           subprocess.run([str(exe.resolve()),"--self-test"],check=True,timeout=180)
           print("PIN70_WINDOWS_PE_AND_BACKEND_TEST_PASS")
+          print("COMPACT_EXE_BYTES",len(data))
           print("EXE_SHA256",hashlib.sha256(data).hexdigest())
           print("HTML_SHA256",hashlib.sha256(source).hexdigest())
           '@ | python -
       - name: Upload new mandatory-pin EXE + HTML (not old v1.6)
         uses: actions/upload-artifact@v4
         with:
-          name: WiFi_RequiredPin_70_EXE_HTML
+          name: WiFi_RequiredPin_70_Lite_EXE_HTML
           path: |
-            dist/WiFi_Placement_RequiredPin_70.exe
+            dist/WiFi_Placement_RequiredPin_70_Lite.exe
             dist/WiFi_Placement_RequiredPin_70.html
             docs/REQUIRED_PIN_DESKTOP.md
           retention-days: 90
