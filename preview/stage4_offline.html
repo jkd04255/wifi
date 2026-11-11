@@ -29,14 +29,14 @@
 </header>
 <main>
 <section id="editorScreen" class="screen editor-screen">
- <div class="page-intro"><div><div class="eyebrow">STEP 01 · DRAW YOUR HOME</div><h1>우리 집 도면 그리기</h1><p>집의 구조를 자유롭게 그려 보세요. <span>그림을 원하는 위치에 필수영역 핀을 배치해 최소 예상 품질을 지정하세요.</span></p></div><button type="button" class="primary proceed" id="applyFromEditorBtn">Apply · 신호 확인하기 <b>→</b></button></div>
+ <div class="page-intro"><div><div class="eyebrow">STEP 01 · DRAW YOUR HOME</div><h1>우리 집 도면 그리기</h1><p>집의 구조를 자유롭게 그려 보세요. <span>그림을 원하는 위치에 신호 세기 핀을 배치해 최소 예상 품질을 지정하세요.</span></p></div><button type="button" class="primary proceed" id="applyFromEditorBtn">Apply · 신호 확인하기 <b>→</b></button></div>
  <div class="layout-bar"><div class="area-controls"><label for="pyeongInput">우리 집 크기</label><input id="pyeongInput" type="number" value="24.2" min="1" max="150" step="0.1" inputmode="decimal"><strong>평</strong><button id="areaApplyBtn" class="secondary">면적 적용</button></div><div class="layout-metrics"><strong id="mapSizeChip">10.0 × 8.0m</strong><span id="areaChip">약 80.0㎡</span><small>X–Z 평면 5:4 비율 가정 · Y는 바닥으로부터의 높이</small></div><div class="dirty-pill" id="dirtyPill">● 도면 작성 중</div></div>
- <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="핀 반경의 예상 품질 70점 이상이 필수 조건입니다"><span class="tool-icon">◎</span>필수영역</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div></div>
- <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 필수영역 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">필수영역 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 필수영역 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
+ <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="신호 세기 핀 · 기본 4칸(64점 이상) · 단일 지점"><span class="tool-icon">◎</span>신호 세기</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div></div>
+ <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 신호 세기 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">신호 세기 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 신호 세기 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
  <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
   <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
   <details class="palette-drawer" id="eraserDrawer"><summary><span>◌ 부분 지우개</span><span class="summary-meta">크기 조절</span></summary><div class="drawer-content"><div class="brush-controls"><label for="eraserSize">지우개 반경 <output id="eraserSizeValue">0.22 m</output></label><input type="range" id="eraserSize" min="0.1" max="1.2" step="0.02" value="0.22"></div><p>지우개가 지나간 <b>선과 벽의 해당 부분만</b> 사라집니다. 직사각형의 한 변 중간을 지워도 나머지 벽은 남습니다. 중요도 칠하기도 지운 위치만 기본 0%로 돌아갑니다. 한 번의 드래그는 실행 취소 1회로 복원합니다.</p></div></details>
-  <details class="palette-drawer" id="requiredDrawer"><summary><span>◎ 필수영역 · 지정 지점 70점 이상</span></summary><div class="drawer-content"><p>필수영역은 반경 없는 한 점입니다. 그 점에서 예상 Wi-Fi 품질이 70/100 이상이어야 합니다.</p><div id="requiredPinPicker" hidden><label for="requiredPinSelect">편집할 핀</label><div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 필수영역 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary">다음 핀</button></div><p id="requiredSelectionStatus" role="status" aria-live="polite">핀을 선택하고 이동하세요.</p></div><div id="requiredSelectedControls" hidden><strong id="requiredSelectedName">선택한 필수영역</strong><p id="requiredSelectedHint">지정한 지점 한 곳을 검사합니다.</p></div><input type="hidden" id="requiredRadius" value="0.3"><output id="requiredRadiusValue" hidden>0.3 m</output><input type="hidden" id="selectedRequiredRadius" value="0.3"><output id="selectedRequiredRadiusValue" hidden>0.3 m</output><p>LAN 포트와 천장·벽 높이 제한 없이 동작합니다. 결과는 미보정 RSSI 예상입니다.</p></div></details>
+  <details class="palette-drawer" id="requiredDrawer"><summary><span>◎ 신호 세기 · 기본 4칸(64점 이상)</span></summary><div class="drawer-content"><p>핀은 반경 없는 한 점만 검사합니다. 새 핀은 기본 4칸(64점 이상)으로 추가됩니다. 선택한 핀마다 팔레트에서 요구 신호 세기를 변경할 수 있습니다.</p><div id="requiredPinPicker" hidden><label for="requiredPinSelect">편집할 핀</label><div class="required-picker-row"><select id="requiredPinSelect" aria-label="편집할 신호 세기 핀 선택"></select><button type="button" id="requiredNextPin" class="secondary">다음 핀</button></div><p id="requiredSelectionStatus" role="status" aria-live="polite">핀을 선택하고 이동하세요.</p></div><div id="requiredSelectedControls" hidden><strong id="requiredSelectedName">선택한 신호 세기</strong><p id="requiredSelectedHint">지정한 한 점을 검사합니다.</p></div><label class="field-label" for="signalBarsSelect"><span>선택한 핀의 최소 신호 세기</span><select id="signalBarsSelect" aria-label="선택한 신호 세기 핀의 최소 요구 칸수" style="width:100%;padding:10px;border:1px solid #d8e3ef;border-radius:8px;background:#fff;color:#263e5a"><option value="4">4칸 이상 · 64점 이상 (기본값)</option><option value="3">3칸 이상 · 42점 이상</option><option value="2">2칸 이상 · 27점 이상</option><option value="1">1칸 이상 · 9점 이상</option><option value="0">0칸 이상 · 0점 이상</option></select></label><p id="signalBarsHelp">핀을 추가하고 선택하면 이곳에서 해당 지점의 기준을 변경할 수 있습니다.</p><p>LAN 포트와 천장·벽 높이 제한 없이 동작합니다. 결과는 미보정 RSSI 예상입니다.</p></div></details>
   <details class="palette-drawer" id="elementsDrawer"><summary><span>▤ 도면 요소 목록</span><span class="summary-meta" id="numWallsChip">벽 0개</span></summary><div class="drawer-content"><div class="element-list" id="elementList"></div><button type="button" class="text-button danger" id="clearBtn">벽과 스케치 전체 지우기</button></div></details>
   <div class="side-help"><strong>도면 그리는 방법</strong><p>‘그리기’는 자유선, ‘선 추가’는 시작점과 끝점 사이의 직선 벽, ‘직사각형’은 벽 네 면을 만듭니다. <b>도면화</b>는 자유선과 사선을 직각으로 보정합니다. <b>부분 지우개</b>는 닿은 부분만 지웁니다.</p><p>벽은 모두 콘크리트로 계산됩니다. 중요도는 신호 세기를 직접 바꾸지 않고 최적 배치 평가에 사용됩니다.</p></div>
   <button type="button" id="resetBtn" class="ghost full">＋ 새 도면 시작</button>
@@ -46,7 +46,7 @@
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
- <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><input type="hidden" id="roomHeightM" value="2.7"><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="필수영역 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">필수영역 없음 · 기준은 반경 17개 표본점의 예상 품질 ≥70점입니다.</div><div id="g3Settings" hidden><select id="g3Mode"><option value="legacy">legacy</option><option value="local">local</option></select><input id="g3LanX" value="0"><input id="g3LanZ" value="0"><input id="g3LanY" value="0"><input id="g3Cable" value="200"></div><p id="g3ModeInfo" class="footnote">LAN 포트·랜선 길이는 고려하지 않습니다. Python 서버 없이 실행됩니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
+ <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><input type="hidden" id="roomHeightM" value="2.7"><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><div id="g3Settings" hidden><select id="g3Mode"><option value="legacy">legacy</option><option value="local">local</option></select><input id="g3LanX" value="0"><input id="g3LanZ" value="0"><input id="g3LanY" value="0"><input id="g3Cable" value="200"></div><p id="g3ModeInfo" class="footnote">LAN 포트·랜선 길이는 고려하지 않습니다. Python 서버 없이 실행됩니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
 </section></main><footer><span>Wi-Fi Placement Studio · Offline HTML / Windows EXE</span><span>1평 ≈ 3.3058㎡ · 가로세로 비율 추정 · 결과는 예측치입니다.</span></footer>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
 /* Browser-offline companion of backend/wifi_engine/core.py.
@@ -447,7 +447,19 @@ function drawZone(ctx,z,sx,sy,active=false){const x=Math.min(z.x1,z.x2)*sx,y=Mat
  if(w>58&&h>22){const name=z.label||'중요 구역';ctx.fillStyle=active?'#174eaa':'#438cbd';ctx.textBaseline='top';ctx.textAlign='left';ctx.font='bold 10px Malgun Gothic, sans-serif';ctx.fillText(name+' '+zonePercent(z),x+7,y+6,Math.max(0,w-10));}
 }
 // Mandatory-area pins: strictly a predicted-quality constraint, not zone weighting.
-const PIN_MIN_QUALITY=70,PIN_MAX_COUNT=12;
+const PIN_MIN_QUALITY=64,PIN_MAX_COUNT=12;
+const SIGNAL_LEVELS=Object.freeze({4:64,3:42,2:27,1:9,0:0});
+function signalBarsFromScore(score){
+ const value=Number(score);
+ return Number.isFinite(value)?([4,3,2,1,0].find(b=>value>=SIGNAL_LEVELS[b])??0):4;
+}
+function signalBars(pin){
+ const bars=Number(pin?.signalBars);
+ return pin?.signalBars!=null&&Number.isInteger(bars)&&bars>=0&&bars<=4?bars:signalBarsFromScore(pin?.minQualityScore);
+}
+function signalMinScore(pin){return SIGNAL_LEVELS[signalBars(pin)];}
+function newSignalPin(x,z){return {id:uid('required'),x,z,signalBars:4,minQualityScore:PIN_MIN_QUALITY};}
+
 function requiredSamples(pin){return [{x:pin.x,z:pin.z}];}
 function qualityPoint(rssi){return clamp((rssi+90)/55*100,0,100)}
 function requiredMinimum(pin,router=L.router){
@@ -457,24 +469,25 @@ function requiredMinimum(pin,router=L.router){
 function getSelectedRequiredPin(){return (L.requiredPins||[]).find(p=>p.id===selectedRequiredId)||null;}
 function syncSelectedRequired(){
  const pins=L.requiredPins||[],panel=$('requiredSelectedControls'),picker=$('requiredPinPicker');
- // Keep the native select and visible pin selection in sync after import, delete or Undo.
  if(pins.length&&!getSelectedRequiredPin())selectedRequiredId=pins[0].id;
  const pin=getSelectedRequiredPin();
  panel.hidden=!pin;picker.hidden=!pins.length;
- const select=$('requiredPinSelect');
- select.replaceChildren();
+ const select=$('requiredPinSelect');select.replaceChildren();
  pins.forEach((v,i)=>{
   const opt=document.createElement('option');opt.value=v.id;
-  opt.textContent='필수영역 '+(i+1)+' · X '+fmt(v.x,2)+'m · Z '+fmt(v.z,2)+'m';
+  opt.textContent='신호 세기 '+(i+1)+' · '+signalBars(v)+'칸 이상 · X '+fmt(v.x,2)+'m · Z '+fmt(v.z,2)+'m';
   select.appendChild(opt);
  });
  $('requiredNextPin').disabled=pins.length<2;
+ $('signalBarsSelect').value=pin?String(signalBars(pin)):'4';
+ $('signalBarsSelect').disabled=!pin;
+ $('signalBarsHelp').textContent=pin?'선택한 핀만 '+signalBars(pin)+'칸(최소 '+signalMinScore(pin)+'점)으로 검사합니다. 새 핀은 항상 4칸으로 추가됩니다.':'핀을 추가하면 4칸에서 다른 칸수로 변경할 수 있습니다.';
  if(!pin){selectedRequiredId=null;return;}
  select.value=pin.id;
  const n=pins.indexOf(pin)+1;
- $('requiredSelectedName').textContent='필수영역 '+n+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';
- $('requiredSelectedHint').textContent='선택한 점의 위치만 변경할 수 있습니다.';
- $('requiredSelectionStatus').textContent='필수영역 '+n+' 선택됨 · 핀 중심을 드래그해 이동 · 겹친 핀은 반복 터치 또는 목록으로 선택';
+ $('requiredSelectedName').textContent='신호 세기 '+n+' · X '+fmt(pin.x,2)+'m / Z '+fmt(pin.z,2)+'m';
+ $('requiredSelectedHint').textContent='선택한 단일 점의 위치와 최소 칸수를 변경할 수 있습니다.';
+ $('requiredSelectionStatus').textContent='신호 세기 '+n+' 선택됨 · '+signalBars(pin)+'칸 이상 · 핀 드래그 또는 목록으로 선택';
 }
 function selectRequiredPin(id){
  if(!(L.requiredPins||[]).some(pin=>pin.id===id))return;
@@ -498,40 +511,39 @@ function drawRequiredPin(ctx,pin,sx,sy,passed=null){
  ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
  ctx.beginPath();ctx.arc(x,y-7,8,Math.PI,0);ctx.lineTo(x,y+12);ctx.closePath();ctx.fillStyle=color;ctx.fill();
  ctx.beginPath();ctx.arc(x,y-7,3,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();
- ctx.fillStyle=color;ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillText('70+',x+12,y-12);
+ ctx.fillStyle=color;ctx.font='bold 11px Malgun Gothic,sans-serif';ctx.fillText(signalBars(pin)+'칸',x+12,y-12);
  if(pin.id&&pin.id===selectedRequiredId&&ctx===eCtx){ctx.beginPath();ctx.arc(x,y,r+6,0,Math.PI*2);ctx.strokeStyle='#3c228e';ctx.lineWidth=3;ctx.setLineDash([]);ctx.stroke();ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.arc(x,y,21,0,Math.PI*2);ctx.strokeStyle='#3c228e';ctx.lineWidth=2;ctx.stroke();}
  ctx.restore();
 }
 function renderRequiredStatus(){
  const pins=L.requiredPins||[],box=$('requiredResults');box.replaceChildren();
  if(!pins.length){
-  box.hidden=true;
-  $('requiredStatus').textContent='필수영역 없음 · 지정 지점의 예상 품질 ≥70';
+  box.hidden=true;$('requiredStatus').textContent='신호 세기 핀 없음 · 기본 4칸(64점 이상) · 단일 지점';
   $('requiredStatus').style.color='#62788c';return;
  }
- const currentScores=pins.map(pin=>requiredMinimum(pin)),min=Math.min(...currentScores);
- const ok=currentScores.every(v=>v+1e-8>=PIN_MIN_QUALITY);
- $('requiredStatus').textContent='필수영역 '+pins.length+'곳 · 현재 배치 최소 예상 '+fmt(min,1)+'/100 · '+(ok?'모두 충족':'미달 핀 있음')+' (미보정 예측)';
+ const currentScores=pins.map(pin=>requiredMinimum(pin));
+ const passedCount=pins.filter((pin,i)=>currentScores[i]+1e-8>=signalMinScore(pin)).length;
+ const ok=passedCount===pins.length;
+ $('requiredStatus').textContent='신호 세기 '+pins.length+'곳 · 현재 배치 '+passedCount+'/'+pins.length+'곳 기준 충족 · 최소 예상 '+fmt(Math.min(...currentScores),1)+'/100 (미보정 예측)';
  $('requiredStatus').style.color=ok?'#15845c':'#ba4e48';
  const suggestion=best?.stage3&&best.requiredAreaSatisfied===true?best.best:null;
- const title=document.createElement('div');title.textContent='필수영역 품질 확인';
+ const title=document.createElement('div');title.textContent='신호 세기 지점별 품질 확인';
  title.style.cssText='font-size:13px;font-weight:700;margin:0 0 7px;color:#293b55';box.appendChild(title);
  pins.forEach((pin,i)=>{
-  const before=currentScores[i],after=suggestion?requiredMinimum(pin,suggestion):null;
-  const beforeOK=before+1e-8>=PIN_MIN_QUALITY,afterOK=after!==null&&after+1e-8>=PIN_MIN_QUALITY;
-  const row=document.createElement('div');
-  row.style.cssText='border:1px solid #dae3ee;border-radius:10px;padding:10px 12px;margin:7px 0;background:#fff';
+  const before=currentScores[i],after=suggestion?requiredMinimum(pin,suggestion):null,minimum=signalMinScore(pin);
+  const beforeOK=before+1e-8>=minimum,afterOK=after!==null&&after+1e-8>=minimum;
+  const row=document.createElement('div');row.style.cssText='border:1px solid #dae3ee;border-radius:10px;padding:10px 12px;margin:7px 0;background:#fff';
   const head=document.createElement('div');head.style.cssText='display:flex;justify-content:space-between;gap:8px;align-items:center';
-  const name=document.createElement('strong');name.textContent='◎ 필수영역 '+(i+1)+' · 지정점 X '+fmt(pin.x,2)+' · Z '+fmt(pin.z,2);name.style.fontSize='12px';
-  const pill=document.createElement('span');pill.textContent=(after!==null?afterOK:beforeOK)?'70점 충족':'70점 미달';
-  pill.style.cssText='font-size:11px;font-weight:700;border-radius:99px;padding:3px 8px;color:'+( (after!==null?afterOK:beforeOK)?'#147454':'#b74a3c')+';background:'+((after!==null?afterOK:beforeOK)?'#e5f5ec':'#fff0ec');
+  const name=document.createElement('strong');name.textContent='◎ 신호 세기 '+(i+1)+' · '+signalBars(pin)+'칸 이상 ('+minimum+'점) · X '+fmt(pin.x,2)+' · Z '+fmt(pin.z,2);name.style.fontSize='12px';
+  const pill=document.createElement('span');pill.textContent=(after!==null?afterOK:beforeOK)?'충족':'미달';
+  pill.style.cssText='font-size:11px;font-weight:700;border-radius:99px;padding:3px 8px;color:'+((after!==null?afterOK:beforeOK)?'#147454':'#b74a3c')+';background:'+((after!==null?afterOK:beforeOK)?'#e5f5ec':'#fff0ec');
   head.append(name,pill);
   const score=document.createElement('div');score.style.cssText='font-size:12px;margin-top:7px;color:#44556c';
-  score.textContent='현재 최소 '+fmt(before,1)+'점 ('+(beforeOK?'충족':'미달')+')'+(after===null?'':' → 추천 최소 '+fmt(after,1)+'점 ('+(afterOK?'충족':'미달')+')');
+  score.textContent='현재 예상 '+fmt(before,1)+'점 ('+(beforeOK?'충족':'미달')+')'+(after===null?'':' → 추천 예상 '+fmt(after,1)+'점 ('+(afterOK?'충족':'미달')+')');
   row.append(head,score);box.appendChild(row);
  });
  const caveat=document.createElement('p');caveat.style.cssText='font-size:10px;color:#718096;margin:6px 0 0';
- caveat.textContent='지정한 단일 점의 RSSI 예상이며 실제 품질 보장은 아닙니다.';
+ caveat.textContent='칸수는 시뮬레이터의 점수 구간입니다. 실제 휴대폰 칸수와 다를 수 있으며 보정되지 않은 단일 지점 RSSI 예측입니다.';
  box.appendChild(caveat);box.hidden=false;
 }
 function drawWalls(ctx,sx,sy){for(const wall of L.walls){
@@ -585,12 +597,12 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
 }
 function renderElements(){const box=$('elementList');box.replaceChildren();
  const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
- if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 필수영역 핀을 추가해 주세요.';box.appendChild(n);return;}
+ if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 신호 세기 핀을 추가해 주세요.';box.appendChild(n);return;}
  entries.forEach(item=>{const row=document.createElement('div');row.className='element';const left=document.createElement('div');left.className='element-text';
- left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 필수영역 (예상 품질 ≥70)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
+ left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 신호 세기 (예상 품질 ≥70)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
  const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 단일 지점':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
  left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
- $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 필수영역 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
+ $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
 }
 function syncLayout(){
  const p=L.areaPyeong??(L.width*L.depth/SQM_PER_PYEONG);
@@ -650,7 +662,7 @@ editor.addEventListener('keydown',e=>{
  if(d){
   e.preventDefault();
   const pin=getSelectedRequiredPin();
-  if(!pin){$('pointerLabel').textContent='필수영역 핀을 먼저 추가하거나 목록에서 선택하세요.';return;}
+  if(!pin){$('pointerLabel').textContent='신호 세기 핀을 먼저 추가하거나 목록에서 선택하세요.';return;}
   const step=e.shiftKey?0.5:0.1;
   const x=+clamp(pin.x+d[0]*step,0,L.width).toFixed(3);
   const z=+clamp(pin.z+d[1]*step,0,L.depth).toFixed(3);
@@ -658,7 +670,7 @@ editor.addEventListener('keydown',e=>{
    $('pointerLabel').textContent='도면 경계입니다. 더 이상 이동할 수 없습니다.';return;
   }
   pushUndo();pin.x=x;pin.z=z;
-  changed('키보드로 필수영역 위치를 이동했습니다. Apply로 다시 계산하세요.');
+  changed('키보드로 신호 세기 위치를 이동했습니다. Apply로 다시 계산하세요.');
   $('pointerLabel').textContent='선택 핀: X '+fmt(x,2)+'m · Z '+fmt(z,2)+'m · Undo 가능';
   return;
  }
@@ -668,7 +680,7 @@ editor.addEventListener('keydown',e=>{
   const x=L.width/2,z=L.depth/2;
   pushUndo();const pin={id:uid('required'),x,z,minQualityScore:PIN_MIN_QUALITY};
   L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
-  changed('키보드로 필수영역 핀을 도면 중앙에 추가했습니다.');
+  changed('키보드로 신호 세기 핀을 도면 중앙에 추가했습니다.');
  }else{
   if(!getSelectedRequiredPin())selectedRequiredId=L.requiredPins[0].id;
   syncSelectedRequired();renderEditor();$('pointerLabel').textContent='선택 핀은 방향키로 이동할 수 있습니다.';
@@ -690,11 +702,11 @@ editor.addEventListener('pointerdown',e=>{
      syncSelectedRequired();renderEditor();return;
    }
    pointerId=null;const place=snapped(raw);
-   if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('필수영역은 최대 12개입니다.');return;}
+   if((L.requiredPins||[]).length>=PIN_MAX_COUNT){toast('신호 세기은 최대 12개입니다.');return;}
    pushUndo();L.requiredPins=L.requiredPins||[];
    const pin={id:uid('required'),x:place.x,z:place.y,minQualityScore:PIN_MIN_QUALITY};
    L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
-   changed('필수영역 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
+   changed('신호 세기 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
  }
  if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}
  if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
@@ -712,7 +724,7 @@ editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointer
 function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);pointerId=null;
  if(requiredDrag){
   moveRequiredDrag(raw,e);const drag=requiredDrag;requiredDrag=null;
-  if(drag.moved){pushUndoSnapshot(drag.undoSnapshot);changed('필수영역 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
+  if(drag.moved){pushUndoSnapshot(drag.undoSnapshot);changed('신호 세기 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
   else if(drag.overlappingIds.length>1){
     // Repeated taps rotate overlapping pins. A drag always moves the selected one.
     const oldIndex=drag.overlappingIds.indexOf(drag.selectedAtDown);
@@ -738,7 +750,7 @@ function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw
  }
 
  currentPath=null;renderEditor();}
-editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;$('pointerLabel').textContent='필수영역 핀 드래그가 취소되어 원래 위치로 복원했습니다.';}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
+editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;$('pointerLabel').textContent='신호 세기 핀 드래그가 취소되어 원래 위치로 복원했습니다.';}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
 editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
 heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
 function togglePalette(open){
@@ -777,7 +789,7 @@ $('selectedRequiredRadius').onchange=e=>{
  if(!Number.isFinite(radius)||radius<.3||radius>3||radius>maxFit+1e-8){
   toast('반경이 도면 밖으로 나갑니다. 핀 중심을 이동하거나 반경을 줄여주세요.');syncSelectedRequired();return;
  }
- if(Math.abs(pin.radiusM-radius)>.001){pushUndo();pin.radiusM=radius;changed('선택한 필수영역 반경을 '+fmt(radius)+'m로 수정했습니다.');}
+ if(Math.abs(pin.radiusM-radius)>.001){pushUndo();pin.radiusM=radius;changed('선택한 신호 세기 반경을 '+fmt(radius)+'m로 수정했습니다.');}
  else syncSelectedRequired();
 };
 $('brushSize').oninput=e=>{$('brushSizeValue').textContent=fmt(e.target.value)+' m';renderEditor()};
@@ -881,14 +893,14 @@ async function g3LocalOptimize(){
  for(const pin of (L.requiredPins||[]))for(const sample of requiredSamples(pin)){
   probes.push({x:+sample.x.toFixed(6),z:+sample.z.toFixed(6),priorityPct:100,targetDbm:-51.5,minQualityScore:PIN_MIN_QUALITY});
  }
- if(probes.length>512)throw Error('필수영역 표본점이 최대 512개를 초과했습니다.');
+ if(probes.length>512)throw Error('신호 세기 표본점이 최대 512개를 초과했습니다.');
  const predict=position=>{const trial={...L,router:{...L.router,x:position.x,z:position.z,y:position.y}};
    return {position,rssisDbm:probes.map(p=>+window.WifiEngine.value(trial,p.x,p.z).toFixed(2))};};
  const candidates=c.positions.map(item=>predict({x:item.x,z:item.z,y:item.y}));
  const current=predict({x:L.router.x,z:L.router.z,y:L.router.y});
  const r=await api('/optimize',{floor,lanPort,probes,candidates,current,routeGridStepM:.4});
- if(r.status!=='ok'||!r.recommendedPosition)throw Error((L.requiredPins||[]).length?'필수영역 예상 품질 70점과 설치·랜선 조건을 모두 만족하는 후보가 없습니다. 핀의 반경 또는 위치를 조정해 주세요.':'조건에 맞는 추천 위치를 찾지 못했습니다.');
- if((L.requiredPins||[]).length&&r.requiredAreaSatisfied!==true)throw Error('필수영역 품질 조건이 확인되지 않아 추천을 중단했습니다.');
+ if(r.status!=='ok'||!r.recommendedPosition)throw Error((L.requiredPins||[]).length?'신호 세기 예상 품질 70점과 설치·랜선 조건을 모두 만족하는 후보가 없습니다. 핀의 반경 또는 위치를 조정해 주세요.':'조건에 맞는 추천 위치를 찾지 못했습니다.');
+ if((L.requiredPins||[]).length&&r.requiredAreaSatisfied!==true)throw Error('신호 세기 품질 조건이 확인되지 않아 추천을 중단했습니다.');
  return {best:r.recommendedPosition,bestStats:{qualityScore:r.scoreAfter},currentStats:{qualityScore:r.scoreBefore},improvementPoints:r.deltaScore,candidates:r.feasibleCandidatesCount,weightsUsed:true,stage3:true,estimatedCableLengthM:r.estimatedCableLengthM,additionalApAdvised:r.additionalApAdvised,criticalCoveragePct:r.criticalCoveragePct,signalSource:'v1.6_local_estimate',requiredAreaSatisfied:r.requiredAreaSatisfied,requiredAreaMinimumQualityScore:r.requiredAreaMinimumQualityScore,requiredAreaSampleCount:r.requiredAreaSampleCount,reason:r.reason};
 }
 $('optimizeBtn').onclick=async()=>{
@@ -897,7 +909,7 @@ $('optimizeBtn').onclick=async()=>{
  try{
   let resultBest;
   const objectiveWeighted=weighted||(L.zones||[]).length>0||(L.importanceStrokes||[]).length>0;
-  if((L.requiredPins||[]).length&&$('g3Mode').value!=='local')throw Error('필수영역 70점 조건은 4번 Python API 로컬 시연에서만 검증합니다. 해당 모드를 선택하세요.');
+  if((L.requiredPins||[]).length&&$('g3Mode').value!=='local')throw Error('신호 세기 70점 조건은 4번 Python API 로컬 시연에서만 검증합니다. 해당 모드를 선택하세요.');
   if($('g3Mode').value==='local'){
     resultBest=await g3LocalOptimize();
     $('engineMode').textContent='4번 Python API · v1.6 예측값 시연 (미보정)';
@@ -921,7 +933,7 @@ $('optimizeBtn').onclick=async()=>{
     const warning=document.createElement('div');
     warning.textContent='v1.6 로컬 예측 시연이며 2번 RSSI 서버/3번 실측 보정 데이터와 연동되지 않았습니다. 집 외곽은 직사각형으로 가정합니다.';
     note.style.fontWeight='600';warning.style.color='#a34a35';box.append(note,warning);
-    if((L.requiredPins||[]).length){const mandatory=document.createElement('div');mandatory.style.fontWeight='700';mandatory.style.color='#168060';mandatory.textContent='필수영역 '+L.requiredPins.length+'곳 · '+best.requiredAreaSampleCount+'개 표본점 모두 70점 이상 · 최소 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점 (예측값)';box.append(mandatory);}
+    if((L.requiredPins||[]).length){const mandatory=document.createElement('div');mandatory.style.fontWeight='700';mandatory.style.color='#168060';mandatory.textContent='신호 세기 '+L.requiredPins.length+'곳 · '+best.requiredAreaSampleCount+'개 표본점 모두 70점 이상 · 최소 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점 (예측값)';box.append(mandatory);}
   }
   $('recommendation').hidden=false;
   $('statusLine').textContent=best.stage3?'4번 API 기반 추천 완료 (v1.6 미보정 예측값 시연)':'추천 위치를 찾았습니다. 보라색 BEST 마커를 확인하세요.';
@@ -946,9 +958,9 @@ $('importFile').onchange=async e=>{
   if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
   const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete'}));
   const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
-  if(rawPins.length>PIN_MAX_COUNT)throw Error('필수영역은 최대 12개까지입니다.');
+  if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기은 최대 12개까지입니다.');
   const requiredPins=rawPins.map((pin,i)=>{const x=val(pin.x,w),z=val(pin.z,depth);
-   if(x<0||x>w||z<0||z>depth)throw Error('필수영역 핀 좌표가 도면 밖입니다.');
+   if(x<0||x>w||z<0||z>depth)throw Error('신호 세기 핀 좌표가 도면 밖입니다.');
    return {id:String(pin.id||'required-'+i),x,z,minQualityScore:PIN_MIN_QUALITY};});
   // Retire imported room-purpose zone labels rather than silently recreating the removed tool.
   const zones=[];
