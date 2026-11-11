@@ -23,11 +23,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install required local optimizer, embedded WebView, and packager
+      - name: Install local optimizer and lightweight Windows packager
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check -r backend/requirements.txt
-          python -m pip install --disable-pip-version-check pywebview==5.4 pyinstaller==6.16.0
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
       - name: Build HTML copy with an explicit EXE requirement for local optimization
         shell: pwsh
         run: |
@@ -63,10 +63,10 @@ jobs:
           Path("dist").mkdir(exist_ok=True)
           Path("dist/WiFi_Placement_RequiredPin_70.html").write_text(html,encoding="utf-8")
           '@ | python -
-      - name: Build self-contained local API and WebView Windows executable
+      - name: Build local optimizer with Edge/Chrome app-mode Windows executable
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --optimize=2 --name WiFi_Placement_RequiredPin_70_Lite --paths backend --add-data "release_preview/stage3.html;preview" --hidden-import=uvicorn.protocols.http.h11_impl --hidden-import=uvicorn.loops.asyncio --hidden-import=uvicorn.lifespan.on --hidden-import=webview.platforms.edgechromium --collect-data=webview --collect-binaries=pythonnet --collect-binaries=clr_loader --exclude-module=watchfiles --exclude-module=rich --exclude-module=webview.platforms.qt --exclude-module=webview.platforms.gtk --exclude-module=webview.platforms.cocoa tools/required_pin_desktop.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --optimize=2 --name WiFi_Placement_RequiredPin_70_Lite --paths backend --add-data "release_preview/stage3.html;preview" --hidden-import=uvicorn.protocols.http.h11_impl --hidden-import=uvicorn.loops.asyncio --hidden-import=uvicorn.lifespan.on --exclude-module=watchfiles --exclude-module=rich --exclude-module=webview --exclude-module=pythonnet --exclude-module=clr_loader tools/required_pin_desktop.py
       - name: Validate true Windows EXE and offline 70-point hard constraint
         shell: pwsh
         run: |
@@ -79,7 +79,7 @@ jobs:
           exe = Path("dist/WiFi_Placement_RequiredPin_70_Lite.exe")
           html = Path("dist/WiFi_Placement_RequiredPin_70.html")
           data = exe.read_bytes()
-          assert 3_000_000 < len(data) < 19_000_000, "Size regression; expected a compact build"
+          assert 3_000_000 < len(data) < 14_000_000, "Size regression; expected a compact build"
           assert data[:2] == b"MZ"
           offset = struct.unpack_from("<I",data,0x3C)[0]
           assert data[offset:offset+4] == b"PE\x00\x00"
