@@ -518,6 +518,6 @@ output.parent.mkdir(parents=True,exist_ok=True)
 output.write_text(source,encoding="utf-8")
 dist=Path("dist")
 dist.mkdir(parents=True,exist_ok=True)
-name="WiFi_Placement_RequiredPoint_70_NoLAN.html"
+name="WiFi_Placement_RequiredPoint_70_NoHeightLimit.html"
 (dist/name).write_text(source,encoding="utf-8")
 print("NO_LAN_HTML_GENERATED",output.stat().st_size,dist.joinpath(name).stat().st_size)
