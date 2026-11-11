@@ -73,6 +73,44 @@ with sync_playwright() as play:
             assert "추천 최소" in results,results
             assert "70점 충족" in results,results
             assert "반경" not in results,results
+            # Router and receiver heights remain configurable, but are never
+            # limited by a ceiling or any old wall-height field.
+            assert page.locator("#roomHeightM").count()==0
+            assert page.locator("#routerY").get_attribute("type")=="number"
+            assert page.locator("#routerY").get_attribute("max") is None
+            assert page.locator("#receiverY").get_attribute("max") is None
+            page.locator("#routerY").fill("12.5")
+            page.locator("#routerY").dispatch_event("change")
+            page.locator("#receiverY").fill("13.5")
+            page.locator("#receiverY").dispatch_event("change")
+            assert page.locator("#routerY").input_value()=="12.5"
+            assert page.locator("#receiverY").input_value()=="13.5"
+            page.locator("#backToEditorBtn").click()
+            with page.expect_download() as dl:
+                page.locator("#exportBtn").click()
+            heights=json.loads(dl.value.path().read_text(encoding="utf-8"))
+            assert "roomHeightM" not in heights
+            assert heights["router"]["y"]==12.5
+            assert heights["receiverY"]==13.5
+            # Import old ceiling and low wall metadata, then export. The
+            # coordinates/Y stay, but ceiling and individual wall heights vanish.
+            old_height=json.loads(json.dumps(heights))
+            old_height["roomHeightM"]=0.5
+            old_height["walls"].append({"id":"old-short-wall",
+                "x1":1,"z1":1,"x2":2,"z2":2,"material":"concrete","heightM":0.01})
+            page.locator("#importFile").set_input_files({
+                "name":"legacy-height-bound-layout.json",
+                "mimeType":"application/json",
+                "buffer":json.dumps(old_height).encode("utf-8"),
+            })
+            page.wait_for_function("document.body.dataset.view==='design'",timeout=15000)
+            with page.expect_download() as dl:
+                page.locator("#exportBtn").click()
+            reexport=json.loads(dl.value.path().read_text(encoding="utf-8"))
+            assert "roomHeightM" not in reexport
+            assert "heightM" not in reexport["walls"][-1]
+            assert reexport["router"]["y"]==12.5
+            assert reexport["receiverY"]==13.5
             assert not errors,errors
             print(engine.upper(),"ONE_POINT_REQUIRED_70_OFFLINE_HTML_PASS")
         finally:
