@@ -14,7 +14,7 @@
 /* Native Win32 launcher: embeds ONE fully-offline HTML file. No Python,
  * FastAPI, WebView2 .NET bridge, server, port or LAN/cable constraints. */
 #define HTML_RESOURCE_ID 101
-#define WINDOW_TITLE L"Wi-Fi Placement Studio - Required Area 70 / No LAN"
+#define WINDOW_TITLE L"Wi-Fi Placement Studio - Required Point 70 / No LAN"
 #define MAX_TEXT 4096
 
 static void error_box(const wchar_t *message) {
@@ -84,7 +84,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE old,LPWSTR cmdline,int show){
     wchar_t root[MAX_PATH],folder[MAX_PATH],html[MAX_PATH];
     DWORD n=GetEnvironmentVariableW(L"LOCALAPPDATA",root,MAX_PATH);
     if(n==0||n>=MAX_PATH){error_box(L"Cannot locate LOCALAPPDATA");return 7;}
-    if(swprintf_s(folder,MAX_PATH,L"%ls\\WiFiRequiredPin70",root)<0)return 8;
+    if(swprintf_s(folder,MAX_PATH,L"%ls\\WiFiRequiredPoint70",root)<0)return 8;
     if(!CreateDirectoryW(folder,NULL)&&GetLastError()!=ERROR_ALREADY_EXISTS){
         error_box(L"Cannot create local app folder");return 9;
     }
