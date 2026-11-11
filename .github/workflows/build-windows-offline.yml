@@ -38,8 +38,24 @@ jobs:
               assert c in h, c
           print('HTML content checks passed')
           PY
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Run standalone offline browser QA
+        shell: bash
+        run: python -m unittest discover -s backend/tests_browser -p 'test_stage4_offline.py' -v
+
   win-exe:
-    needs: html-check
+    needs: [html-check, browser-smoke]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
