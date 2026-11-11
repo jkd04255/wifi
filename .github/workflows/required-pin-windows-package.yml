@@ -1,0 +1,78 @@
+name: Package tiny single-point 70 EXE and HTML without height limit
+
+on:
+  push:
+    branches: [feat/optimizer-required-pin-distribution]
+    paths:
+      - "tools/build_required_pin_nolan.py"
+      - "tools/test_required_pin_nolan.cjs"
+      - "tools/test_required_pin_nolan_browser.py"
+      - "tools/required_pin_nolan_win32.c"
+      - "tools/required_pin_nolan.rc"
+      - ".github/workflows/required-pin-windows-package.yml"
+      - "docs/REQUIRED_PIN_DESKTOP.md"
+      - "preview/stage3.html"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-win32-offline:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate release HTML without LAN/port/cable constraints
+        shell: pwsh
+        run: python tools/build_required_pin_nolan.py
+      - name: Verify JavaScript and predicted hard-70 feasibility
+        shell: pwsh
+        run: node tools/test_required_pin_nolan.cjs release_preview/stage3.html
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile tiny native Windows launcher embedding offline HTML
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build,dist | Out-Null
+          rc.exe /nologo /fo build\required_pin_nolan.res tools\required_pin_nolan.rc
+          cl.exe /nologo /utf-8 /W3 /O1 /MT /DUNICODE /D_UNICODE tools\required_pin_nolan_win32.c build\required_pin_nolan.res /Fe:dist\WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe /link /SUBSYSTEM:WINDOWS shlwapi.lib user32.lib advapi32.lib
+      - name: Validate native PE signature and embedded no-LAN HTML
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import struct,subprocess,hashlib
+          exe=Path("dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe")
+          html=Path("dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.html")
+          data=exe.read_bytes()
+          assert data[:2]==b"MZ"
+          assert data[struct.unpack_from("<I",data,0x3c)[0]:][:4]==b"PE\x00\x00"
+          assert 50000<len(data)<2000000,f"Native lightweight EXE size regression: {len(data)}"
+          assert b'data-tool="required"' in html.read_bytes()
+          assert b'id="g3LanX"' not in html.read_bytes()
+          subprocess.run([str(exe.resolve()),"--self-test"],check=True,timeout=30)
+          print("NATIVE_PE_AND_EMBEDDED_HTML_PASS")
+          print("NO_LAN_EXE_BYTES",len(data))
+          print("NO_LAN_HTML_BYTES",html.stat().st_size)
+          print("NO_LAN_EXE_SHA256",hashlib.sha256(data).hexdigest())
+          print("NO_LAN_HTML_SHA256",hashlib.sha256(html.read_bytes()).hexdigest())
+          '@ | python -
+      - name: Run offline Chromium and WebKit browser regression
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install chromium webkit
+          python tools/test_required_pin_nolan_browser.py
+      - name: Upload tiny native EXE and standalone fully-functional HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiFi_RequiredPoint_70_NoHeightLimit_EXE_HTML
+          path: |
+            dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.exe
+            dist/WiFi_Placement_RequiredPoint_70_NoHeightLimit.html
+            docs/REQUIRED_PIN_DESKTOP.md
+          retention-days: 90
+          if-no-files-found: error
