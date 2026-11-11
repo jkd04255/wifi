@@ -845,10 +845,11 @@ class Stage3BrowserTests(unittest.TestCase):
                     # Fill the bounded history with 30 committed keyboard moves.
                     for i in range(30):
                         canvas.press("ArrowRight" if i % 2 == 0 else "ArrowLeft")
-                    before_cancel = self._export_current_layout(page)["requiredPins"][0]
+                    before_cancel_layout = self._export_current_layout(page)
+                    before_cancel = before_cancel_layout["requiredPins"][0]
                     self.assertAlmostEqual(before_cancel["x"], initial["x"], delta=.001)
-                    px = bounds["x"] + bounds["width"]*before_cancel["x"]/6.0
-                    py = bounds["y"] + bounds["height"]*before_cancel["z"]/4.0
+                    px = bounds["x"] + bounds["width"]*before_cancel["x"]/before_cancel_layout["width"]
+                    py = bounds["y"] + bounds["height"]*before_cancel["z"]/before_cancel_layout["depth"]
                     primary = {"pointerId":105,"pointerType":"touch",
                                "isPrimary":True,"button":0,"buttons":1}
                     canvas.dispatch_event("pointerdown",{**primary,"clientX":px,"clientY":py})
@@ -880,25 +881,37 @@ class Stage3BrowserTests(unittest.TestCase):
                     canvas.press("Enter")
                     initial=self._export_current_layout(page)
                     pin=initial["requiredPins"][0]
-                    for _ in range(40):
+                    previous_x=None
+                    max_x=initial["width"]-pin["radiusM"]
+                    for _ in range(100):
+                        current=self._export_current_layout(page)["requiredPins"][0]
+                        if current["x"]>=max_x-.001:break
+                        previous_x=current["x"]
                         canvas.press("ArrowRight")
                     at_right=self._export_current_layout(page)["requiredPins"][0]
-                    self.assertAlmostEqual(at_right["x"],initial["width"]-pin["radiusM"],delta=.001)
+                    self.assertAlmostEqual(at_right["x"],max_x,delta=.001)
+                    self.assertIsNotNone(previous_x)
                     canvas.press("ArrowRight")
                     self.assertIn("도면 경계",page.locator("#pointerLabel").inner_text())
                     page.locator("#undoBtn").click()
                     after_right_undo=self._export_current_layout(page)["requiredPins"][0]
-                    self.assertAlmostEqual(after_right_undo["x"],at_right["x"]-.1,delta=.001)
+                    self.assertAlmostEqual(after_right_undo["x"],previous_x,delta=.001)
                     canvas.focus()
-                    for _ in range(20):
+                    previous_z=None
+                    max_z=initial["depth"]-pin["radiusM"]
+                    for _ in range(100):
+                        current=self._export_current_layout(page)["requiredPins"][0]
+                        if current["z"]>=max_z-.001:break
+                        previous_z=current["z"]
                         canvas.press("Shift+ArrowDown")
                     at_bottom=self._export_current_layout(page)["requiredPins"][0]
-                    self.assertAlmostEqual(at_bottom["z"],initial["depth"]-pin["radiusM"],delta=.001)
+                    self.assertAlmostEqual(at_bottom["z"],max_z,delta=.001)
+                    self.assertIsNotNone(previous_z)
                     canvas.press("Shift+ArrowDown")
                     self.assertIn("도면 경계",page.locator("#pointerLabel").inner_text())
                     page.locator("#undoBtn").click()
                     after_bottom_undo=self._export_current_layout(page)["requiredPins"][0]
-                    self.assertAlmostEqual(after_bottom_undo["z"],at_bottom["z"]-.5,delta=.001)
+                    self.assertAlmostEqual(after_bottom_undo["z"],previous_z,delta=.001)
                     self.assertEqual(after_bottom_undo["minQualityScore"],70)
                     self.assertEqual(errors,[])
                 finally:
