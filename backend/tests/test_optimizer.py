@@ -190,5 +190,82 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.client.post("/optimize",json=body).status_code,422)
 
 
+class RequiredPinHardConstraintTests(unittest.TestCase):
+    """A 70/100 mandatory pin sample is a constraint, never just a bonus weight."""
+
+    def setUp(self):
+        self.data = example()
+        self.data["probes"][0]["minQualityScore"] = 70
+
+    def opt(self):
+        return optimize(OptimizeRequest.model_validate(self.data))
+
+    def test_required_quality_threshold_at_minus_51_5_dbm(self):
+        self.data["candidates"][0]["rssisDbm"][0] = -51.5
+        self.data["candidates"][1]["rssisDbm"][0] = -80
+        result = self.opt()
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["recommendedPosition"]["x"], 1)
+        self.assertTrue(result["requiredAreaSatisfied"])
+        self.assertEqual(result["requiredAreaSampleCount"], 1)
+        self.assertAlmostEqual(result["requiredAreaMinimumQualityScore"], 70, places=4)
+
+    def test_one_failing_required_sample_blocks_candidate(self):
+        self.data["candidates"][0]["rssisDbm"][0] = -51.51
+        self.data["candidates"][1]["rssisDbm"][0] = -80
+        result = self.opt()
+        self.assertEqual(result["status"], "no_feasible_candidate")
+        self.assertIsNone(result["recommendedPosition"])
+        self.assertFalse(result["requiredAreaSatisfied"])
+        self.assertIn("mandatory", result["reason"])
+        self.assertIn("mandatory pin samples", " ".join(result["feasibilityWarnings"]))
+
+    def test_all_radius_samples_must_pass(self):
+        self.data["probes"][1]["minQualityScore"] = 70
+        self.data["candidates"][0]["rssisDbm"] = [-45, -70, -30]
+        self.data["candidates"][1]["rssisDbm"] = [-48, -50, -95]
+        self.data["current"]["rssisDbm"] = [-45, -80, -40]
+        result = self.opt()
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["recommendedPosition"]["x"], 4)
+        self.assertEqual(result["requiredAreaSampleCount"], 2)
+        self.assertEqual(result["requiredAreaMinimumQualityScore"], round((-50 + 90)/55*100,2))
+
+    def test_current_must_not_override_required_condition(self):
+        self.data["candidates"][0]["rssisDbm"] = [-48, -80, -30]
+        self.data["candidates"][1]["rssisDbm"] = [-90, -50, -95]
+        self.data["current"]["rssisDbm"] = [-60, -20, -40]
+        result = self.opt()
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["recommendedPosition"]["x"], 1)
+        self.assertTrue(result["requiredAreaSatisfied"])
+
+    def test_old_request_without_pin_remains_backward_compatible(self):
+        self.data["probes"][0].pop("minQualityScore")
+        result = self.opt()
+        self.assertEqual(result["status"], "ok")
+        self.assertIsNone(result["requiredAreaSatisfied"])
+        self.assertEqual(result["requiredAreaSampleCount"], 0)
+        self.assertIsNone(result["requiredAreaMinimumQualityScore"])
+
+    def test_outside_candidate_and_failing_pin_are_separate(self):
+        self.data["candidates"][0]["position"]["x"] = -5
+        self.data["candidates"][1]["rssisDbm"][0] = -75
+        result = self.opt()
+        self.assertEqual(result["status"], "no_feasible_candidate")
+        self.assertEqual(result["requiredAreaSampleCount"], 1)
+
+    def test_invalid_min_quality_rejected(self):
+        self.data["probes"][0]["minQualityScore"] = 110
+        self.assertEqual(TestClient(app).post("/optimize", json=self.data).status_code, 422)
+
+    def test_low_priority_required_point_still_mandatory(self):
+        self.data["probes"][0]["priorityPct"] = -100
+        self.data["candidates"][0]["rssisDbm"][0] = -80
+        self.data["candidates"][1]["rssisDbm"][0] = -80
+        result = self.opt()
+        self.assertEqual(result["status"], "no_feasible_candidate")
+
+
 if __name__=="__main__":
     unittest.main()
