@@ -33,13 +33,13 @@ jobs:
           checks=['function requiredSamples(pin){return [{x:pin.x,z:pin.z}];}',
                   'async function optimizeOfflinePins()',
                   '천장·벽 높이 제한',
-                  'LAN 포트·랜선 길이는 고려하지 않습니다',
+                  'LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다',
                   'const SIGNAL_LEVELS=Object.freeze({4:64,3:42,2:27,1:9,0:0});',
                   'requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8',
                   'id="signalBarsSelect"']
           for c in checks:
               assert c in h, c
-          for stale in ['id="requiredRadius"', 'id="selectedRequiredRadius"', '필수영역']:
+          for stale in ['id="requiredRadius"', 'id="selectedRequiredRadius"', 'id="roomHeightM"', 'g3Mode', 'fetch(', '/api/', '필수영역']:
               assert stale not in h, stale
           print('Signal-bar point contracts passed')
           PY
