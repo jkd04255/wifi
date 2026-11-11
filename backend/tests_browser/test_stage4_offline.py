@@ -226,7 +226,9 @@ class OfflineDesktopSmoke(unittest.TestCase):
         })
         self.page.wait_for_function("document.querySelectorAll('#requiredPinSelect option').length===2")
         self.assertEqual(self.export()["requiredPins"], original["requiredPins"])
-        self.page.locator("#paletteToggleBtn").click()
+        if self.page.locator("#toolsRail").is_hidden():
+            self.page.locator("#paletteToggleBtn").click()
+        self.page.locator("#requiredDrawer").evaluate("(node) => { node.open = true; }")
         self.page.locator("#requiredPinSelect").select_option(original["requiredPins"][0]["id"])
         self.assertEqual(self.page.locator('[data-signal-level="3"]').get_attribute("aria-pressed"), "true")
         self.page.locator("#requiredPinSelect").select_option(original["requiredPins"][1]["id"])
