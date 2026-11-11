@@ -46,7 +46,7 @@
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
- <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><input type="hidden" id="roomHeightM" value="2.7"><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><p id="offlineModeInfo" class="footnote">오프라인 JS 예측 엔진만 사용합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
+ <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><p id="offlineModeInfo" class="footnote">오프라인 JS 예측 엔진만 사용합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
 </section></main><footer><span>Wi-Fi Placement Studio · Offline HTML / Windows EXE</span><span>1평 ≈ 3.3058㎡ · 가로세로 비율 추정 · 결과는 예측치입니다.</span></footer>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
 /* Browser-offline companion of backend/wifi_engine/core.py.
@@ -611,7 +611,7 @@ function syncLayout(){
  $('pyeongInput').value=Number(p.toFixed(1));
  $('numWallsChip').textContent=`벽 ${L.walls.length} · 미변환 ${(L.sketches||[]).length}`;
  $('routerY').value=String(L.router.y);$('routerYValue').textContent=fmt(L.router.y)+' m';$('routerXValue').textContent='X = '+fmt(L.router.x)+' m · Z = '+fmt(L.router.z)+' m';
- $('receiverY').value=String(L.receiverY);$('roomHeightM').value=String(L.roomHeightM);
+ $('receiverY').value=String(L.receiverY);
  $('frequencySelect').value=String(L.router.frequency);$('powerInput').value=L.router.txPowerDbm??20;$('gainInput').value=L.router.antennaGainDbi??0;
  $('exponentInput').value=L.modelOverrides?.pathLossExponent??2.2;
  for(const canvas of [editor,heat])canvas.parentElement.style.aspectRatio=L.width+'/'+L.depth;
@@ -845,10 +845,6 @@ $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 
 $('receiverY').onchange=e=>{
  const n=Number(e.target.value);if(!Number.isFinite(n)||n<0){toast('수신기 높이는 0 이상으로 지정하세요.');syncLayout();return;}
  L.receiverY=n;changed('수신기 높이(Y)를 변경했습니다.');};
-$('roomHeightM').onchange=e=>{
- const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>10){toast('천장 높이는 1–10m입니다.');syncLayout();return;}
- L.roomHeightM=n;L.router.y=Math.min(n,L.router.y);L.receiverY=Math.min(n,L.receiverY);
- changed('실내 높이와 기본 콘크리트 벽 높이를 변경했습니다.');};
 $('frequencySelect').onchange=e=>setRouterField('frequency',Number(e.target.value),2.4,5);
 $('powerInput').onchange=e=>setRouterField('txPowerDbm',e.target.value,0,35);
 $('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20);
@@ -883,6 +879,7 @@ $('importFile').onchange=async e=>{
   const w=Number(converted.width),depth=Number(converted.depth);
   if(!Number.isFinite(w)||!Number.isFinite(depth)||w<2||depth<2||w>100||depth>100||!converted.router||!Array.isArray(converted.walls))throw Error('도면 XZ 크기, 공유기, 벽 목록을 확인해 주세요.');
   const val=(v,max)=>{const n=Number(v);if(!Number.isFinite(n)||n<0||n>max)throw Error('좌표가 도면 범위를 벗어났습니다.');return n;};
+  const pinCoordinate=(v,max)=>{if(typeof v!=='number'||!Number.isFinite(v))throw Error('신호 세기 핀 좌표는 유효한 숫자여야 합니다.');return val(v,max);};
   const roomHeightM=2.7,receiverY=Math.max(0,cleanNum(converted.receiverY,1));
   const r=converted.router;
   if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
@@ -892,8 +889,7 @@ $('importFile').onchange=async e=>{
   const importedPinIds=new Set();
   const requiredPins=rawPins.map((pin,i)=>{
    if(!pin||typeof pin!=='object'||Array.isArray(pin))throw Error('신호 세기 핀 데이터가 잘못됐습니다.');
-   const x=val(pin.x,w),z=val(pin.z,depth);
-   if(x<0||x>w||z<0||z>depth)throw Error('신호 세기 핀 좌표가 도면 밖입니다.');
+   const x=pinCoordinate(pin.x,w),z=pinCoordinate(pin.z,depth);
    const bars=signalBars(pin);
    let id=typeof pin.id==='string'&&pin.id.trim()?pin.id.trim():'required-import-'+(i+1);
    if(importedPinIds.has(id)){id='required-import-'+(i+1);while(importedPinIds.has(id))id+='-unique';}
