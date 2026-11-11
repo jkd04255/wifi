@@ -9,6 +9,8 @@
 
 
 /* Required-area pin touch and keyboard ergonomics — isolated GATE 3 preview only */
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+#editorCanvas:focus-visible{outline:3px solid #5b42b9;outline-offset:-4px}
 .required-picker-row{display:flex;gap:8px;align-items:center;margin:8px 0}
 .required-picker-row select{min-width:0;flex:1;min-height:44px;padding:9px;border-radius:9px;border:1px solid #aab9d2;background:#fff;color:#263c5c}
 .required-picker-row button{min-height:44px;padding:9px 12px}
@@ -30,7 +32,7 @@
  <div class="page-intro"><div><div class="eyebrow">STEP 01 · DRAW YOUR HOME</div><h1>우리 집 도면 그리기</h1><p>집의 구조를 자유롭게 그려 보세요. <span>그림을 원하는 위치에 필수영역 핀을 배치해 최소 예상 품질을 지정하세요.</span></p></div><button type="button" class="primary proceed" id="applyFromEditorBtn">Apply · 신호 확인하기 <b>→</b></button></div>
  <div class="layout-bar"><div class="area-controls"><label for="pyeongInput">우리 집 크기</label><input id="pyeongInput" type="number" value="24.2" min="1" max="150" step="0.1" inputmode="decimal"><strong>평</strong><button id="areaApplyBtn" class="secondary">면적 적용</button></div><div class="layout-metrics"><strong id="mapSizeChip">10.0 × 8.0m</strong><span id="areaChip">약 80.0㎡</span><small>X–Z 평면 5:4 비율 가정 · Y는 바닥으로부터의 높이</small></div><div class="dirty-pill" id="dirtyPill">● 도면 작성 중</div></div>
  <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="핀 반경의 예상 품질 70점 이상이 필수 조건입니다"><span class="tool-icon">◎</span>필수영역</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div></div>
- <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" aria-label="집 도면 자유롭게 그리기"></canvas><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 필수영역 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
+ <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 필수영역 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">필수영역 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 필수영역 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
  <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
   <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
   <details class="palette-drawer" id="eraserDrawer"><summary><span>◌ 부분 지우개</span><span class="summary-meta">크기 조절</span></summary><div class="drawer-content"><div class="brush-controls"><label for="eraserSize">지우개 반경 <output id="eraserSizeValue">0.22 m</output></label><input type="range" id="eraserSize" min="0.1" max="1.2" step="0.02" value="0.22"></div><p>지우개가 지나간 <b>선과 벽의 해당 부분만</b> 사라집니다. 직사각형의 한 변 중간을 지워도 나머지 벽은 남습니다. 중요도 칠하기도 지운 위치만 기본 0%로 돌아갑니다. 한 번의 드래그는 실행 취소 1회로 복원합니다.</p></div></details>
@@ -482,7 +484,10 @@ function requiredMinimum(pin,router=L.router){
 }
 function getSelectedRequiredPin(){return (L.requiredPins||[]).find(p=>p.id===selectedRequiredId)||null;}
 function syncSelectedRequired(){
- const pins=L.requiredPins||[],pin=getSelectedRequiredPin(),panel=$('requiredSelectedControls'),picker=$('requiredPinPicker');
+ const pins=L.requiredPins||[],panel=$('requiredSelectedControls'),picker=$('requiredPinPicker');
+ // Keep the native select and visible pin selection in sync after import, delete or Undo.
+ if(pins.length&&!getSelectedRequiredPin())selectedRequiredId=pins[0].id;
+ const pin=getSelectedRequiredPin();
  panel.hidden=!pin;picker.hidden=!pins.length;
  const select=$('requiredPinSelect');
  select.replaceChildren();
@@ -567,7 +572,6 @@ function drawWalls(ctx,sx,sy){for(const wall of L.walls){
 function drawRouter(ctx,x,y,rad=10){ctx.save();ctx.shadowColor='#245ee790';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fillStyle='#2469dc';ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=3;ctx.strokeStyle='white';ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.3;for(const r of [rad+5,rad+10]){ctx.beginPath();ctx.arc(x,y,r,Math.PI*1.24,Math.PI*1.76);ctx.stroke();}ctx.restore();}
 function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0,w,h);background(eCtx,w,h,true);
  const sx=w/L.width,sy=h/L.depth;
- for(const pin of (L.requiredPins||[]))drawRequiredPin(eCtx,pin,sx,sy);
  paintImportanceLayer(eCtx,L.importanceStrokes||[],w,h,sx,sy);
  for(const sk of (L.sketches||[]))drawSketch(eCtx,sk,sx,sy);
  if(currentPath?.tool==='brush')paintBrush(eCtx,{points:currentPath.points,weightPct:currentPath.weightPct,radiusM:currentPath.radiusM},sx,sy);
@@ -575,7 +579,10 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
  if(tool==='erase'&&hoverPoint){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('eraserSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.fillStyle='rgba(255,255,255,.50)';eCtx.fill();eCtx.setLineDash([4,3]);eCtx.strokeStyle='#e44e57';eCtx.lineWidth=1.7;eCtx.stroke();eCtx.restore();}
  if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
  if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
- drawWalls(eCtx,sx,sy);drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
+ drawWalls(eCtx,sx,sy);
+ // Pins (particularly the selected outline) must remain visible over brush/walls.
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(eCtx,pin,sx,sy);
+ drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
  if(preview&&start){const a={x:start.x*sx,y:start.y*sy},b={x:preview.x*sx,y:preview.y*sy};
  
  
@@ -662,6 +669,42 @@ function moveRequiredDrag(point,event){
  }
  if(drag.moved){pin.x=+x.toFixed(3);pin.z=+z.toFixed(3);}
 }
+// Keyboard-only equivalent to tapping, dragging and undoing a mandatory pin.
+editor.addEventListener('keydown',e=>{
+ if(tool!=='required')return;
+ const arrows={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+ const d=arrows[e.key];
+ if(d){
+  e.preventDefault();
+  const pin=getSelectedRequiredPin();
+  if(!pin){$('pointerLabel').textContent='필수영역 핀을 먼저 추가하거나 목록에서 선택하세요.';return;}
+  const step=e.shiftKey?0.5:0.1;
+  const x=+clamp(pin.x+d[0]*step,pin.radiusM,L.width-pin.radiusM).toFixed(3);
+  const z=+clamp(pin.z+d[1]*step,pin.radiusM,L.depth-pin.radiusM).toFixed(3);
+  if(Math.hypot(x-pin.x,z-pin.z)<0.0001){
+   $('pointerLabel').textContent='도면 경계입니다. 더 이상 이동할 수 없습니다.';return;
+  }
+  pushUndo();pin.x=x;pin.z=z;
+  changed('키보드로 필수영역 위치를 이동했습니다. Apply로 다시 계산하세요.');
+  $('pointerLabel').textContent='선택 핀: X '+fmt(x,2)+'m · Z '+fmt(z,2)+'m · Undo 가능';
+  return;
+ }
+ if(e.key!=='Enter'&&e.key!==' ')return;
+ e.preventDefault();
+ if(!(L.requiredPins||[]).length){
+  const radius=Number($('requiredRadius').value);
+  const x=L.width/2,z=L.depth/2;
+  if(!(radius>=.3&&radius<=3&&x>=radius&&L.width-x>=radius&&z>=radius&&L.depth-z>=radius)){
+   toast('도면 크기에 비해 핀 반경이 큽니다. 반경을 줄여 주세요.');return;
+  }
+  pushUndo();const pin={id:uid('required'),x,z,radiusM:radius,minQualityScore:PIN_MIN_QUALITY};
+  L.requiredPins.push(pin);selectedRequiredId=pin.id;$('g3Mode').value='local';
+  changed('키보드로 필수영역 핀을 도면 중앙에 추가했습니다.');
+ }else{
+  if(!getSelectedRequiredPin())selectedRequiredId=L.requiredPins[0].id;
+  syncSelectedRequired();renderEditor();$('pointerLabel').textContent='선택 핀은 방향키로 이동할 수 있습니다.';
+ }
+});
 editor.addEventListener('pointerdown',e=>{
  if(e.button!==0||(e.pointerType==='touch'&&!e.isPrimary)||pointerId!==null)return;
  const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);
@@ -693,7 +736,7 @@ editor.addEventListener('pointerdown',e=>{
  if(tool==='brush')currentPath={tool:'brush',points:[[p.x,p.y]],radiusM:Number($('brushSize').value),weightPct:selectedWeight};
  renderEditor();
 });
-editor.addEventListener('pointermove',e=>{const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
+editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
  $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
  if(requiredDrag){if(e.pointerId!==pointerId)return;moveRequiredDrag(p,e);editor.style.cursor='grabbing';renderEditor();return;}
  if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
