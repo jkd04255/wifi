@@ -109,3 +109,14 @@
 - [x] Public 저장소 `jkd04255/wifi` 확인, 열람과 push 권한 차이 기록.
 - [ ] 팀원 1·2·3 계약/데이터 수신 및 실데이터 교차검증.
 - [ ] GATE 3 정식 통합 판정 및 PR 병합·Pages 재배포 — **HOLD**.
+
+
+### GATE 3 UI 교체: 필수영역 핀 (2026-11-11)
+
+- [x] 방 용도 지정 UI 제거, 필수영역 핀 추가 (반경 0.3–3m, 70/100 최소 예측 품질, 최대 12개).
+- [x] 필수 품질 제약이 전체 중요도 평균보다 우선하도록 4번 Python optimizer 기능 구현; 조건 미달 후보는 추천 불가.
+- [x] Preview JSON import/export, Undo, 개별 삭제, 도면 크기 조정 및 최소품질 현황 UI.
+- [x] Python 94/94 + Chromium/WebKit 12/12 총 106/106 검증 [Actions #42977957957](https://github.com/jkd04255/wifi/actions/runs/42977957957).
+- [ ] 후속 문구 보완 HEAD 전체 회귀 CI 확인.
+- [ ] 실측 데이터 계약, 실제 외곽, 연속 원판 범위의 정확성 검증.
+- [ ] 본 Draft PR #3 및 기반 Draft PR #2의 병합/Pages 배포 — **HOLD**.
