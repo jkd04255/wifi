@@ -136,3 +136,12 @@
 - JSON round-trip preserves `requiredPins`; old room purpose `zones` are retired, with import notice.
 - Public Pages is unchanged. Test the new pin feature locally via `backend/dev_server.py`, not at the old Pages URL.
 - Feature is on [Draft PR #3](https://github.com/jkd04255/wifi/pull/3), based on Draft PR #2, and must not merge/deploy until integration gates clear.
+
+
+## GATE 3 Required Pin UI/UX follow-up — latest verification (2026-11-11)
+
+- Same branch `feat/optimizer-required-pin` and [Draft PR #3](https://github.com/jkd04255/wifi/pull/3).
+- Change: pin center drag relocation within floor bounds, selectable per-pin radius, Undo and cancellation, result-screen current/recommended minimum predicted quality 70-point cards.
+- Code SHA `18c998114a194bf040af002c9dbaf678f6c5a0ef`: [GitHub Actions #42982663205](https://github.com/jkd04255/wifi/actions/runs/42982663205) **PASS**; Python 94 + Chromium/WebKit 17 = **111/111**.
+- Detailed QA/manual preview steps in [REQUIRED_PIN_QA.md](REQUIRED_PIN_QA.md). No changes to existing `index.html` or `legacy/*`, no main merge/Pages deployment. Entire GATE 3 remains **HOLD** until real team contracts verified.
+- Immediate next work: confirm full integration contracts/actual RSSI, strengthen real-device accessibility/drag ergonomics, and review against GATE conditions before any rollout.
