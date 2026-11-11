@@ -580,8 +580,10 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
  if(tool==='required'&&hoverPoint&&!start&&!requiredDrag&&!hitRequiredPin(hoverPoint))drawRequiredPin(eCtx,{x:hoverPoint.x,z:hoverPoint.y,radiusM:Number($('requiredRadius').value)},sx,sy);
  if(tool==='brush'&&hoverPoint&&!start){eCtx.save();eCtx.beginPath();eCtx.arc(hoverPoint.x*sx,hoverPoint.y*sy,Number($('brushSize').value)*Math.min(sx,sy),0,Math.PI*2);eCtx.setLineDash([4,4]);eCtx.lineWidth=1.5;eCtx.strokeStyle=`rgb(${brushInfo(selectedWeight).rgb.join(',')})`;eCtx.stroke();eCtx.restore();}
  drawWalls(eCtx,sx,sy);
- // Pins (particularly the selected outline) must remain visible over brush/walls.
- for(const pin of (L.requiredPins||[]))drawRequiredPin(eCtx,pin,sx,sy);
+ // Draw the selected pin last so an overlapping pin cannot cover its focus ring.
+ const pins=L.requiredPins||[];
+ for(const pin of pins)if(pin.id!==selectedRequiredId)drawRequiredPin(eCtx,pin,sx,sy);
+ const focusedPin=getSelectedRequiredPin();if(focusedPin)drawRequiredPin(eCtx,focusedPin,sx,sy);
  drawRouter(eCtx,L.router.x*sx,L.router.z*sy);
  if(preview&&start){const a={x:start.x*sx,y:start.y*sy},b={x:preview.x*sx,y:preview.y*sy};
  
