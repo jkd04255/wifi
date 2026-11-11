@@ -146,3 +146,29 @@ Python **94/94**, Chromium/WebKit **25/25**, total **119/119 PASS**.
 ### GATE policy
 **GATE 3 HOLD:** 1번 official floor/footprint, 2번 actual `/simulate` schema/source and 3번 measurement-calibration schema/source are not checked into this repo; `docs/TEAM_CONTRACT_TEMPLATE.md` is still PROPOSED/UNVERIFIED.
 No code was integrated from those sources, and no actual RSSI calibration is claimed. Draft PR #2 and #3 stay unmerged, `main/index.html` and legacy v1.6 unchanged, no GitHub Pages redeployment.
+
+
+## Undo history capacity and exact keyboard-edge regression — 2026-11-11
+
+**Verified HEAD:** `ee542b751b9eda123fe13d3bfefb41a3ec3ca928`  
+**GitHub Actions:** [#42987876155](https://github.com/jkd04255/wifi/actions/runs/42987876155) — completed/success.  
+Python **94/94 PASS**; Playwright browser suite **27/27 PASS** (Chromium and WebKit, including dual-engine mobile pin cases).
+
+### Additional defect found and fixed
+A touch drag previously called `pushUndo()` as soon as the movement threshold was crossed. If the 30-entry Undo stack was full, this shifted out the oldest snapshot; `pointercancel` then popped the new snapshot, but could not restore the evicted oldest entry. The cancelled gesture therefore silently reduced the user's undo history by one.
+
+- Drag now stages its pre-drag JSON snapshot without changing the Undo stack.
+- A normal `pointerup` commits exactly one snapshot through the same bounded-history helper.
+- `pointercancel` restores the original X-Z center and does not mutate Undo history; the pointer label explains the rollback.
+- No-op keyboard nudges at the floor edge do not create an Undo entry.
+
+### New regression cases
+- `test_cancelled_drag_preserves_full_undo_history`: fill the 30-step history, cancel a real-handler touch drag after threshold, then verify the 29th and 30th Undo states. Chromium and WebKit.
+- `test_keyboard_nudge_stops_at_pin_radius_and_noop_keeps_undo`: keyboard movement reaches the right and lower floor boundaries exactly at the pin radius; another nudge is a no-op and one Undo restores the previous valid coordinate. Chromium and WebKit.
+- Existing multi-touch isolation, pointer cancellation rollback, overlapping pin selection, import/delete selection reconciliation, keyboard creation/movement, wall/brush and optimizer hard-constraint regressions remain included.
+
+### Scope and remaining limitations
+- Existing `main/index.html`, legacy v1.6, concrete-wall drawing, +100/0/-100 importance brush, and 70/100 mandatory-pin hard constraint remain unchanged.
+- 1/2/3-team signed-off contracts remain absent; no actual RSSI prediction/calibration source was connected. Local preview continues to identify v1.6 estimates as uncalibrated.
+- Synthetic touch PointerEvents and browser emulation are not actual iPhone Safari/VoiceOver hardware validation.
+- **GATE 3 HOLD**: Draft PR #2/#3 remain unmerged; no main update or Pages deployment.
