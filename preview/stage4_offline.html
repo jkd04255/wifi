@@ -52,7 +52,7 @@
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
- <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.2" min="1" max="6" step="0.1"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><p id="offlineModeInfo" class="footnote">오프라인 JS 예측 엔진만 사용합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">수신 신호 세기(RSSI)를 계산하는 근사 모델입니다. 실제 통신 속도나 CSI 기반 실측 결과를 의미하지 않습니다.</p></aside></div>
+ <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><p id="offlineModeInfo" class="footnote">2.4 GHz는 CAMPUSRSSI 기반 OPEN · GENERAL · DENSE 보정을 동시에 계산해 공통 조건을 만족하는 Robust 위치를 추천합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><p id="calibrationHint" class="footnote">2.4 GHz 히트맵은 GENERAL(n=2.00, 콘크리트 6.85 dB/회) 기준입니다. 추천 위치는 OPEN/GENERAL/DENSE 세 모델의 worst-case를 최적화합니다. 2개 이상 콘크리트 교차는 외삽입니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">RSSI는 근사 예측치입니다. 2.4 GHz Robust 보정은 CAMPUSRSSI 연구결과를 사용하며 실제 통신 속도·CSI·모든 건물의 절대 RSSI를 보장하지 않습니다.</p></aside></div>
 </section></main><footer><span>Wi-Fi Placement Studio · Offline HTML / Windows EXE</span><span>1평 ≈ 3.3058㎡ · 가로세로 비율 추정 · 결과는 예측치입니다.</span></footer>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
 /* Browser-offline companion of backend/wifi_engine/core.py.
@@ -60,8 +60,14 @@
    The received signal is an estimate, not throughput/CSI. */
 (function(global){
  'use strict';
+ const CALIBRATION_24=Object.freeze({
+   OPEN:Object.freeze({n:1.6538,concrete:6.28}),
+   GENERAL:Object.freeze({n:2.0011,concrete:6.8491}),
+   DENSE:Object.freeze({n:2.3784,concrete:7.21})
+ });
+ const CALIBRATION_PROFILE_NAMES=Object.freeze(['OPEN','GENERAL','DENSE']);
  const preset={
-   '2.4':{p0:-35,n:2.2,wallLoss:{concrete:12,gypsum:4,glass:3,door:3,brick:8,wood:3}},
+   '2.4':{p0:-35,n:CALIBRATION_24.GENERAL.n,wallLoss:{concrete:CALIBRATION_24.GENERAL.concrete,gypsum:4,glass:3,door:3,brick:8,wood:3}},
    '5':{p0:-41,n:2.2,wallLoss:{concrete:18,gypsum:6,glass:5,door:5,brick:12,wood:5}}
  };
  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -78,7 +84,15 @@
  function settings(L){L=normalizeLayout(L);
    const r=L.router,p=preset[String(r.frequency)],o=L.modelOverrides||{},wallLoss={};
    Object.keys(p.wallLoss).forEach(k=>wallLoss[k]=p.wallLoss[k]*(o.wallScale??1));Object.assign(wallLoss,o.wallLoss||{});
-   return {name:'multi-wall-v2',p0:(o.p0??p.p0)+(r.txPowerDbm??20)-20+(r.antennaGainDbi??0),n:o.pathLossExponent??p.n,wallLoss,wallScale:o.wallScale??1};
+   const calibrated24=Number(r.frequency)===2.4;
+   if(calibrated24)wallLoss.concrete=CALIBRATION_24.GENERAL.concrete;
+   return {name:calibrated24?'campusrssi-general-v1.2':'multi-wall-v2-legacy-5g',p0:(o.p0??p.p0)+(r.txPowerDbm??20)-20+(r.antennaGainDbi??0),n:calibrated24?CALIBRATION_24.GENERAL.n:(o.pathLossExponent??p.n),wallLoss,wallScale:o.wallScale??1,profileName:calibrated24?'GENERAL':null,calibrated:calibrated24};
+ }
+ function profileSettings(L,name){
+   L=normalizeLayout(L);
+   const base=settings(L),profile=CALIBRATION_24[name];
+   if(Number(L.router.frequency)!==2.4||!profile)return base;
+   return {...base,name:'campusrssi-'+name.toLowerCase()+'-v1.2',n:profile.n,wallLoss:{...base.wallLoss,concrete:profile.concrete},profileName:name,calibrated:true};
  }
  // Fraction of projected transmitter-to-receiver segment at the concrete wall.
  function wallFraction(ax,az,bx,bz,w){
@@ -93,10 +107,15 @@
  function value(L,x,z,p=settings(L),details=false,receiverY=null){L=normalizeLayout(L);
    const r=L.router,ry=receiverY??L.receiverY??1;
    const d=Math.max(.5,Math.hypot(x-r.x,z-r.z,ry-r.y));
-   const base=p.p0-10*p.n*Math.log10(d);let total=base;const hits=[];
+   const base=p.p0-10*p.n*Math.log10(d);let total=base;const hits=[],concreteFractions=[];
    for(const w of (L.walls||[])){
      if(w.x1===w.x2&&w.z1===w.z2)continue;
-     if(wallHit(L,x,z,w,ry)){
+     const t=wallFraction(r.x,r.z,x,z,w);
+     if(t!==null){
+       if(w.material==='concrete'){
+         if(concreteFractions.some(v=>Math.abs(v-t)<1e-7))continue;
+         concreteFractions.push(t);
+       }
        const loss=p.wallLoss[w.material];if(loss===undefined)throw Error('알 수 없는 벽 재질: '+w.material);
        total-=loss;if(details)hits.push({id:w.id,material:w.material,lossDb:loss});
      }
@@ -177,7 +196,7 @@
    const current=evaluate(L.router.x,L.router.z);
    return {best:{x:+best.x.toFixed(2),y:+L.router.y.toFixed(2),z:+best.z.toFixed(2)},bestStats:best.stats,currentStats:current.stats,improvementPoints:+(best.objective-current.objective).toFixed(1),criterion:'weighted RSSI quality index minus weak-area penalty (XZ plane, fixed Y)',candidates:cols*rcount+18,weightsUsed:weighted};
  }
- global.WifiEngine={settings,value,grid,optimize,weight,score,crosses,normalizeLayout};
+ global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,value,grid,optimize,weight,score,crosses,normalizeLayout};
 })(window);
 
 </script><script>
@@ -472,6 +491,14 @@ function requiredMinimum(pin,router=L.router){
  const trial={...L,router:{...L.router,...router}};
  return Math.min(...requiredSamples(pin).map(p=>qualityPoint(window.WifiEngine.value(trial,p.x,p.z))));
 }
+function requiredMinimumProfile(pin,router,profileName){
+ const trial={...L,router:{...L.router,...router}},cfg=window.WifiEngine.profileSettings(trial,profileName);
+ return Math.min(...requiredSamples(pin).map(p=>qualityPoint(window.WifiEngine.value(trial,p.x,p.z,cfg))));
+}
+function robustRequiredMinimum(pin,router){
+ if(Number(L.router.frequency)!==2.4)return requiredMinimum(pin,router);
+ return Math.min(...window.WifiEngine.calibrationProfileNames.map(name=>requiredMinimumProfile(pin,router,name)));
+}
 function getSelectedRequiredPin(){return (L.requiredPins||[]).find(p=>p.id===selectedRequiredId)||null;}
 function syncSelectedRequired(){
  const pins=L.requiredPins||[],panel=$('requiredSelectedControls'),picker=$('requiredPinPicker');
@@ -624,7 +651,10 @@ function syncLayout(){
  $('routerY').value=String(L.router.y);$('routerYValue').textContent=fmt(L.router.y)+' m';$('routerXValue').textContent='X = '+fmt(L.router.x)+' m · Z = '+fmt(L.router.z)+' m';
  $('receiverY').value=String(L.receiverY);
  $('frequencySelect').value=String(L.router.frequency);$('powerInput').value=L.router.txPowerDbm??20;$('gainInput').value=L.router.antennaGainDbi??0;
- $('exponentInput').value=L.modelOverrides?.pathLossExponent??2.2;
+ const calibrated24=Number(L.router.frequency)===2.4;
+ $('exponentInput').value=calibrated24?'2.0011':(L.modelOverrides?.pathLossExponent??2.2);
+ $('exponentInput').disabled=calibrated24;
+ $('exponentInput').title=calibrated24?'2.4 GHz CAMPUSRSSI Robust 모드에서는 GENERAL 값 2.0011을 중앙 히트맵에 사용합니다.':'5 GHz는 실측 보정이 없어 기존 수동 감쇠 지수를 사용합니다.';
  for(const canvas of [editor,heat])canvas.parentElement.style.aspectRatio=L.width+'/'+L.depth;
 }
 // Geometric eraser: remove intersections with a swept circle (capsule), retaining
@@ -864,16 +894,16 @@ $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 
 $('receiverY').onchange=e=>{
  const n=Number(e.target.value);if(!Number.isFinite(n)||n<0){toast('수신기 높이는 0 이상으로 지정하세요.');syncLayout();return;}
  L.receiverY=n;changed('수신기 높이(Y)를 변경했습니다.');};
-$('frequencySelect').onchange=e=>setRouterField('frequency',Number(e.target.value),2.4,5);
+$('frequencySelect').onchange=e=>{setRouterField('frequency',Number(e.target.value),2.4,5);syncLayout();toast(Number(L.router.frequency)===2.4?'2.4 GHz CAMPUSRSSI Robust 보정이 적용됩니다.':'5 GHz는 아직 CAMPUSRSSI 보정 대상이 아니며 기존 예측모델을 사용합니다.');};
 $('powerInput').onchange=e=>setRouterField('txPowerDbm',e.target.value,0,35);
 $('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20);
-$('exponentInput').onchange=e=>{const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
+$('exponentInput').onchange=e=>{if(Number(L.router.frequency)===2.4){toast('2.4 GHz는 CAMPUSRSSI Robust 보정으로 감쇠 지수를 자동 적용합니다.');syncLayout();return;}const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('5 GHz 감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
 function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';}
 function setBusy(busy){for(const id of ['applyBtn','weightBtn','optimizeBtn','plainBtn'])$(id).disabled=busy;}
 async function simulate(w){weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
  await new Promise(resolve=>setTimeout(resolve,25));
- try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent='오프라인 JS · 미보정 예측';
- applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();$('statusLine').textContent=w?'중요도를 반영한 공간 품질 평가가 완료되었습니다. 반투명 표시로 가중치 영역을 확인할 수 있습니다.':'신호 계산이 완료되었습니다. 히트맵의 원하는 곳을 눌러 보세요.';
+ try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent=Number(L.router.frequency)===2.4?'오프라인 JS · CAMPUSRSSI GENERAL + Robust 추천':'오프라인 JS · 5 GHz 미보정 예측';
+ applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'GENERAL 히트맵 + 중요도 평가 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.':'GENERAL 보정 히트맵 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
  }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
 }
 function renderStats(){if(!result)return;const s=result.statistics;
@@ -883,9 +913,10 @@ function renderStats(){if(!result)return;const s=result.statistics;
 function renderProbe(){if(!result)return;
  const d=window.WifiEngine.value(L,probe.x,probe.z,undefined,true);
  $('probeCoordinates').textContent=`X ${fmt(probe.x,2)} · Y ${fmt(L.receiverY,2)} · Z ${fmt(probe.z,2)} m`;
- const items=[['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
+ const concreteHits=d.walls.filter(w=>w.material==='concrete').length;
+ const items=[['보정 모델',Number(L.router.frequency)===2.4?'GENERAL · Robust 추천용 중앙 모델':'5 GHz 기존 미보정 모델'],['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
  ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
- ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
+ ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
 }
 $('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
@@ -967,33 +998,56 @@ $('applyBottomBtn').onclick=enterAnalysis;
 // Isolated offline mode. One sample per pin; no LAN/cable/ceiling constraints.
 async function optimizeOfflinePins(){
  const pins=L.requiredPins||[],step=Math.max(.65,Math.max(L.width,L.depth)/12),search=Math.max(.5,Math.max(L.width,L.depth)/14),sample=[];
- const isWeighted=weighted||(L.importanceStrokes||[]).length>0;
+ const isWeighted=weighted||(L.importanceStrokes||[]).length>0,robust24=Number(L.router.frequency)===2.4;
+ const profiles=robust24?window.WifiEngine.calibrationProfileNames:['LEGACY'];
  for(let z=step/2;z<L.depth;z+=step)for(let x=step/2;x<L.width;x+=step)sample.push({x,z,w:isWeighted?window.WifiEngine.weight(L,x,z):1});
  if(!sample.some(s=>s.w>0))for(const s of sample)s.w=1;
  const sumW=sample.reduce((n,s)=>n+s.w,0);
- const score=(x,z)=>{const trial={...L,router:{...L.router,x,z}},cfg=window.WifiEngine.settings(L);let sum=0,weak=0;
+ const scoreProfile=(x,z,name)=>{const trial={...L,router:{...L.router,x,z}},cfg=robust24?window.WifiEngine.profileSettings(trial,name):window.WifiEngine.settings(trial);let sum=0,weak=0;
   for(const p of sample){const v=window.WifiEngine.value(trial,p.x,p.z,cfg);sum+=qualityPoint(v)*p.w;if(v< -75)weak+=p.w;}
   return {quality:sum/sumW,objective:(sum-12*weak)/sumW};};
- const before=score(L.router.x,L.router.z),valid=(x,z)=>(L.walls||[]).every(w=>{
+ const scoreAll=(x,z)=>Object.fromEntries(profiles.map(name=>[name,scoreProfile(x,z,name)]));
+ const beforeProfiles=scoreAll(L.router.x,L.router.z),beforeWorst=Math.min(...Object.values(beforeProfiles).map(v=>v.objective));
+ const valid=(x,z)=>(L.walls||[]).every(w=>{
    const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
- let bestPoint=null,candidates=0;
- const check=(x,z)=>{if(!valid(x,z))return;candidates++;if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8))return;
-  const current=score(x,z);if(!bestPoint||current.objective>bestPoint.score.objective)bestPoint={x,z,score:current};};
+ let bestPoint=null,candidates=0,commonCandidates=0;
+ const bestByProfile=Object.fromEntries(profiles.map(name=>[name,null]));
+ const profilePinMin=(pin,router,name)=>robust24?requiredMinimumProfile(pin,router,name):requiredMinimum(pin,router);
+ const check=(x,z)=>{if(!valid(x,z))return;candidates++;
+  const router={...L.router,x,z},scores=scoreAll(x,z),feasible={};
+  for(const name of profiles){
+   feasible[name]=pins.every(pin=>profilePinMin(pin,router,name)>=signalMinScore(pin)-1e-8);
+   if(feasible[name]&&(!bestByProfile[name]||scores[name].objective>bestByProfile[name].score.objective))bestByProfile[name]={x,z,score:scores[name]};
+  }
+  if(!robust24){
+   if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8))return;
+  }else if(profiles.some(name=>!feasible[name]))return;
+  commonCandidates++;
+  const robustObjective=Math.min(...profiles.map(name=>scores[name].objective));
+  const robustQuality=Math.min(...profiles.map(name=>scores[name].quality));
+  if(!bestPoint||robustObjective>bestPoint.robustObjective)bestPoint={x,z,scores,robustObjective,robustQuality};
+ };
  const nx=Math.max(2,Math.ceil(L.width/search)),nz=Math.max(2,Math.ceil(L.depth/search));
  for(let z=0;z<=nz;z++)for(let x=0;x<=nx;x++)check(L.width*x/nx,L.depth*z/nz);
  check(L.router.x,L.router.z);
  if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
- if(!bestPoint)throw Error(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.');
- const min=pins.length?Math.min(...pins.map(pin=>requiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
- return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+before.quality.toFixed(1)},bestStats:{qualityScore:+bestPoint.score.quality.toFixed(1)},improvementPoints:+(bestPoint.score.objective-before.objective).toFixed(1),stage3:true,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:min,requiredAreaSampleCount:pins.length,candidates,weightsUsed:isWeighted};
+ if(!bestPoint)throw Error(robust24?'CALIBRATION_CONFLICT · OPEN/GENERAL/DENSE에서 신호 세기 핀 조건을 동시에 만족하는 배치가 없습니다.':(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.'));
+ const robustMin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ const profilePoints=Object.fromEntries(profiles.map(name=>[name,bestByProfile[name]?{x:bestByProfile[name].x,z:bestByProfile[name].z,quality:+bestByProfile[name].score.quality.toFixed(1),objective:+bestByProfile[name].score.objective.toFixed(2)}:null]));
+ let maxProfileDistance=0;
+ if(robust24){const pts=Object.values(profilePoints).filter(Boolean);for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++)maxProfileDistance=Math.max(maxProfileDistance,Math.hypot(pts[i].x-pts[j].x,pts[i].z-pts[j].z));}
+ const confidence=!robust24?'LEGACY':maxProfileDistance<=.5?'HIGH':maxProfileDistance<=1?'MEDIUM':'LOW';
+ const bestWorstQuality=robust24?bestPoint.robustQuality:bestPoint.scores.LEGACY.quality;
+ const currentWorstQuality=Math.min(...Object.values(beforeProfiles).map(v=>v.quality));
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,weightsUsed:isWeighted};
 }
 $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
- const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m','품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점','후보 '+best.candidates+'개 검토 · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · 최저 예상 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),'LAN·케이블·천장·벽 높이 제한 미적용. RSSI 미보정 예측값'];
+ const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m',best.robust24?'Robust worst-case 품질 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점':'품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점',best.robust24?'배치 신뢰도 '+best.confidence+' · 프로파일별 최적점 최대거리 '+fmt(best.maxProfileDistance,2)+' m':'5 GHz 기존 모델','후보 '+best.candidates+'개 검토'+(best.robust24?' · 공통 feasible '+best.commonCandidates+'개':'')+' · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · worst-case 최저 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),best.robust24?'CAMPUSRSSI 2.4 GHz · OPEN/GENERAL/DENSE 동시 보정 · 콘크리트 6.28~7.21 dB/회':'5 GHz는 CAMPUSRSSI 실측보정 미적용','LAN·케이블·천장·벽 높이 제한 미적용'];
  for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
- $('recommendation').hidden=false;$('statusLine').textContent='오프라인 공유기 추천 완료';$('engineMode').textContent='오프라인 JS · 미보정 예측';renderHeat();renderRequiredStatus();
+ $('recommendation').hidden=false;$('statusLine').textContent=best.robust24?'추천 완료 · OPEN/GENERAL/DENSE 공통 Robust 최적화 · 신뢰도 '+best.confidence:'추천 완료 · 5 GHz 기존 오프라인 모델';$('engineMode').textContent=best.robust24?'오프라인 JS · CAMPUSRSSI Robust 2.4 GHz':'오프라인 JS · 5 GHz 미보정 예측';renderHeat();renderRequiredStatus();
  }catch(err){best=null;$('recommendation').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
  finally{setBusy(false)}
 };
