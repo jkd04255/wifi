@@ -1075,9 +1075,21 @@ $('importFile').onchange=async e=>{
    if(!Array.isArray(q.points)||q.points.length<1||q.points.length>1500)throw Error('중요도 좌표열이 잘못됐습니다.');
    return {id:String(q.id||'brush-'+i),points:q.points.map(pt=>{if(!Array.isArray(pt)||pt.length!==2)throw Error('중요도 좌표는 [x,z]여야 합니다.');return[val(pt[0],w),val(pt[1],depth)];}),radiusM:clamp(cleanNum(q.radiusM,.6),.05,5),weightPct:brushInfo(clamp(cleanNum(q.weightPct,0),-100,100)).pct,...(q.erase?{erase:true}:{})};
   });
+  const overrides=converted.modelOverrides??{};
+  if(typeof overrides!=='object'||Array.isArray(overrides))throw Error('모델 보정 설정의 JSON 형식이 잘못됐습니다.');
+  const originalWallLoss=overrides.wallLoss??{};
+  if(!originalWallLoss||typeof originalWallLoss!=='object'||Array.isArray(originalWallLoss))throw Error('벽 감쇠 설정의 JSON 형식이 잘못됐습니다.');
+  const importedWallLoss={};
+  for(const [key,value] of Object.entries(originalWallLoss)){
+   if(!['concrete','gypsum','glass','door','brick','wood'].includes(key)||typeof value!=='number'||!Number.isFinite(value)||value<0||value>100)
+    throw Error('벽 감쇠 설정은 재질별 0~100 dB의 유효한 숫자여야 합니다.');
+   importedWallLoss[key]=value;
+  }
+  if(overrides.p0!=null&&(typeof overrides.p0!=='number'||!Number.isFinite(overrides.p0)))
+   throw Error('기준세기 P0는 유효한 숫자여야 합니다.');
   pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
     router:{x:val(r.x,w),y:Math.max(0,cleanNum(r.y,1.2)),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20)},
-    walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(converted.modelOverrides?.p0==null?{}:{p0:converted.modelOverrides.p0}),wallLoss:converted.modelOverrides?.wallLoss||{}}};
+    walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(overrides.p0==null?{}:{p0:overrides.p0}),wallLoss:importedWallLoss}};
   probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedRequiredId=null;requiredDrag=null;
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
