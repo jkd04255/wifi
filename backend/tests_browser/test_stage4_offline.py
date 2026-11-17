@@ -357,13 +357,13 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertEqual(self.page.locator("#profileComparisonRows .profile-row").count(), 3)
         self.assertEqual(
             self.page.locator("#profileComparisonRows .profile-row b").all_inner_texts(),
-            ["OPEN", "GENERAL", "DENSE"],
+            ["신호 원활", "중간", "혼잡"],
         )
         self.assertEqual(self.page.locator("#profileComparisonRows .profile-meter span").count(), 3)
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
         self.assertEqual(self.page.locator("#calibrationComparisonRows > div").count(), 2)
         self.assertIn("보정 전 (기존)", self.page.locator("#calibrationComparisonRows").inner_text())
-        self.assertIn("보정 후 (GENERAL)", self.page.locator("#calibrationComparisonRows").inner_text())
+        self.assertIn("보정 후 (중간)", self.page.locator("#calibrationComparisonRows").inner_text())
         self.assertIn("예상 평균 RSSI 차이", self.page.locator("#calibrationComparison").inner_text())
         self.page.locator("#powerInput").fill("25")
         self.page.locator("#powerInput").press("Tab")
@@ -404,7 +404,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator('[data-top-rank="2"]').click()
         self.page.wait_for_function(
             "document.getElementById('applyBtn').disabled===false && "
-            "document.getElementById('engineMode').textContent.includes('GENERAL')",
+            "document.getElementById('engineMode').textContent.includes('중간')",
             timeout=30000,
         )
         saved=self.export()
@@ -475,6 +475,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         labels=self.page.locator("#candidateCompare [data-compare-profile]").evaluate_all(
             "(els)=>els.map(el=>el.dataset.compareProfile)")
         self.assertEqual(labels,["OPEN","GENERAL","DENSE"])
+        self.assertEqual(self.page.locator("#candidateCompare .compare-line b").all_inner_texts(), ["신호 원활", "중간", "혼잡"])
         self.assertEqual(self.export(),before)
         self.assertTrue(self.page.locator("#recommendation").is_visible())
 
