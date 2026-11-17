@@ -487,7 +487,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
             "name":"calibration-inputs.json","mimeType":"application/json",
             "buffer":json.dumps(original).encode("utf-8"),
         })
-        self.page.wait_for_function("document.getElementById('requiredPinSelect').options.length===1")
+        self.page.wait_for_function(
+            "document.getElementById('toast').textContent.includes('XZ 도면을 불러왔습니다')")
         imported=self.export()
         self.assertEqual(imported["modelOverrides"]["p0"],-40)
         self.assertEqual(imported["modelOverrides"]["wallLoss"],{"concrete":5.5})
@@ -511,8 +512,9 @@ class OfflineDesktopSmoke(unittest.TestCase):
                 "name":"invalid-"+suffix+".json","mimeType":"application/json",
                 "buffer":json.dumps(data).encode("utf-8"),
             })
+            label="기준세기 P0" if suffix=="p0" else "벽 감쇠"
             self.page.wait_for_function(
-                "document.getElementById('toast').textContent.startsWith('JSON 불러오기 실패')")
+                "(label)=>document.getElementById('toast').textContent.includes(label)", label)
             self.assertEqual(self.export(),original)
 
     def test_5ghz_candidate_comparison_does_not_claim_campusrssi_calibration(self):
