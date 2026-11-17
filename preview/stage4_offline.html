@@ -417,7 +417,7 @@ function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show')
 function pushUndoSnapshot(snapshot){undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift()}
 function pushUndo(){pushUndoSnapshot(JSON.stringify(L))}
 function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
- dirty=true;best=null;$('recommendation').hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
+ dirty=true;best=null;$('recommendation').hidden=true;for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
  $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
 }
 function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty')}
@@ -606,7 +606,12 @@ function renderRequiredStatus(){
   head.append(name,pill);
   const score=document.createElement('div');score.style.cssText='font-size:12px;margin-top:7px;color:#44556c';
   score.textContent=(robustMode?'현재 3프로파일 최악 예상 ':'현재 예상 ')+fmt(before,1)+'점 ('+(beforeOK?'충족':'미달')+')'+(after===null?'':(robustMode?' → Robust 추천 최악 예상 ':' → 추천 예상 ')+fmt(after,1)+'점 ('+(afterOK?'충족':'미달')+')');
-  row.append(head,score);box.appendChild(row);
+  row.append(head,score);
+  const margin=document.createElement('div');margin.className='pin-margin';
+  const delta=before-minimum,afterDelta=after===null?null:after-minimum;
+  margin.textContent='핀 최악 여유점수 '+(delta>=0?'+':'')+fmt(delta,1)+'점'+(afterDelta===null?'':' → 추천 '+(afterDelta>=0?'+':'')+fmt(afterDelta,1)+'점');
+  margin.style.color=(afterDelta===null?delta:afterDelta)>=-1e-8?'#147454':'#bc4b40';
+  row.appendChild(margin);box.appendChild(row);
  });
  const caveat=document.createElement('p');caveat.style.cssText='font-size:10px;color:#718096;margin:6px 0 0';
  caveat.textContent='칸수는 Wiplan 내부 점수이며 실제 휴대폰 표시와 다릅니다. 2.4 GHz는 CAMPUSRSSI 기반 경험 보정 및 OPEN/GENERAL/DENSE 최악값을 사용합니다. 각 가정의 절대 RSSI는 보증하지 않으며 5 GHz는 미보정입니다.';
@@ -655,7 +660,7 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
  hCtx.beginPath();hCtx.setLineDash([5,4]);hCtx.lineWidth=1.5;hCtx.strokeStyle='#202c40bb';hCtx.moveTo(L.router.x*sx,L.router.z*sy);hCtx.lineTo(probe.x*sx,probe.z*sy);hCtx.stroke();hCtx.setLineDash([]);
  drawWalls(hCtx,sx,sy);drawRouter(hCtx,L.router.x*sx,L.router.z*sy,9);
- for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,requiredMinimum(pin)+1e-8>=signalMinScore(pin));
+ for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,robustRequiredMinimum(pin,L.router)+1e-8>=signalMinScore(pin));
  renderRequiredStatus();
  if(best){hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
  hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
@@ -926,17 +931,61 @@ $('frequencySelect').onchange=e=>{setRouterField('frequency',Number(e.target.val
 $('powerInput').onchange=e=>setRouterField('txPowerDbm',e.target.value,0,35);
 $('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20);
 $('exponentInput').onchange=e=>{if(Number(L.router.frequency)===2.4){toast('2.4 GHz는 CAMPUSRSSI Robust 보정으로 감쇠 지수를 자동 적용합니다.');syncLayout();return;}const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('5 GHz 감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
-function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';}
+function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;}
 function setBusy(busy){for(const id of ['applyBtn','weightBtn','optimizeBtn','plainBtn'])$(id).disabled=busy;}
 async function simulate(w){weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent=Number(L.router.frequency)===2.4?'오프라인 JS · CAMPUSRSSI GENERAL + Robust 추천':'오프라인 JS · 5 GHz 미보정 예측';
- applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'GENERAL 히트맵 + 중요도 평가 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.':'GENERAL 보정 히트맵 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
+ applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();renderCalibrationComparison();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'GENERAL 히트맵 + 중요도 평가 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.':'GENERAL 보정 히트맵 완료 · 추천은 OPEN/GENERAL/DENSE Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
  }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
 }
 function renderStats(){if(!result)return;const s=result.statistics;
  $('meanStat').textContent=fmt(s.meanDbm)+' dBm';$('goodStat').textContent=fmt(s.coverageGoodPct)+'%';$('scoreStat').textContent=fmt(s.qualityScore)+' / 100';$('weakStat').textContent=fmt(s.coverageWeakPct)+'%';
  $('scoreStat').style.color=s.qualityScore>=65?'#168b6d':s.qualityScore>=40?'#a6771a':'#d65b50';
+}
+function renderProfileComparison(){
+ const panel=$('profileComparison');
+ if(!result||dirty||Number(L.router.frequency)!==2.4){panel.hidden=true;return;}
+ const box=$('profileComparisonRows');box.replaceChildren();
+ const readings=window.WifiEngine.calibrationProfileNames.map(name=>{
+  const config=window.WifiEngine.profileSettings(L,name);
+  return {name,rssi:window.WifiEngine.value(L,probe.x,probe.z,config),n:config.n,alpha:config.wallLoss.concrete};
+ });
+ const min=Math.min(...readings.map(r=>r.rssi)),max=Math.max(...readings.map(r=>r.rssi));
+ for(const reading of readings){
+  const row=document.createElement('div');row.className='profile-row';
+  const label=document.createElement('b');label.textContent=reading.name;
+  const meter=document.createElement('div');meter.className='profile-meter';
+  const fill=document.createElement('span');fill.dataset.profile=reading.name;
+  fill.style.width=clamp((reading.rssi+100)/70*100,0,100).toFixed(1)+'%';meter.appendChild(fill);
+  const score=document.createElement('strong');score.textContent=fmt(reading.rssi,1)+' dBm';
+  row.append(label,meter,score);box.appendChild(row);
+ }
+ const note=document.createElement('p');note.className='comparison-note';
+ note.textContent='동일 지점 · 최대 프로파일 차이 '+fmt(max-min,1)+' dB · 각 n 및 콘크리트 감쇠는 연구 프로파일 기준';
+ box.appendChild(note);panel.hidden=false;
+}
+function renderCalibrationComparison(){
+ const panel=$('calibrationComparison');
+ if(!result||dirty||Number(L.router.frequency)!==2.4){panel.hidden=true;return;}
+ const cfg=window.WifiEngine.baselineSettings(L);
+ const legacyValues=result.values.map((row,r)=>row.map((v,c)=>{
+  const x=Math.min(L.width,(c+.5)*result.gridStep),z=Math.min(L.depth,(r+.5)*result.gridStep);
+  return window.WifiEngine.value(L,x,z,cfg);
+ }));
+ const before=window.WifiEngine.score(legacyValues,result.weights),after=result.statistics;
+ const box=$('calibrationComparisonRows');box.replaceChildren();
+ for(const [label,s] of [['보정 전 (기존)',before],['보정 후 (GENERAL)',after]]){
+  const item=document.createElement('div'),title=document.createElement('small'),value=document.createElement('strong'),details=document.createElement('small');
+  title.textContent=label;value.textContent=fmt(s.meanDbm,1)+' dBm';
+  details.textContent='품질 '+fmt(s.qualityScore,1)+'점 · 취약 '+fmt(s.coverageWeakPct,1)+'%';
+  item.append(title,value,details);box.appendChild(item);
+ }
+ const difference=document.createElement('p');difference.className='comparison-note';
+ difference.textContent='예상 평균 RSSI 차이 (후−전): '+(after.meanDbm>=before.meanDbm?'+':'')+fmt(after.meanDbm-before.meanDbm,1)+' dB · 실제 정확도 개선을 의미하지 않음';
+ panel.appendChild(difference);
+ const old=panel.querySelectorAll('.comparison-note');for(let i=0;i<old.length-1;i++){if(old[i].textContent.startsWith('예상 평균'))old[i].remove();}
+ panel.hidden=false;
 }
 function renderProbe(){if(!result)return;
  const d=window.WifiEngine.value(L,probe.x,probe.z,undefined,true);
@@ -946,6 +995,7 @@ function renderProbe(){if(!result)return;
  ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
  ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
+ renderProfileComparison();
 }
 $('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
 $('useBestBtn').onclick=async()=>{if(!best)return;pushUndo();L.router.x=best.best.x;L.router.z=best.best.z;best=null;changed('추천 위치를 적용했습니다. 히트맵을 갱신합니다.');await simulate(weighted)};
