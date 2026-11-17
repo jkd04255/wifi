@@ -441,6 +441,97 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
         self.assertEqual(self.export()["requiredPins"],original["requiredPins"])
 
+    def test_near_optimal_feasible_sample_overlay_toggle(self):
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_visible(), self.page.locator("#statusLine").inner_text())
+        description=self.page.locator("#stabilitySummary").inner_text()
+        self.assertIn("J 최고점 대비 1.0점 이내", description)
+        self.assertIn("이산 표본", description)
+        self.assertTrue(self.page.locator("#stabilityToggle").is_checked())
+        image_on=self.page.locator("#heatmapCanvas").evaluate("(canvas)=>canvas.toDataURL('image/png')")
+        self.page.locator("#stabilityToggle").uncheck()
+        self.assertFalse(self.page.locator("#stabilityToggle").is_checked())
+        image_off=self.page.locator("#heatmapCanvas").evaluate("(canvas)=>canvas.toDataURL('image/png')")
+        self.assertNotEqual(image_on,image_off)
+        self.page.locator("#stabilityToggle").check()
+        image_again=self.page.locator("#heatmapCanvas").evaluate("(canvas)=>canvas.toDataURL('image/png')")
+        self.assertEqual(image_on,image_again)
+
+    def test_compare_candidate_no_router_mutation_and_three_objective_scores(self):
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        opts=self.page.locator("#topThreeRows button[data-compare-rank]")
+        self.assertEqual(opts.count(),3)
+        self.assertEqual(opts.nth(0).get_attribute("aria-pressed"),"true")
+        before=self.export()
+        opts.nth(1).click()
+        self.assertEqual(opts.nth(1).get_attribute("aria-pressed"),"true")
+        self.assertEqual(opts.nth(0).get_attribute("aria-pressed"),"false")
+        self.assertIn("비교 중: #2", self.page.locator("#candidateCompare").inner_text())
+        self.assertIn("1순위와의 거리", self.page.locator("#candidateCompare").inner_text())
+        labels=self.page.locator("#candidateCompare [data-compare-profile]").evaluate_all(
+            "(els)=>els.map(el=>el.dataset.compareProfile)")
+        self.assertEqual(labels,["OPEN","GENERAL","DENSE"])
+        self.assertEqual(self.export(),before)
+        self.assertTrue(self.page.locator("#recommendation").is_visible())
+
+    def test_json_roundtrip_preserves_calibration_inputs_not_ephemeral_candidates(self):
+        self.pin()
+        original=self.export()
+        original["modelOverrides"]["p0"]=-40
+        original["modelOverrides"]["wallLoss"]={"concrete":5.5}
+        self.page.locator("#importFile").set_input_files({
+            "name":"calibration-inputs.json","mimeType":"application/json",
+            "buffer":json.dumps(original).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('requiredPinSelect').options.length===1")
+        imported=self.export()
+        self.assertEqual(imported["modelOverrides"]["p0"],-40)
+        self.assertEqual(imported["modelOverrides"]["wallLoss"],{"concrete":5.5})
+        self.assertEqual(imported["requiredPins"],original["requiredPins"])
+        self.assertNotIn("topThree",imported)
+        self.assertNotIn("stability",imported)
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_visible(),self.page.locator("#statusLine").inner_text())
+        self.assertEqual(self.export(),imported)
+
+    def test_invalid_calibration_json_rejected_and_original_layout_preserved(self):
+        self.pin()
+        original=self.export()
+        for suffix,invalid in [("p0",{"p0":"not-a-number"}),("wall",{"wallLoss":{"concrete":"bad"}})]:
+            data=json.loads(json.dumps(original))
+            data["modelOverrides"].update(invalid)
+            self.page.locator("#importFile").set_input_files({
+                "name":"invalid-"+suffix+".json","mimeType":"application/json",
+                "buffer":json.dumps(data).encode("utf-8"),
+            })
+            self.page.wait_for_function(
+                "document.getElementById('toast').textContent.startsWith('JSON 불러오기 실패')")
+            self.assertEqual(self.export(),original)
+
+    def test_5ghz_candidate_comparison_does_not_claim_campusrssi_calibration(self):
+        data=self.export()
+        data["router"]["frequency"]=5
+        self.page.locator("#importFile").set_input_files({
+            "name":"legacy-five.json","mimeType":"application/json",
+            "buffer":json.dumps(data).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('frequencySelect').value==='5'")
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertIn("5 GHz 미보정",self.page.locator("#topThreeCandidates").inner_text())
+        self.assertEqual(self.page.locator("#candidateCompare [data-compare-profile]").count(),1)
+        self.assertEqual(self.page.locator("#candidateCompare [data-compare-profile]").first.get_attribute("data-compare-profile"),"LEGACY")
+        self.assertTrue(self.page.locator("#profileComparison").is_hidden())
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
         self.assertIn("신호 세기", tool.inner_text())
