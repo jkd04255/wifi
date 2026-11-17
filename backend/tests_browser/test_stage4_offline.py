@@ -108,6 +108,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertIn("추천 불가:", self.page.locator("#statusLine").inner_text())
+        self.assertIn("CALIBRATION_CONFLICT", self.page.locator("#statusLine").inner_text())
         self.assertTrue(self.page.locator("#recommendation").is_hidden())
         self.page.locator("#designTab").click()
         self.page.locator("#paletteToggleBtn").click()
@@ -269,6 +270,69 @@ class OfflineDesktopSmoke(unittest.TestCase):
         after = self.export()["requiredPins"]
         self.assertEqual([p["minQualityScore"] for p in after], [42, 0])
         self.assertTrue(self.page.locator("#recommendation").is_hidden())
+
+    def test_campusrssi_report_profiles_and_5ghz_isolation(self):
+        layout = self.export()
+        model = self.page.evaluate("""layout => {
+            const engine = window.WifiEngine;
+            const profiles = Object.fromEntries(engine.calibrationProfileNames.map(
+                name => [name, engine.profileSettings(layout, name)]
+            ));
+            const modified = {...layout, modelOverrides:{...layout.modelOverrides, pathLossExponent:3}};
+            const five = {...layout, router:{...layout.router, frequency:5}};
+            return {
+                names:engine.calibrationProfileNames,
+                general:engine.settings(layout),
+                profiles:profiles,
+                forcedN:engine.settings(modified).n,
+                five:engine.settings(five)
+            };
+        }""", layout)
+        self.assertEqual(model["names"], ["OPEN", "GENERAL", "DENSE"])
+        self.assertAlmostEqual(model["general"]["n"], 2.0011, places=4)
+        self.assertAlmostEqual(model["general"]["wallLoss"]["concrete"], 6.8491, places=4)
+        self.assertAlmostEqual(model["forcedN"], 2.0011, places=4)
+        for name, n, alpha in [("OPEN", 1.6538, 6.28), ("GENERAL", 2.0011, 6.8491), ("DENSE", 2.3784, 7.21)]:
+            self.assertAlmostEqual(model["profiles"][name]["n"], n, places=4)
+            self.assertAlmostEqual(model["profiles"][name]["wallLoss"]["concrete"], alpha, places=4)
+            self.assertAlmostEqual(model["profiles"][name]["p0"], model["general"]["p0"], places=4)
+        self.assertFalse(model["five"]["calibrated"])
+        self.assertAlmostEqual(model["five"]["n"], 2.2, places=4)
+        self.assertAlmostEqual(model["five"]["wallLoss"]["concrete"], 18, places=4)
+
+    def test_campusrssi_concrete_crossing_deduplicates_split_segments(self):
+        layout = self.export()
+        readings = self.page.evaluate("""base => {
+            const model = window.WifiEngine;
+            const wall = (id, x) => ({id,x1:x,z1:1,x2:x,z2:9,material:'concrete'});
+            const trial = walls => ({
+                ...base,
+                router:{...base.router,x:1,z:5,y:1.2,frequency:2.4},
+                receiverY:1.2,
+                walls
+            });
+            const no = model.value(trial([]),9,5);
+            const one = model.value(trial([wall('a',5)]),9,5);
+            const duplicate = model.value(trial([wall('a',5),wall('b',5)]),9,5);
+            const two = model.value(trial([wall('a',3),wall('b',6)]),9,5);
+            return {oneLoss:no-one,duplicateLoss:no-duplicate,twoLoss:no-two};
+        }""", layout)
+        self.assertAlmostEqual(readings["oneLoss"], 6.8491, places=3)
+        self.assertAlmostEqual(readings["duplicateLoss"], 6.8491, places=3)
+        self.assertAlmostEqual(readings["twoLoss"], 13.6982, places=3)
+
+    def test_signal_pin_results_use_robust_worst_case_not_just_general(self):
+        self.pin()
+        self.change_bars(0)
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertIn("3개 프로파일 최악값", self.page.locator("#requiredStatus").inner_text())
+        self.assertIn("현재 3프로파일 최악 예상", self.page.locator("#requiredResults").inner_text())
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
+        self.assertIn("Robust", self.page.locator("#recommendBody").inner_text())
+        self.assertIn("Robust 추천 최악 예상", self.page.locator("#requiredResults").inner_text())
 
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
