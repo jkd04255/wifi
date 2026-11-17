@@ -1356,6 +1356,40 @@ $('optimizeBtn').onclick=async()=>{
  finally{setBusy(false)}
 };
 
+
+// Luna-style menus and toolbar dispatch only to existing working Wiplan actions.
+async function xpAction(action){
+ switch(action){
+  case 'new': $('resetBtn').click();break;
+  case 'open': $('importFile').click();break;
+  case 'save': $('exportBtn').click();break;
+  case 'undo': $('undoBtn').click();break;
+  case 'palette':
+   switchView('design');
+   if($('toolsRail').hidden)$('paletteToggleBtn').click();
+   break;
+  case 'design':switchView('design');break;
+  case 'analysis':await enterAnalysis();break;
+  case 'run':await enterAnalysis();break;
+  case 'optimize':
+   await enterAnalysis();
+   $('optimizeBtn').click();
+   break;
+  case 'help':
+   if(!$('xpHelpDialog').open)$('xpHelpDialog').showModal();
+   break;
+ }
+}
+document.querySelectorAll('[data-xp-action]').forEach(button=>{
+ button.addEventListener('click',()=>{
+  document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
+  void xpAction(button.dataset.xpAction);
+ });
+});
+$('xpHelpClose').onclick=()=>$('xpHelpDialog').close();
+window.addEventListener('keydown',event=>{
+ if(event.key==='Escape')document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
+});
 switchView('design');
 })();
 
