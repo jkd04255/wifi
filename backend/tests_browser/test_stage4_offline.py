@@ -334,6 +334,113 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertIn("Robust", self.page.locator("#recommendBody").inner_text())
         self.assertIn("Robust 추천 최악 예상", self.page.locator("#requiredResults").inner_text())
 
+    def test_baseline_24_matches_precalibration_git_commit_and_5ghz_unchanged(self):
+        data = self.export()
+        model = self.page.evaluate("""layout => {
+            const e=window.WifiEngine;
+            const before=e.baselineSettings(layout),after=e.settings(layout);
+            const five={...layout,router:{...layout.router,frequency:5}};
+            return {before,after,fiveBaseline:e.baselineSettings(five),fiveCurrent:e.settings(five)};
+        }""", data)
+        self.assertAlmostEqual(model["before"]["n"], 2.2, places=4)
+        self.assertAlmostEqual(model["before"]["wallLoss"]["concrete"], 12.0, places=4)
+        self.assertAlmostEqual(model["before"]["p0"], model["after"]["p0"], places=4)
+        self.assertAlmostEqual(model["after"]["n"], 2.0011, places=4)
+        self.assertAlmostEqual(model["after"]["wallLoss"]["concrete"], 6.8491, places=4)
+        self.assertEqual(model["fiveBaseline"], model["fiveCurrent"])
+        self.assertFalse(model["fiveCurrent"]["calibrated"])
+
+    def test_profiles_and_same_layout_before_after_visualization(self):
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#profileComparison").is_visible())
+        self.assertEqual(self.page.locator("#profileComparisonRows .profile-row").count(), 3)
+        self.assertEqual(
+            self.page.locator("#profileComparisonRows .profile-row b").all_inner_texts(),
+            ["OPEN", "GENERAL", "DENSE"],
+        )
+        self.assertEqual(self.page.locator("#profileComparisonRows .profile-meter span").count(), 3)
+        self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
+        self.assertEqual(self.page.locator("#calibrationComparisonRows > div").count(), 2)
+        self.assertIn("보정 전 (기존)", self.page.locator("#calibrationComparisonRows").inner_text())
+        self.assertIn("보정 후 (GENERAL)", self.page.locator("#calibrationComparisonRows").inner_text())
+        self.assertIn("예상 평균 RSSI 차이", self.page.locator("#calibrationComparison").inner_text())
+        self.page.locator("#powerInput").fill("25")
+        self.page.locator("#powerInput").press("Tab")
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+        self.assertTrue(self.page.locator("#profileComparison").is_hidden())
+        self.page.locator("#applyBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
+
+    def test_pin_worst_case_margin_before_and_after_robust_optimization(self):
+        self.pin()
+        self.change_bars(2)
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertIn("핀 최악 여유점수", self.page.locator("#requiredResults").inner_text())
+        self.assertIn("3개 프로파일 최악값", self.page.locator("#requiredStatus").inner_text())
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
+        self.assertIn("→ 추천 +", self.page.locator("#requiredResults").inner_text())
+
+    def test_robust_top_three_sorted_spaced_and_second_candidate_applies(self):
+        self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_visible(), self.page.locator("#statusLine").inner_text())
+        options=self.page.locator("#topThreeRows button[data-top-rank]")
+        self.assertEqual(options.count(), 3)
+        coords=[]
+        for i in range(options.count()):
+            b=options.nth(i)
+            self.assertEqual(b.get_attribute("data-top-rank"), str(i+1))
+            coords.append((float(b.get_attribute("data-candidate-x")),float(b.get_attribute("data-candidate-z"))))
+        for i in range(len(coords)):
+            for j in range(i+1,len(coords)):
+                distance=((coords[i][0]-coords[j][0])**2+(coords[i][1]-coords[j][1])**2)**.5
+                self.assertGreaterEqual(distance, .5-1e-6)
+        self.page.locator('[data-top-rank="2"]').click()
+        self.page.wait_for_function(
+            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('engineMode').textContent.includes('GENERAL')",
+            timeout=30000,
+        )
+        saved=self.export()
+        self.assertAlmostEqual(saved["router"]["x"],coords[1][0],places=5)
+        self.assertAlmostEqual(saved["router"]["z"],coords[1][1],places=5)
+        self.assertTrue(self.page.locator("#recommendation").is_hidden())
+        self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
+
+    def test_calibration_visualizations_hidden_for_5ghz_and_restored_after_json(self):
+        self.pin()
+        original=self.export()
+        data=json.loads(json.dumps(original))
+        data["router"]["frequency"]=5
+        self.page.locator("#importFile").set_input_files({
+            "name":"five.json","mimeType":"application/json",
+            "buffer":json.dumps(data).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('frequencySelect').value==='5'")
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#profileComparison").is_hidden())
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+        self.assertIn("5 GHz",self.page.locator("#engineMode").inner_text())
+        self.assertEqual(self.export()["requiredPins"],original["requiredPins"])
+        self.page.locator("#designTab").click()
+        self.page.locator("#importFile").set_input_files({
+            "name":"return-24.json","mimeType":"application/json",
+            "buffer":json.dumps(original).encode("utf-8"),
+        })
+        self.page.wait_for_function("document.getElementById('frequencySelect').value==='2.4'")
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
+        self.assertEqual(self.export()["requiredPins"],original["requiredPins"])
+
     def test_default_four_bars_and_point_only_no_radius(self):
         tool = self.page.locator('[data-tool="required"]')
         self.assertIn("신호 세기", tool.inner_text())
