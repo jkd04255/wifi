@@ -514,7 +514,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
             })
             label="기준세기 P0" if suffix=="p0" else "벽 감쇠"
             self.page.wait_for_function(
-                "(label)=>document.getElementById('toast').textContent.includes(label)", label)
+                "(label)=>document.getElementById('toast').textContent.includes(label)", arg=label)
             self.assertEqual(self.export(),original)
 
     def test_5ghz_candidate_comparison_does_not_claim_campusrssi_calibration(self):
