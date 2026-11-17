@@ -672,11 +672,21 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  ctx.putImageData(img,0,0);hCtx.imageSmoothingEnabled=true;hCtx.drawImage(off,0,0,w,h);
  const sx=w/L.width,sy=h/L.depth;
  if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
+ if(best?.stability?.points?.length&&showStableOverlay){
+  hCtx.save();hCtx.fillStyle='rgba(111,75,191,.38)';hCtx.strokeStyle='rgba(255,255,255,.78)';hCtx.lineWidth=1;
+  for(const candidate of best.stability.points){
+   hCtx.beginPath();hCtx.arc(candidate.x*sx,candidate.z*sy,4,0,Math.PI*2);hCtx.fill();hCtx.stroke();
+  }
+  hCtx.restore();
+ }
  hCtx.beginPath();hCtx.setLineDash([5,4]);hCtx.lineWidth=1.5;hCtx.strokeStyle='#202c40bb';hCtx.moveTo(L.router.x*sx,L.router.z*sy);hCtx.lineTo(probe.x*sx,probe.z*sy);hCtx.stroke();hCtx.setLineDash([]);
  drawWalls(hCtx,sx,sy);drawRouter(hCtx,L.router.x*sx,L.router.z*sy,9);
  for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,robustRequiredMinimum(pin,L.router)+1e-8>=signalMinScore(pin));
  renderRequiredStatus();
- if(best){hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
+ if(best){
+  const selected=best.topThree?.find(candidate=>candidate.rank===selectedCompareRank);
+  if(selected){hCtx.save();hCtx.beginPath();hCtx.arc(selected.x*sx,selected.z*sy,18,0,Math.PI*2);hCtx.strokeStyle='#e34f8e';hCtx.lineWidth=3.5;hCtx.stroke();hCtx.restore();}
+  hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
  hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
  $('heatmapBand').textContent=fmt(L.router.frequency, L.router.frequency===5?0:1)+' GHz';
 }
@@ -1134,6 +1144,16 @@ async function optimizeOfflinePins(){
  if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
  if(!bestPoint)throw Error(robust24?'CALIBRATION_CONFLICT · OPEN/GENERAL/DENSE에서 신호 세기 핀 조건을 동시에 만족하는 배치가 없습니다.':(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.'));
  const robustMin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ // Discrete near-optimal feasible candidates only. These are sampled points,
+ // not a continuous physically verified area or guaranteed building coverage.
+ const stabilityTolerance=1;
+ const uniqueStable=new Map();
+ for(const candidate of feasiblePool){
+  if(bestPoint.robustObjective-candidate.robustObjective>stabilityTolerance+1e-8)continue;
+  const key=candidate.x.toFixed(5)+','+candidate.z.toFixed(5);
+  if(!uniqueStable.has(key)||uniqueStable.get(key).robustObjective<candidate.robustObjective)uniqueStable.set(key,candidate);
+ }
+ const stablePoints=Array.from(uniqueStable.values()).map(point=>({x:+point.x.toFixed(5),z:+point.z.toFixed(5)}));
  // Distinct, feasible options. Preserve the winning candidate as rank 1;
  // choose next-highest maximin scores at least 0.5 m apart.
  const topCandidates=[bestPoint];
@@ -1147,7 +1167,9 @@ async function optimizeOfflinePins(){
   const margin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,router)-signalMinScore(pin))):null;
   return {rank:i+1,x:candidate.x,y:L.router.y,z:candidate.z,
    worstObjective:+candidate.robustObjective.toFixed(2),worstQuality:+candidate.robustQuality.toFixed(1),
-   worstMargin:margin===null?null:+margin.toFixed(1)};
+   worstMargin:margin===null?null:+margin.toFixed(1),
+   deltaFromBest:+(bestPoint.robustObjective-candidate.robustObjective).toFixed(2),
+   profileObjectives:Object.fromEntries(profiles.map(name=>[name,+candidate.scores[name].objective.toFixed(2)]))};
  });
  const profilePoints=Object.fromEntries(profiles.map(name=>[name,bestByProfile[name]?{x:bestByProfile[name].x,z:bestByProfile[name].z,quality:+bestByProfile[name].score.quality.toFixed(1),objective:+bestByProfile[name].score.objective.toFixed(2)}:null]));
  let maxProfileDistance=0;
@@ -1155,7 +1177,9 @@ async function optimizeOfflinePins(){
  const confidence=!robust24?'LEGACY':maxProfileDistance<=.5?'HIGH':maxProfileDistance<=1?'MEDIUM':'LOW';
  const bestWorstQuality=robust24?bestPoint.robustQuality:bestPoint.scores.LEGACY.quality;
  const currentWorstQuality=Math.min(...Object.values(beforeProfiles).map(v=>v.quality));
- return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,topThree,weightsUsed:isWeighted};
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,topThree,
+  stability:{tolerancePoints:stabilityTolerance,feasibleSampleCount:uniqueStable.size,points:stablePoints},
+  weightsUsed:isWeighted};
 }
 function renderTopThree(){
  const panel=$('topThreeCandidates'),rows=$('topThreeRows');rows.replaceChildren();
