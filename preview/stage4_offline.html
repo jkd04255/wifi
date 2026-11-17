@@ -1181,9 +1181,37 @@ async function optimizeOfflinePins(){
   stability:{tolerancePoints:stabilityTolerance,feasibleSampleCount:uniqueStable.size,points:stablePoints},
   weightsUsed:isWeighted};
 }
+function renderCandidateComparison(){
+ const box=$('candidateCompare');box.replaceChildren();
+ const top=best?.topThree;if(!top?.length)return;
+ const candidate=top.find(v=>v.rank===selectedCompareRank)||top[0],first=top[0];
+ const title=document.createElement('strong');
+ title.textContent='비교 중: #'+candidate.rank+' · 1순위 대비 J '+(candidate.deltaFromBest>0?'−':'')+fmt(candidate.deltaFromBest,2)+'점';
+ const distance=document.createElement('small');
+ distance.textContent='1순위와의 거리 '+fmt(Math.hypot(candidate.x-first.x,candidate.z-first.z),2)+' m · 최악 품질 '+fmt(candidate.worstQuality,1)+'점'+(candidate.worstMargin===null?'':' · 최소 핀 여유 '+(candidate.worstMargin>=0?'+':'')+fmt(candidate.worstMargin,1)+'점');
+ box.append(title,distance);
+ for(const [profile,objective] of Object.entries(candidate.profileObjectives)){
+  const line=document.createElement('div');line.className='compare-line';line.dataset.compareProfile=profile;
+  const label=document.createElement('b');label.textContent=profile;
+  const bar=document.createElement('progress');bar.max=100;bar.value=clamp(objective,0,100);bar.setAttribute('aria-label',profile+' 목적함수 J');
+  const value=document.createElement('span');value.textContent=fmt(objective,2)+'점';
+  line.append(label,bar,value);box.appendChild(line);
+ }
+ document.querySelectorAll('[data-compare-rank]').forEach(button=>{
+  button.setAttribute('aria-pressed',String(Number(button.dataset.compareRank)===candidate.rank));
+ });
+ renderHeat();
+}
+$('stabilityToggle').onchange=e=>{showStableOverlay=e.target.checked;renderHeat();};
 function renderTopThree(){
  const panel=$('topThreeCandidates'),rows=$('topThreeRows');rows.replaceChildren();
  if(!best?.topThree?.length){panel.hidden=true;return;}
+ selectedCompareRank=1;
+ $('stabilityToggle').checked=showStableOverlay;
+ const stable=best.stability;
+ $('stabilitySummary').textContent=stable
+  ?'목적함수 J 최고점 대비 '+fmt(stable.tolerancePoints,1)+'점 이내 · 공통 조건 충족 검색 후보 '+stable.feasibleSampleCount+'곳 (이산 표본이며 연속 면적 아님)'
+  :'검색된 안정영역 후보가 없습니다.';
  const heading=panel.querySelector('h3');
  heading.textContent=best.robust24?'Robust 추천 Top 3':'5 GHz 미보정 추천 Top 3';
  const note=panel.querySelector('.comparison-note');
@@ -1197,9 +1225,14 @@ function renderTopThree(){
   const button=document.createElement('button');button.type='button';button.className='secondary';
   button.dataset.topRank=String(candidate.rank);button.dataset.candidateX=String(candidate.x);button.dataset.candidateZ=String(candidate.z);button.textContent=candidate.rank===1?'1순위 적용':'이 위치 적용';
   button.onclick=()=>applyRecommendedPoint(candidate);
-  row.append(text,button);rows.appendChild(row);
+  const compare=document.createElement('button');compare.type='button';compare.className='secondary';
+  compare.dataset.compareRank=String(candidate.rank);compare.textContent='비교';compare.setAttribute('aria-pressed','false');
+  compare.onclick=()=>{selectedCompareRank=candidate.rank;renderCandidateComparison();};
+  const actions=document.createElement('div');actions.className='candidate-actions';actions.append(compare,button);
+  row.append(text,actions);rows.appendChild(row);
  }
  panel.hidden=false;
+ renderCandidateComparison();
 }
 $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
