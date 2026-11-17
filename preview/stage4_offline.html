@@ -1157,7 +1157,7 @@ function renderTopThree(){
   sub.textContent='최악 품질 '+fmt(candidate.worstQuality,1)+'점 · J '+fmt(candidate.worstObjective,2)+(candidate.worstMargin===null?'':' · 핀 여유 '+(candidate.worstMargin>=0?'+':'')+fmt(candidate.worstMargin,1));
   text.append(headline,sub);
   const button=document.createElement('button');button.type='button';button.className='secondary';
-  button.dataset.topRank=String(candidate.rank);button.textContent=candidate.rank===1?'1순위 적용':'이 위치 적용';
+  button.dataset.topRank=String(candidate.rank);button.dataset.candidateX=String(candidate.x);button.dataset.candidateZ=String(candidate.z);button.textContent=candidate.rank===1?'1순위 적용':'이 위치 적용';
   button.onclick=()=>applyRecommendedPoint(candidate);
   row.append(text,button);rows.appendChild(row);
  }
