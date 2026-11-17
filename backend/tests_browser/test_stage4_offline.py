@@ -47,6 +47,52 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#requiredDrawer").evaluate("(el) => { el.open = true; }")
         self.page.locator("#signalBarsSelect").select_option(str(bars))
 
+    def test_xp_luna_chrome_and_menus_visible(self):
+        self.assertTrue(self.page.locator(".xp-caption").is_visible())
+        self.assertIn("Wiplan - Wi-Fi 배치 시뮬레이터", self.page.locator(".xp-caption").inner_text())
+        self.assertEqual(self.page.locator(".xp-menu").count(), 5)
+        self.assertEqual(self.page.locator(".xp-toolbar button").count(), 8)
+        self.assertIn("linear-gradient", self.page.locator(".xp-caption").evaluate("(e)=>getComputedStyle(e).backgroundImage"))
+        self.assertEqual(self.page.locator(".xp-toolbar [data-xp-action='optimize']").get_attribute("type"), "button")
+        self.assertTrue(self.page.locator("#editorCanvas").is_visible())
+
+    def test_xp_menu_save_new_undo_and_help_are_functional(self):
+        self.pin()
+        self.assertEqual(len(self.export()["requiredPins"]), 1)
+        self.page.locator(".xp-menu").first.locator("summary").click()
+        self.assertTrue(self.page.locator(".xp-menu").first.evaluate("(e)=>e.open"))
+        with self.page.expect_download() as task:
+            self.page.locator(".xp-menu").first.locator("[data-xp-action='save']").click()
+        downloaded=json.loads(task.value.path().read_text(encoding="utf-8"))
+        self.assertEqual(len(downloaded["requiredPins"]),1)
+        self.assertFalse(self.page.locator(".xp-menu").first.evaluate("(e)=>e.open"))
+        self.page.locator(".xp-toolbar [data-xp-action='new']").click()
+        self.assertEqual(self.export()["requiredPins"], [])
+        self.page.locator(".xp-toolbar [data-xp-action='undo']").click()
+        self.assertEqual(len(self.export()["requiredPins"]),1)
+        self.page.locator(".xp-toolbar [data-xp-action='help']").click()
+        self.assertTrue(self.page.locator("#xpHelpDialog").is_visible())
+        self.assertIn("신호 원활·중간·혼잡",self.page.locator("#xpHelpDialog").inner_text())
+        self.page.locator("#xpHelpClose").click()
+        self.assertFalse(self.page.locator("#xpHelpDialog").is_visible())
+
+    def test_xp_toolbar_simulation_and_optimizer_run_real_engine(self):
+        self.page.locator(".xp-toolbar [data-xp-action='run']").click()
+        self.page.wait_for_function(
+            "document.body.dataset.view==='analysis' && "
+            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('engineMode').textContent.includes('중간')",
+            timeout=30000,
+        )
+        self.assertIn("dBm",self.page.locator("#meanStat").inner_text())
+        self.page.locator(".xp-toolbar [data-xp-action='optimize']").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(),self.page.locator("#statusLine").inner_text())
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_visible())
+        self.page.locator(".xp-toolbar [data-xp-action='palette']").click()
+        self.assertTrue(self.page.locator("#editorScreen").is_visible())
+        self.assertTrue(self.page.locator("#toolsRail").is_visible())
+
     def test_tool_does_not_auto_expand_palette(self):
         self.assertTrue(self.page.locator("#toolsRail").is_hidden())
         self.pin()
