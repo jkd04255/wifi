@@ -998,7 +998,13 @@ function renderProbe(){if(!result)return;
  renderProfileComparison();
 }
 $('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
-$('useBestBtn').onclick=async()=>{if(!best)return;pushUndo();L.router.x=best.best.x;L.router.z=best.best.z;best=null;changed('추천 위치를 적용했습니다. 히트맵을 갱신합니다.');await simulate(weighted)};
+async function applyRecommendedPoint(point){
+ if(!best||!point)return;
+ pushUndo();L.router.x=point.x;L.router.z=point.z;
+ best=null;changed('선택한 추천 위치를 적용했습니다. 히트맵을 갱신합니다.');
+ await simulate(weighted);
+}
+$('useBestBtn').onclick=()=>applyRecommendedPoint(best?.best);
 function exportLayout(){
  return {...L,requiredPins:(L.requiredPins||[]).map(pin=>({
   id:pin.id,x:pin.x,z:pin.z,signalBars:signalBars(pin),minQualityScore:signalMinScore(pin)
@@ -1089,6 +1095,7 @@ async function optimizeOfflinePins(){
  const valid=(x,z)=>(L.walls||[]).every(w=>{
    const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
  let bestPoint=null,candidates=0,commonCandidates=0;
+ const feasiblePool=[];
  const bestByProfile=Object.fromEntries(profiles.map(name=>[name,null]));
  const profilePinMin=(pin,router,name)=>robust24?requiredMinimumProfile(pin,router,name):requiredMinimum(pin,router);
  const check=(x,z)=>{if(!valid(x,z))return;candidates++;
@@ -1103,7 +1110,9 @@ async function optimizeOfflinePins(){
   commonCandidates++;
   const robustObjective=Math.min(...profiles.map(name=>scores[name].objective));
   const robustQuality=Math.min(...profiles.map(name=>scores[name].quality));
-  if(!bestPoint||robustObjective>bestPoint.robustObjective)bestPoint={x,z,scores,robustObjective,robustQuality};
+  const candidate={x,z,scores,robustObjective,robustQuality};
+  feasiblePool.push(candidate);
+  if(!bestPoint||robustObjective>bestPoint.robustObjective)bestPoint=candidate;
  };
  const nx=Math.max(2,Math.ceil(L.width/search)),nz=Math.max(2,Math.ceil(L.depth/search));
  for(let z=0;z<=nz;z++)for(let x=0;x<=nx;x++)check(L.width*x/nx,L.depth*z/nz);
@@ -1111,13 +1120,48 @@ async function optimizeOfflinePins(){
  if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
  if(!bestPoint)throw Error(robust24?'CALIBRATION_CONFLICT · OPEN/GENERAL/DENSE에서 신호 세기 핀 조건을 동시에 만족하는 배치가 없습니다.':(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.'));
  const robustMin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ // Distinct, feasible options. Preserve the winning candidate as rank 1;
+ // choose next-highest maximin scores at least 0.5 m apart.
+ const topCandidates=[bestPoint];
+ const sortedFeasible=feasiblePool.slice().sort((a,b)=>b.robustObjective-a.robustObjective||a.x-b.x||a.z-b.z);
+ for(const candidate of sortedFeasible){
+  if(topCandidates.length>=3)break;
+  if(topCandidates.every(prev=>Math.hypot(candidate.x-prev.x,candidate.z-prev.z)>=.5-1e-8))topCandidates.push(candidate);
+ }
+ const topThree=topCandidates.map((candidate,i)=>{
+  const router={...L.router,x:candidate.x,z:candidate.z};
+  const margin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,router)-signalMinScore(pin))):null;
+  return {rank:i+1,x:candidate.x,y:L.router.y,z:candidate.z,
+   worstObjective:+candidate.robustObjective.toFixed(2),worstQuality:+candidate.robustQuality.toFixed(1),
+   worstMargin:margin===null?null:+margin.toFixed(1)};
+ });
  const profilePoints=Object.fromEntries(profiles.map(name=>[name,bestByProfile[name]?{x:bestByProfile[name].x,z:bestByProfile[name].z,quality:+bestByProfile[name].score.quality.toFixed(1),objective:+bestByProfile[name].score.objective.toFixed(2)}:null]));
  let maxProfileDistance=0;
  if(robust24){const pts=Object.values(profilePoints).filter(Boolean);for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++)maxProfileDistance=Math.max(maxProfileDistance,Math.hypot(pts[i].x-pts[j].x,pts[i].z-pts[j].z));}
  const confidence=!robust24?'LEGACY':maxProfileDistance<=.5?'HIGH':maxProfileDistance<=1?'MEDIUM':'LOW';
  const bestWorstQuality=robust24?bestPoint.robustQuality:bestPoint.scores.LEGACY.quality;
  const currentWorstQuality=Math.min(...Object.values(beforeProfiles).map(v=>v.quality));
- return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,weightsUsed:isWeighted};
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,topThree,weightsUsed:isWeighted};
+}
+function renderTopThree(){
+ const panel=$('topThreeCandidates'),rows=$('topThreeRows');rows.replaceChildren();
+ if(!best?.topThree?.length){panel.hidden=true;return;}
+ const heading=panel.querySelector('h3');
+ heading.textContent=best.robust24?'Robust 추천 Top 3':'5 GHz 미보정 추천 Top 3';
+ const note=panel.querySelector('.comparison-note');
+ note.textContent=best.robust24?'세 프로파일 모두에서 핀 조건을 만족한 후보를 최대 3개 표시합니다. 후보별 최소 간격 0.5m.':'5 GHz는 CAMPUSRSSI 실측 보정이 없습니다. 기존 모델의 추천 후보입니다.';
+ for(const candidate of best.topThree){
+  const row=document.createElement('div');row.className='top-candidate';
+  const text=document.createElement('div'),headline=document.createElement('strong'),sub=document.createElement('small');
+  headline.textContent='#'+candidate.rank+' · X '+fmt(candidate.x,2)+'m / Z '+fmt(candidate.z,2)+'m';
+  sub.textContent='최악 품질 '+fmt(candidate.worstQuality,1)+'점 · J '+fmt(candidate.worstObjective,2)+(candidate.worstMargin===null?'':' · 핀 여유 '+(candidate.worstMargin>=0?'+':'')+fmt(candidate.worstMargin,1));
+  text.append(headline,sub);
+  const button=document.createElement('button');button.type='button';button.className='secondary';
+  button.dataset.topRank=String(candidate.rank);button.textContent=candidate.rank===1?'1순위 적용':'이 위치 적용';
+  button.onclick=()=>applyRecommendedPoint(candidate);
+  row.append(text,button);rows.appendChild(row);
+ }
+ panel.hidden=false;
 }
 $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
@@ -1125,8 +1169,8 @@ $('optimizeBtn').onclick=async()=>{
  try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
  const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m',best.robust24?'Robust worst-case 품질 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점':'품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점',best.robust24?'배치 신뢰도 '+best.confidence+' · 프로파일별 최적점 최대거리 '+fmt(best.maxProfileDistance,2)+' m':'5 GHz 기존 모델','후보 '+best.candidates+'개 검토'+(best.robust24?' · 공통 feasible '+best.commonCandidates+'개':'')+' · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · worst-case 최저 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),best.robust24?'CAMPUSRSSI 2.4 GHz · OPEN/GENERAL/DENSE 동시 보정 · 콘크리트 6.28~7.21 dB/회':'5 GHz는 CAMPUSRSSI 실측보정 미적용','LAN·케이블·천장·벽 높이 제한 미적용'];
  for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
- $('recommendation').hidden=false;$('statusLine').textContent=best.robust24?'추천 완료 · OPEN/GENERAL/DENSE 공통 Robust 최적화 · 신뢰도 '+best.confidence:'추천 완료 · 5 GHz 기존 오프라인 모델';$('engineMode').textContent=best.robust24?'오프라인 JS · CAMPUSRSSI Robust 2.4 GHz':'오프라인 JS · 5 GHz 미보정 예측';renderHeat();renderRequiredStatus();
- }catch(err){best=null;$('recommendation').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
+ $('recommendation').hidden=false;renderTopThree();$('statusLine').textContent=best.robust24?'추천 완료 · OPEN/GENERAL/DENSE 공통 Robust 최적화 · 신뢰도 '+best.confidence:'추천 완료 · 5 GHz 기존 오프라인 모델';$('engineMode').textContent=best.robust24?'오프라인 JS · CAMPUSRSSI Robust 2.4 GHz':'오프라인 JS · 5 GHz 미보정 예측';renderHeat();renderRequiredStatus();
+ }catch(err){best=null;$('recommendation').hidden=true;$('topThreeCandidates').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
  finally{setBusy(false)}
 };
 
