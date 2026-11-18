@@ -136,6 +136,54 @@ footer{padding:7px 12px;color:#303c4f;border-top:1px solid #aaa79d;background:#e
 @media(max-width:920px){.app-shell{width:calc(100% - 12px);margin:6px auto}.xp-toolbar>button{min-width:56px;font-size:10px}.xp-caption{height:30px}.topbar{flex-wrap:wrap}.xp-menu>summary{padding:4px 7px}}
 @media(max-width:540px){.xp-toolbar{padding:4px}.xp-toolbar>button{min-width:52px;min-height:44px;padding:2px 3px}.xp-toolbar-icon{font-size:18px}.xp-toolbar-divider{display:none}.xp-caption{font-size:12px}.xp-window-chrome i{width:19px;height:19px}.page-intro h1{font-size:15px}.topbar{gap:4px}.view-tab{padding:8px 10px}}
 
+
+/* Final Luna refinements: deliberately compact, beveled native-control feel. */
+:root{color-scheme:light}
+body{background:linear-gradient(160deg,#4d8dcc 0%,#2770b4 50%,#1e5e96 100%)}
+.app-shell{border-color:#174da7;box-shadow:0 0 0 1px #8db6f0,0 9px 20px #112c6070}
+.xp-caption{height:32px;font-size:13px;border-top:1px solid #61a4ff;border-bottom:1px solid #003785;background:linear-gradient(180deg,#3788fc 0%,#126ee8 25%,#0657c7 65%,#0641a8 100%)}
+.xp-caption-symbol{display:inline-grid;place-items:center;background:linear-gradient(135deg,#9af6f8,#1172d8);border:1px solid #e8ffff;color:#073b82;border-radius:2px;box-shadow:1px 1px #06307a;width:19px;height:19px;font-size:14px}
+.xp-menu-bar{background:#ece9d8;border-top:1px solid #fdfcf4;border-bottom:1px solid #b4b3a8}
+.xp-menu>summary:focus-visible,.xp-menu-content button:focus-visible{outline:2px solid #2c6dbe;outline-offset:1px}
+.xp-menu-content{box-shadow:2px 2px 0 #bac4cc,4px 4px 7px #48566569}
+.xp-toolbar{padding:3px 7px 5px;border-bottom:1px solid #a6a397}
+.xp-toolbar>button{min-height:48px}
+.xp-toolbar>button:focus-visible,.view-tab:focus-visible,.xp-help-content button:focus-visible{outline:2px solid #154f9a;outline-offset:1px}
+.topbar{background:#ece9d8}
+.top-actions .ghost{padding:7px 11px}
+main{background:#ece9d8;padding:9px 11px}
+.page-intro{border-bottom:1px solid #c9c5b8;margin-bottom:9px}
+.page-intro h1{font-size:15px}
+.page-intro p{font-size:11px}
+.layout-bar,.draw-toolbar{border:1px solid #aaa99e;background:linear-gradient(#fbfaf3,#efebde);box-shadow:inset 0 1px #fff}
+.canvas-column,.result-map{border:1px solid #8daacf;box-shadow:inset 1px 1px #fff;padding:9px}
+.canvas-frame{box-shadow:inset 1px 1px #7e8899,1px 1px #fff;border:2px solid #859ab3}
+.side-controls,.result-controls{border:1px solid #8aaad6;background:#fffef8;box-shadow:inset 1px 1px #fff}
+.side-title{background:linear-gradient(#327bd9,#1c5db7);margin:-10px -10px 12px;padding:8px 10px;border-bottom:1px solid #13498f}
+.side-title strong{font-size:12px;color:white;text-shadow:0 1px #174581}
+.side-title small{font-size:10px;color:#e1efff}
+.side-help{border:1px solid #d0d4d9;background:#f7f6ef}
+.palette-drawer{border:1px solid #97b6d7}
+.palette-drawer summary{padding:9px}
+.palette-drawer summary:hover{filter:brightness(1.08)}
+.stat{box-shadow:inset 1px 1px white,inset -1px -1px #d6d4c8}
+.tool{font-size:11px}
+.tool-icon{font-size:15px}
+.ghost,.secondary,.primary,.tool,.signal-level-buttons button,.palette-choice{box-shadow:inset 1px 1px white,inset -1px -1px #bcc8d2;text-shadow:none}
+.ghost:active,.secondary:active,.primary:active,.tool:active{box-shadow:inset 1px 1px #9db1c9;background:#d0dcf0}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #2d68b1;outline-offset:1px}
+button:disabled{opacity:.54}
+.signal-level-buttons button[aria-pressed=true]{background:linear-gradient(#fff9e3,#f8d996);border-color:#a87d38}
+.inspector-head{padding:8px 10px}
+.inspector-body{padding:10px}
+.recommendation{padding:10px}
+.recommendation button{min-height:31px}
+.xp-statusbar{display:grid;grid-template-columns:minmax(100px,1.1fr) repeat(4,minmax(0,1fr));gap:3px;align-items:stretch;padding:3px 6px 4px;min-height:27px}
+.xp-statusbar span{display:block;min-width:0;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#303030;background:#ece9d8;border:1px solid;border-color:#a2a198 white white #a2a198;font:11px Tahoma,'Malgun Gothic',sans-serif}
+.xp-statusbar span:last-child{font-weight:bold;color:#124997}
+@media(max-width:900px){.xp-statusbar{grid-template-columns:1.3fr 1fr 1fr}.xp-statusbar span:nth-child(4),.xp-statusbar span:nth-child(5){display:none}}
+@media(max-width:520px){.xp-caption{height:30px}.xp-statusbar{grid-template-columns:1fr 1fr}.xp-statusbar span:nth-child(3){display:none}.topbar{padding-top:4px}.xp-menu-content{min-width:155px}}
+
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -182,7 +230,7 @@ footer{padding:7px 12px;color:#303c4f;border-top:1px solid #aaa79d;background:#e
  <div class="page-intro"><div><div class="eyebrow">STEP 02 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>예측 RSSI를 색으로 확인하고, 중요도 반영 결과와 최적 공유기 위치를 비교합니다.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">RSSI · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>Apply를 누르면 결과가 표시됩니다.</small></div></div><div class="signal-legend"><span>−90</span><div class="heat-gradient"></div><span>−30 dBm</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span>평균 RSSI</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small>−67 dBm 이상</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small>−75 dBm 미만</small></div></div><section class="comparison-card" id="profileComparison" aria-label="2.4 GHz 환경별 예상 RSSI" hidden><h3>신호 원활 · 중간 · 혼잡 지점별 비교</h3><div id="profileComparisonRows"></div><p class="comparison-note">모델별 예측 차이입니다. 실제 RSSI 오차나 측정값은 아닙니다.</p></section><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
  <aside class="result-controls"><div class="side-title"><strong>공유기 설정</strong><small>모델 입력</small></div><div class="router-grid"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><section class="comparison-card" id="calibrationComparison" aria-label="보정 전후 예상 RSSI 비교" hidden><h3>보정 전·후 비교 (2.4 GHz)</h3><div id="calibrationComparisonRows" class="profile-metrics"></div><p class="comparison-note">동일 도면·공유기 위치에서 이전 Wiplan 모델(n=2.2, 콘크리트 12dB/회)과 중간 모델(n=2.0011, 콘크리트 6.8491dB/회)의 예상값을 비교합니다. 실측 MAE 개선량이 아닙니다.</p></section><p id="offlineModeInfo" class="footnote">2.4 GHz는 CAMPUSRSSI 기반 신호 원활 · 중간 · 혼잡 보정을 동시에 계산해 공통 조건을 만족하는 Robust 위치를 추천합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><p id="calibrationHint" class="footnote">2.4 GHz 히트맵은 중간(n=2.00, 콘크리트 6.85 dB/회) 기준입니다. 추천 위치는 신호 원활/중간/혼잡 세 모델의 worst-case를 최적화합니다. 2개 이상 콘크리트 교차는 외삽입니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><div class="comparison-card" id="topThreeCandidates" hidden><h3>Robust 추천 Top 3</h3><div id="topThreeRows"></div><section class="stability-tools"><label for="stabilityToggle"><input type="checkbox" id="stabilityToggle" checked>지도에 추천 안정 후보 분포 표시</label><p id="stabilitySummary">최적화 후 근접 후보 수를 표시합니다.</p></section><div id="candidateCompare" class="compare-detail" aria-live="polite"></div><p class="comparison-note">조건을 충족한 공유기 후보이며, 서로 0.5m 이상 떨어진 위치를 우선 표시합니다.</p></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><p class="footnote">RSSI는 근사 예측치입니다. 2.4 GHz Robust 보정은 CAMPUSRSSI 연구결과를 사용하며 실제 통신 속도·CSI·모든 건물의 절대 RSSI를 보장하지 않습니다.</p></aside></div>
-</section></main><footer><span>Wiplan · Windows XP 스타일 · 오프라인 HTML / Windows EXE</span><span>1평 ≈ 3.3058㎡ · 가로세로 비율 추정 · 결과는 예측치입니다.</span></footer>
+</section></main><footer class="xp-statusbar" aria-label="프로그램 상태 표시줄"><span id="xpStatusState">준비 · 도면 편집</span><span id="xpStatusDimensions">도면 크기 확인 중</span><span id="xpStatusPins">신호 핀 0개</span><span id="xpStatusBand">2.4 GHz</span><span id="xpStatusModel">CAMPUSRSSI · 중간</span></footer>
 </div><dialog id="xpHelpDialog" class="xp-help-dialog" aria-labelledby="xpHelpTitle"><div id="xpHelpTitle" class="xp-help-heading">Wiplan 도움말</div><div class="xp-help-content">도면에서 콘크리트 벽을 그리고 공유기와 신호 세기 핀을 배치합니다. 신호 세기 핀은 각 위치에 독립적인 4~0칸 기준을 설정할 수 있습니다. 시뮬레이션에서 예상 RSSI를 확인하고 최적 위치를 계산할 수 있습니다.<p>2.4GHz: 신호 원활·중간·혼잡 Robust 보정 / 5GHz: 기존 미보정 모델</p><p>실제 통신 품질은 환경과 장비에 따라 다릅니다. 계산 결과는 예측값입니다.</p><button type="button" id="xpHelpClose">확인</button></div></dialog><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
 /* Browser-offline companion of backend/wifi_engine/core.py.
    New layout contract v1.1: floor map XZ, vertical height Y, RSSI values[row Z][col X].
