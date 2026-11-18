@@ -47,6 +47,49 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#requiredDrawer").evaluate("(el) => { el.open = true; }")
         self.page.locator("#signalBarsSelect").select_option(str(bars))
 
+    def test_xp_status_bar_tracks_real_layout_and_mode(self):
+        self.assertTrue(self.page.locator(".xp-statusbar").is_visible())
+        self.assertEqual(self.page.locator(".xp-statusbar > span").count(), 5)
+        self.assertIn("도면 편집",self.page.locator("#xpStatusState").inner_text())
+        self.assertIn("신호 핀 0개",self.page.locator("#xpStatusPins").inner_text())
+        self.assertIn("중간",self.page.locator("#xpStatusModel").inner_text())
+        self.pin()
+        self.assertIn("신호 핀 1개",self.page.locator("#xpStatusPins").inner_text())
+        self.page.locator(".xp-toolbar [data-xp-action='run']").click()
+        self.page.wait_for_function(
+            "document.body.dataset.view==='analysis' && document.getElementById('applyBtn').disabled===false",
+            timeout=30000,
+        )
+        self.assertIn("신호 분석",self.page.locator("#xpStatusState").inner_text())
+        self.assertIn("계산 완료",self.page.locator("#xpStatusState").inner_text())
+        self.assertIn("2.4 GHz",self.page.locator("#xpStatusBand").inner_text())
+
+    def test_xp_keyboard_save_and_edit_field_shortcuts(self):
+        self.pin()
+        with self.page.expect_download() as task:
+            self.page.keyboard.press("Control+s")
+        saved=json.loads(task.value.path().read_text(encoding="utf-8"))
+        self.assertEqual(len(saved["requiredPins"]),1)
+        self.page.locator("#pyeongInput").focus()
+        self.page.locator("#pyeongInput").fill("23.5")
+        before=self.export()
+        self.page.keyboard.press("Control+z")
+        self.assertEqual(self.export(),before)
+        self.page.locator("#editorCanvas").focus()
+        self.page.keyboard.press("Control+z")
+        self.assertEqual(len(self.export()["requiredPins"]),0)
+
+    def test_xp_compact_layout_on_mobile_does_not_overflow(self):
+        self.page.set_viewport_size({"width":390,"height":844})
+        self.assertTrue(self.page.locator(".xp-caption").is_visible())
+        self.assertTrue(self.page.locator(".xp-toolbar").is_visible())
+        width=self.page.evaluate("document.documentElement.scrollWidth")
+        self.assertLessEqual(width,410)
+        self.page.locator(".xp-toolbar [data-xp-action='help']").click()
+        self.assertTrue(self.page.locator("#xpHelpDialog").is_visible())
+        self.page.locator("#xpHelpClose").click()
+        self.assertTrue(self.page.locator("#editorCanvas").is_visible())
+
     def test_xp_luna_chrome_and_menus_visible(self):
         self.assertTrue(self.page.locator(".xp-caption").is_visible())
         self.assertIn("Wiplan - Wi-Fi 배치 시뮬레이터", self.page.locator(".xp-caption").inner_text())
