@@ -579,7 +579,7 @@ function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계
  dirty=true;best=null;$('recommendation').hidden=true;for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
  $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
 }
-function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty')}
+function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty');syncXPStatus();}
 function resizeCanvas(canvas,ctx){const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return {w:1,h:1};const dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:rect.width,h:rect.height};}
 function positions(canvas,event){const r=canvas.getBoundingClientRect();return{x:clamp((event.clientX-r.left)/r.width*L.width,0,L.width),y:clamp((event.clientY-r.top)/r.height*L.depth,0,L.depth)};}
 function snapped(p){return{x:clamp(Math.round(p.x*4)/4,0,L.width),y:clamp(Math.round(p.y*4)/4,0,L.depth)};}
@@ -846,6 +846,16 @@ function renderElements(){const box=$('elementList');box.replaceChildren();
  left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
  $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
 }
+function syncXPStatus(){
+ const view=document.body.dataset.view==='analysis'?'신호 분석':'도면 편집';
+ const pinCount=(L.requiredPins||[]).length;
+ const ready=dirty?'수정됨':'계산 완료';
+ $('xpStatusState').textContent=view+' · '+ready;
+ $('xpStatusDimensions').textContent=fmt(L.width,1)+' × '+fmt(L.depth,1)+' m';
+ $('xpStatusPins').textContent='신호 핀 '+pinCount+'개 · 벽 '+L.walls.length+'개';
+ $('xpStatusBand').textContent=fmt(L.router.frequency,L.router.frequency===5?0:1)+' GHz';
+ $('xpStatusModel').textContent=Number(L.router.frequency)===2.4?'CAMPUSRSSI · 중간':'5 GHz · 미보정';
+}
 function syncLayout(){
  const p=L.areaPyeong??(L.width*L.depth/SQM_PER_PYEONG);
  $('mapSizeChip').textContent=`${fmt(L.width)} × ${fmt(L.depth)} m`;
@@ -860,6 +870,7 @@ function syncLayout(){
  $('exponentInput').disabled=calibrated24;
  $('exponentInput').title=calibrated24?'2.4 GHz CAMPUSRSSI Robust 모드에서는 GENERAL 값 2.0011을 중앙 히트맵에 사용합니다.':'5 GHz는 실측 보정이 없어 기존 수동 감쇠 지수를 사용합니다.';
  for(const canvas of [editor,heat])canvas.parentElement.style.aspectRatio=L.width+'/'+L.depth;
+ syncXPStatus();
 }
 // Geometric eraser: remove intersections with a swept circle (capsule), retaining
 // all unaffected segments as independent concrete walls and untouched sketches.
@@ -1253,6 +1264,7 @@ function switchView(view){
  $('designTab').classList.toggle('active',design);$('analysisTab').classList.toggle('active',!design);
  $('designTab').setAttribute('aria-current',design?'page':'false');
  $('analysisTab').setAttribute('aria-current',design?'false':'page');
+ syncXPStatus();
  requestAnimationFrame(()=>{design?renderEditor():renderHeat();});
 }
 async function enterAnalysis(){switchView('analysis');await simulate(false);}
@@ -1436,7 +1448,22 @@ document.querySelectorAll('[data-xp-action]').forEach(button=>{
 });
 $('xpHelpClose').onclick=()=>$('xpHelpDialog').close();
 window.addEventListener('keydown',event=>{
- if(event.key==='Escape')document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
+ if(event.key==='Escape'){
+  document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
+  return;
+ }
+ if(!(event.ctrlKey||event.metaKey)||event.shiftKey||event.altKey)return;
+ const target=event.target;
+ const editing=target instanceof HTMLElement&&
+   (target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName));
+ const key=event.key.toLowerCase();
+ const actions={s:'save',o:'open'};
+ if(!editing&&key==='z')actions.z='undo';
+ if(!editing&&key==='n')actions.n='new';
+ if(actions[key]){
+  event.preventDefault();
+  void xpAction(actions[key]);
+ }
 });
 switchView('design');
 })();
