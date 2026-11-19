@@ -1548,7 +1548,7 @@ for(const key of ['wizardFrequency','wizardPower','wizardGain','wizardExponent']
 for(const radio of document.querySelectorAll('[name="wizardMount"]'))radio.onchange=()=>{
  if(!radio.checked)return;
  pushUndo();L.router.mountMode=radio.value;
- if(radio.value==='wall')ensureWallMount();
+ if(radio.value==='wall'){L.router.mountFace??='right';ensureWallMount();}
  changed('공유기 설치 방식 변경');syncWizardFields();
 };
 $('mountFace').onchange=()=>{pushUndo();L.router.mountFace=$('mountFace').value;
