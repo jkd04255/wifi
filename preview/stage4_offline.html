@@ -240,7 +240,9 @@ body[data-view="router"] #editorScreen,body[data-view="router"] #resultScreen,bo
 .wizard-step-summary strong{display:block;font-size:15px;margin-top:4px;color:#184f8d}
 .view-nav{flex-wrap:wrap}.view-tab{font-size:11px;padding:8px 12px}
 .expert-toggle{margin:5px 0 9px;display:flex;justify-content:flex-end;align-items:center;gap:8px}
-.expert-only{display:none!important}body.expert-on .expert-only{display:revert!important}
+.expert-only{display:none!important}body.expert-on .expert-only:not([hidden]){display:block!important}
+body.expert-on .router-grid.expert-only{display:grid!important}
+body.expert-on .expert-only[hidden]{display:none!important}
 body.expert-on .beginner-only{display:none!important}
 #simpleProbeScore{border:1px solid #c3d3e4;background:#f3f8ff;padding:10px}
 #simpleProbeScore strong{font-size:22px;color:#144f94}
@@ -985,7 +987,7 @@ function renderElements(){const box=$('elementList');box.replaceChildren();
  $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
 }
 function syncXPStatus(){
- const view=document.body.dataset.view==='analysis'?'신호 분석':'도면 편집';
+ const view=({design:'도면 편집',router:'공유기 설정',height:'공유기 높이',analysis:'신호 분석'}[document.body.dataset.view])||'도면 편집';
  const pinCount=(L.requiredPins||[]).length;
  const ready=dirty?'수정됨':'계산 완료';
  $('xpStatusState').textContent=view+' · '+ready;
@@ -1732,6 +1734,7 @@ async function optimizeOfflinePins(){
 }
 function renderCandidateComparison(){
  const box=$('candidateCompare');box.replaceChildren();
+ if(typeof addInfoButton==='function'){addInfoButton(box,'1순위 대비 J N점');addInfoButton(box,'핀 여유');}
  const top=best?.topThree;if(!top?.length)return;
  const candidate=top.find(v=>v.rank===selectedCompareRank)||top[0],first=top[0];
  const title=document.createElement('strong');
