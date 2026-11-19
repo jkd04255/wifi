@@ -1245,9 +1245,17 @@ function syncLayout(){
 function eraseAt(a,b){
  const radius=Number($('eraserSize').value);
  const wallResult=geometry.eraseWalls(L.walls,a,b,radius,()=>uid('wall'));
+ const originalDoors=L.doors||[];
  const sketchResult=geometry.eraseSketches(L.sketches||[],a,b,radius,()=>uid('sketch'));
  const touched=wallResult.changed||sketchResult.changed;
- if(touched){if(!eraseChanged)pushUndo();eraseChanged=true;L.walls=wallResult.walls;L.sketches=sketchResult.sketches;}
+ if(touched){
+  if(!eraseChanged)pushUndo();eraseChanged=true;
+  L.walls=wallResult.walls;L.sketches=sketchResult.sketches;
+  L.doors=originalDoors.filter(d=>L.walls.some(w=>w.id===d.wallId&&
+    Math.abs(window.WifiEngine.doorT(w,d.x1,d.z1))<=2&&
+    Math.abs(window.WifiEngine.doorT(w,d.x2,d.z2))<=2));
+  if(!L.doors.some(d=>d.id===selectedDoorId))selectedDoorId=null;
+ }
  return touched;
 }
 function finishEraser(p){
@@ -1387,7 +1395,12 @@ function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw
  currentPath=null;renderEditor();}
 editor.addEventListener('pointerup',finish);editor.addEventListener('pointercancel',e=>{if(pointerId!==null&&e.pointerId!==pointerId)return;if(requiredDrag){const drag=requiredDrag;const pin=(L.requiredPins||[]).find(v=>v.id===drag.id);if(pin&&drag.moved){pin.x=drag.startX;pin.z=drag.startZ;$('pointerLabel').textContent='신호 세기 핀 드래그가 취소되어 원래 위치로 복원했습니다.';}requiredDrag=null;pointerId=null;syncSelectedRequired();renderEditor();return;}if(tool==='erase'&&start){pointerId=null;finishEraser(eraseLast);return;}start=null;preview=null;pointerId=null;currentPath=null;renderEditor()});
 editor.addEventListener('pointerleave',()=>{if(!start){hoverPoint=null;if(tool==='brush'||tool==='erase'||tool==='required')renderEditor()}});
-heat.addEventListener('pointerdown',e=>{if(!result)return;(()=>{const p=positions(heat,e);probe={x:p.x,z:p.y};})();renderHeat();renderProbe()});
+heat.addEventListener('pointerdown',e=>{
+ if(!result)return;const p=positions(heat,e);
+ const door=closestDoor(p.x,p.y);
+ if(door){toggleDoor(door.id,true);return;}
+ probe={x:p.x,z:p.y};renderHeat();renderProbe();renderDoorComparison();
+});
 function togglePalette(open){
  $('editorWorkarea').classList.toggle('palette-collapsed',!open);
  $('toolsRail').hidden=!open;
@@ -1584,7 +1597,7 @@ function applyArea(){
 }
 $('areaApplyBtn').onclick=applyArea;
 $('pyeongInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyArea();}});
-$('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());changed();};
+$('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());selectedDoorId=null;changed();};
 $('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.doors=[];selectedDoorId=null;L.sketches=[];changed()};
 $('resetBtn').onclick=()=>{pushUndo();L=sample();selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
 function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
@@ -1603,7 +1616,7 @@ async function simulate(w){
  weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent=Number(L.router.frequency)===2.4?'오프라인 JS · CAMPUSRSSI 중간 + Robust 추천':'오프라인 JS · 5 GHz 미보정 예측';
- applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();renderCalibrationComparison();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'중간 히트맵 + 중요도 평가 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.':'중간 보정 히트맵 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
+ applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();renderCalibrationComparison();renderDoorPanels();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'중간 히트맵 + 중요도 평가 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.':'중간 보정 히트맵 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
  }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
 }
 function expertOn(){return document.body.classList.contains('expert-on');}
@@ -1668,9 +1681,15 @@ function renderProbe(){if(!result)return;
  $('probeQualityValue').textContent=fmt(qualityPoint(d.rssiDbm),1)+' / 100';
  $('probeCoordinates').textContent=`X ${fmt(probe.x,2)} · Y ${fmt(L.receiverY,2)} · Z ${fmt(probe.z,2)} m`;
  const concreteHits=d.walls.filter(w=>w.material==='concrete').length;
- const items=[['보정 모델',Number(L.router.frequency)===2.4?'중간 · Robust 추천용 중앙 모델':'5 GHz 기존 미보정 모델'],['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
+ const closedDoorHits=d.doors.length;
+ const items=[['보정 모델',Number(L.router.frequency)===2.4?'중간 · Robust 추천용 중앙 모델':'5 GHz 기존 미보정 모델'],['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],['현재 주파수',fmt(L.router.frequency,1)+' GHz'],
  ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
- ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(L.router.mountMode==='wall'?[['벽 부착 방향 시험 감쇠','−'+fmt(d.mountDirectionLossDb)+' dB · 실측 안테나 패턴 아님']]:[]),...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
+ ...d.doors.map(door=>['닫힌 나무 방문 통과','−'+fmt(door.lossDb)+' dB']),
+ ['콘크리트 벽 통과 횟수',String(concreteHits)+'개'],
+ ['닫힌 나무문 통과 횟수',String(closedDoorHits)+'개'],
+ ['콘크리트 벽 손실 합계','−'+fmt(d.wallLossDb)+' dB'],
+ ['나무문 손실 합계','−'+fmt(d.doorLossDb)+' dB'],
+ ['전체 장애물 감쇠량','−'+fmt(d.totalObstacleLossDb)+' dB'],...(L.router.mountMode==='wall'?[['벽 부착 방향 시험 감쇠','−'+fmt(d.mountDirectionLossDb)+' dB · 실측 안테나 패턴 아님']]:[]),...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
  renderProfileComparison();
  if(!$('positionJudgment').hidden)renderPositionJudgment();
@@ -1684,7 +1703,7 @@ function renderPositionJudgment(){
  const grid=document.createElement('div');grid.className='position-grid';
  for(const [name,dx,dz,boundary] of dirs){
   let closest=Infinity;
-  for(const wall of L.walls){
+  for(const wall of window.WifiEngine.effectiveWalls(L)){
    const sx=wall.x2-wall.x1,sz=wall.z2-wall.z1,den=dx*sz-dz*sx;
    if(Math.abs(den)<1e-9)continue;
    const ex=wall.x1-probe.x,ez=wall.z1-probe.z;
