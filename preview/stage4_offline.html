@@ -447,29 +447,64 @@ body.expert-on .beginner-only{display:none!important}
  function wallHit(L,x,z,wall,receiverY){return wallFraction(L.router.x,L.router.z,x,z,wall)!==null;}
  // Experimental wall-side model: geometric wall attachment plus a simple
  // 0..8 dB front-to-back pattern. This is NOT measured per-device antenna data.
- function mountCandidate(L,x,z,face='right'){
-   const dirs={right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]},d=dirs[face]||dirs.right;
-   let best=null;
-   for(const wall of L.walls||[]){
-     const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,len=Math.hypot(dx,dz);
-     if(len<.05)continue;
-     let nx=-dz/len,nz=dx/len;
-     const alignment=nx*d[0]+nz*d[1];
-     if(Math.abs(alignment)<.25)continue;
-     if(alignment<0){nx=-nx;nz=-nz;}
-     const t=Math.max(0,Math.min(1,((x-wall.x1)*dx+(z-wall.z1)*dz)/(len*len)));
-     const ax=wall.x1+t*dx,az=wall.z1+t*dz,px=ax+nx*.04,pz=az+nz*.04;
-     if(px<0||px>L.width||pz<0||pz>L.depth)continue;
-     const dist=Math.hypot(x-ax,z-az);
-     if(!best||dist<best.distance)best={x:+px.toFixed(5),z:+pz.toFixed(5),wallId:wall.id,distance:dist,face};
+ // The nearest *geometric* wall is chosen first. The emitting side is inferred
+ // from the current router point, important receiver pins and usable floor area.
+ // An open sketch is not enough to prove physical indoor/outdoor orientation.
+ function mountCandidate(L,x,z){
+   const walls=L.walls||[],pins=L.requiredPins||[];
+   const w=Number(L.width),depth=Number(L.depth);
+   if(!(w>0&&depth>0))return null;
+   const samples=[];
+   for(const fractionX of [.15,.35,.5,.65,.85])for(const fractionZ of [.15,.35,.5,.65,.85]){
+     samples.push({x:w*fractionX,z:depth*fractionZ});
    }
-   return best;
+   let closest=null;
+   for(const wall of walls){
+     const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,length=Math.hypot(dx,dz);
+     if(length<.05)continue;
+     const t=Math.max(0,Math.min(1,((x-wall.x1)*dx+(z-wall.z1)*dz)/(length*length)));
+     const ax=wall.x1+t*dx,az=wall.z1+t*dz,dist=Math.hypot(x-ax,z-az);
+     const nx=-dz/length,nz=dx/length;
+     const sides=[];
+     for(const sign of [1,-1]){
+       const normalX=nx*sign,normalZ=nz*sign;
+       const px=ax+normalX*.04,pz=az+normalZ*.04;
+       if(px<0||px>w||pz<0||pz>depth)continue;
+       // Prefer the same side as the pointer; favor the side with required
+       // signal points and a larger share of the editable floor rectangle.
+       let interiorScore=0;
+       const pointerDot=(x-ax)*normalX+(z-az)*normalZ;
+       if(Math.abs(pointerDot)>1e-5)interiorScore+=pointerDot>0?15:-15;
+       for(const sample of samples){
+         if((sample.x-ax)*normalX+(sample.z-az)*normalZ>0)interiorScore+=1;
+       }
+       for(const pin of pins){
+         if((pin.x-ax)*normalX+(pin.z-az)*normalZ>0)interiorScore+=2+(Number(pin.signalBars)||0);
+       }
+       const dotCenter=(w/2-ax)*normalX+(depth/2-az)*normalZ;
+       interiorScore+=dotCenter>0?0.5:0;
+       const face=Math.abs(normalX)>=Math.abs(normalZ)?(normalX>0?'right':'left'):(normalZ>0?'down':'up');
+       sides.push({x:+px.toFixed(5),z:+pz.toFixed(5),wallId:wall.id,
+         distance:dist,face,mountFace:face,mountNormalX:+normalX.toFixed(8),mountNormalZ:+normalZ.toFixed(8),
+         sideScore:interiorScore});
+     }
+     if(!sides.length)continue;
+     sides.sort((a,b)=>b.sideScore-a.sideScore);
+     const candidate=sides[0];
+     if(!closest||dist<closest.distance-1e-7||
+       (Math.abs(dist-closest.distance)<=1e-7&&candidate.sideScore>closest.sideScore))closest=candidate;
+   }
+   return closest;
  }
  function mountDirectionLoss(r,x,z){
    if(r.mountMode!=='wall')return 0;
-   const dirs={right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]},v=dirs[r.mountFace]||dirs.right;
+   const dirs={right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]};
+   const n=Number(r.mountNormalX),m=Number(r.mountNormalZ);
+   const magnitude=Math.hypot(n,m);
+   const v=Number.isFinite(magnitude)&&magnitude>.1?[n/magnitude,m/magnitude]:(dirs[r.mountFace]||dirs.right);
    const dx=x-r.x,dz=z-r.z,len=Math.hypot(dx,dz);
    if(len<1e-6)return 0;
+   // Trial 0–8 dB front/back model, not a measured antenna pattern.
    return 4*(1-Math.max(-1,Math.min(1,(dx*v[0]+dz*v[1])/len)));
  }
  function value(L,x,z,p=settings(L),details=false,receiverY=null){L=normalizeLayout(L);
@@ -1153,12 +1188,13 @@ editor.addEventListener('pointerdown',e=>{
  if(tool==='router'){
   let px=p.x,pz=p.y,wallId=null;
   if(L.router.mountMode==='wall'){
-   const target=window.WifiEngine.mountCandidate(L,p.x,p.y,L.router.mountFace||'right');
-   if(!target){toast('선택한 방향으로 부착할 수 있는 벽이 없습니다.');return;}
+   const target=window.WifiEngine.mountCandidate(L,p.x,p.y);
+   if(!target){toast('도면에 부착 가능한 벽이 없습니다. 벽을 먼저 그려 주세요.');return;}
    px=target.x;pz=target.z;wallId=target.wallId;
   }
   pushUndo();L.router.x=px;L.router.z=pz;
-  if(wallId)L.router.wallId=wallId;
+  if(wallId){const mount=window.WifiEngine.mountCandidate(L,p.x,p.y);
+   Object.assign(L.router,{wallId,mountFace:mount.face,mountNormalX:mount.mountNormalX,mountNormalZ:mount.mountNormalZ});}
   changed();return;
  }
  start=p;preview=p;hoverPoint=p;
@@ -1497,9 +1533,10 @@ $('importFile').onchange=async e=>{
   const mountMode=r.mountMode==='wall'?'wall':'furniture',mountFace=r.mountFace||'right';
   const router={x:val(r.x,w),y:Math.max(0,cleanNum(r.y,1.2)),z:val(r.z,depth),frequency:Number(r.frequency),txPowerDbm:clamp(cleanNum(r.txPowerDbm,20),0,35),antennaGainDbi:clamp(cleanNum(r.antennaGainDbi,0),-10,20),mountMode,mountFace};
   if(mountMode==='wall'){
-    const target=window.WifiEngine.mountCandidate({width:w,depth,walls},router.x,router.z,mountFace);
-    if(!target)throw Error('선택한 방향으로 부착할 수 있는 벽이 없습니다.');
-    router.x=target.x;router.z=target.z;router.wallId=target.wallId;
+    const target=window.WifiEngine.mountCandidate({width:w,depth,walls,requiredPins},router.x,router.z);
+    if(!target)throw Error('도면에 부착 가능한 벽이 없습니다.');
+    Object.assign(router,{x:target.x,z:target.z,wallId:target.wallId,mountFace:target.face,
+      mountNormalX:target.mountNormalX,mountNormalZ:target.mountNormalZ});
   }
   pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
     router,
@@ -1538,9 +1575,11 @@ $('applyBottomBtn').onclick=enterAnalysis;
 const HEIGHT_OPTIONS=[[0,'바닥'],[.3,'바닥에 앉은 높이'],[1,'책상 높이'],[1.2,'가슴 높이'],[1.6,'사람 키'],[2.2,'천장']];
 function ensureWallMount(){
  if(L.router.mountMode!=='wall')return true;
- const point=window.WifiEngine.mountCandidate(L,L.router.x,L.router.z,L.router.mountFace||'right');
+ const point=window.WifiEngine.mountCandidate(L,L.router.x,L.router.z);
  if(!point)return false;
- L.router.x=point.x;L.router.z=point.z;L.router.wallId=point.wallId;return true;
+ Object.assign(L.router,{x:point.x,z:point.z,wallId:point.wallId,mountFace:point.face,
+   mountNormalX:point.mountNormalX,mountNormalZ:point.mountNormalZ});
+ return true;
 }
 function syncWizardFields(){
  const r=L.router;
