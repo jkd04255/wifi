@@ -1579,6 +1579,60 @@ for(const strip of document.querySelectorAll('[data-resize-edge]')){
  });
  strip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();setEditorHeight(editorHeight+(e.key==='ArrowUp'?40:-40));}});
 }
+
+const INFO_TERMS={
+ 'RSSI':'RSSI(수신 신호 강도 지표)는 기기가 수신하는 전파 세기를 나타냅니다. Wiplan에서는 RSSI를 dBm으로 예측하고, 일반 화면에는 Q = max(0,min(100,(RSSI+90)/55×100)) 점으로 환산합니다. 실제 속도 또는 품질 보장은 아닙니다.',
+ 'dBm':'1mW를 0dBm으로 한 로그 전력 단위입니다. 값이 0에 가까울수록 수신 신호가 강합니다. 예: −50dBm은 −70dBm보다 20dB 강하며 전력으로 100배입니다.',
+ '우수 커버리지':'도면의 분석 격자 중 RSSI가 −67dBm 이상인 위치가 차지하는 비율입니다. 100×(통과 격자 수)/(전체 격자 수)로 계산합니다. 실제 방문자 연결 성공률이나 인터넷 속도를 의미하지 않습니다.',
+ '중요도 반영 품질':'각 위치 신호점수 Q_i = clamp((RSSI_i+90)/55×100,0,100)를 계산합니다. 위치별 중요도 가중치 w_i를 반영해 품질점수 = Σ(w_i×Q_i)/Σw_i가 됩니다. 빨강은 중요도 +100%(가중치 2배), 초록은 0%(1배), 파랑은 −100%(0배)입니다.',
+ '취약 공간 비율':'모든 평가 격자 중 RSSI가 −75dBm 미만인 지점의 비율입니다. 100×(취약 격자 수)/(전체 격자 수)입니다. 중요도 반영 비율과는 다른 수치입니다.',
+ '신호 원활 · 중간 · 혼잡':'2.4GHz CAMPUSRSSI 연구 결과를 이용해 만든 세 환경 가정입니다. 신호 원활: n=1.6538, 콘크리트 6.28dB/회. 중간: n=2.0011, 6.8491dB/회. 혼잡: n=2.3784, 7.21dB/회. 경로손실지수와 벽 감쇠 계수가 달라 같은 지점의 신호가 다르게 예측됩니다. 실제 주변 기기 간섭량을 직접 측정한 혼잡도는 아닙니다.',
+ 'Robust':'한 환경에서만 좋은 위치가 아니라 여러 가능한 환경 모두에서 충분히 동작하도록 판단하는 방법입니다. Wiplan에서는 신호 원활·중간·혼잡 모두를 검토합니다.',
+ 'Robust worst-case':'세 보정 환경 중 가장 낮은 성능을 평가에 사용한다는 뜻입니다. 각 후보에 대해 J_OPEN, J_GENERAL, J_DENSE를 구해 최소값을 그 후보의 최악 성능으로 잡습니다.',
+ '거리 감쇠 지수':'전파 거리 손실을 나타내는 지수 n입니다. 단순 모델: RSSI ≈ P0 − 10n log10(d) − (벽 감쇠 합). n이 클수록 멀어질 때 신호가 빨리 감소합니다. Wiplan의 2.4GHz 중간 모델은 2.0011이며, 5GHz는 미보정 입력값입니다.',
+ '안테나 이득':'이상적인 모든 방향 방사 안테나를 기준으로 전파를 어느 방향에 집중시키는지 나타내는 dBi 값입니다. 안테나 자체가 전력을 증폭하는 장치는 아닙니다. 별도 RF 증폭기는 송신 출력의 문제이며, 실제 설치 시 안테나 방향·기종·법적 송신 제한도 고려해야 합니다.',
+ 'feasible':'특정 후보 위치가 사용자가 지정한 모든 신호 핀 조건을 만족하는 상태입니다. 2.4GHz에서는 신호 원활·중간·혼잡 세 환경 각각에서 전부 통과해야 공통 feasible 후보가 됩니다.',
+ '후보 검토와 TOP3':'도면 안의 위치 후보를 표본 추출하고 벽 충돌 또는 벽 부착 조건을 확인합니다. 각 신호 핀 기준(4/3/2/1/0칸 = 64/42/27/9/0점)을 모든 환경에서 만족한 후보만 남깁니다. 각 후보의 최악 J를 구해 내림차순 평가하고, 서로 0.5m 이상 떨어진 위치를 우선해 최대 세 곳을 표시합니다. 후보는 검색 격자에 의존하며 전역 최적해를 보장하지 않습니다.',
+ '프로파일별 최적점 최대거리':'각 보정 환경에서 따로 최고 점수를 얻은 공유기 후보 좌표들의 최대 쌍별 거리입니다. 최고점이 비슷한 장소에 모여 있을수록 모델 변경에 대해 위치 추천이 일관된다는 뜻입니다. 검증된 확률이나 신뢰구간은 아닙니다.',
+ '핀 여유':'신호 핀에서 예측한 가장 불리한 품질점수에서 사용자가 정한 최소 요구점수를 뺀 값입니다. 예: 최악 품질 58점, 요구 42점이면 +16점입니다. 음수이면 해당 핀 조건을 충족하지 못합니다.',
+ '1순위 대비 J N점':'J는 후보 위치의 평균(중요도 반영) 품질점수에서 취약 공간 비율의 0.12배를 뺀 Wiplan 내부 목적함수입니다: J=평균품질점수−0.12×취약공간비율(%). 후보별로 세 모델 중 최소 J를 구하고, 1순위 후보의 최악 J에서 해당 후보의 최악 J를 뺀 값을 표시합니다. 예: 1순위 J=71, 2순위 J=68.5이면 2.5점 낮습니다.',
+ 'MAE 개선량':'MAE는 측정 RSSI와 예측 RSSI의 차이 절댓값을 평균한 오차입니다. 개선량 = 이전 모델 MAE − 개선 모델 MAE로 계산합니다. 현재 프로그램의 보정 전후 비교는 모델 예측값의 차이이며, 해당 집에서 실제로 MAE가 줄었다는 증거가 아닙니다.',
+ '콘크리트 벽 감쇠':'공유기와 수신 지점 사이 직선이 콘크리트 벽과 교차할 때 RSSI에서 빼는 dB 손실입니다. 동일 교차 위치 중복은 한 번만 차감합니다. 다중 벽 교차 손실은 측정범위 밖 외삽일 수 있습니다.',
+ '벽 부착 방향':'공유기를 벽 선분의 지정한 쪽으로 4cm 떨어진 위치에 제약합니다. 방향별 추가 손실은 앞쪽 0dB~반대편 8dB의 시험용 패턴입니다. 실제 제품 안테나 방사 패턴 측정값이 아니므로 정확한 예측으로 사용하면 안 됩니다.',
+ 'CAMPUSRSSI':'실내 공간에서 측정한 Wi-Fi RSSI 데이터를 이용해 경로손실지수와 벽 감쇠를 추정한 연구 근거입니다. 특정 가정에서 자동 측정한 결과가 아니며 AP별 기준 세기를 실제 가정 공유기에 그대로 적용하지 않습니다.',
+ '가중치':'중요도 구역에 더 많은 평가 비중을 주는 숫자입니다. 신호 자체를 증폭하지 않고, 공유기 위치를 선택하는 평가에만 반영됩니다.'
+};
+function addInfoButton(parent,term){
+ if(!parent||parent.querySelector('[data-term="'+term+'"]'))return;
+ const button=document.createElement('button');button.type='button';button.className='info-dot';
+ button.dataset.term=term;button.textContent='i';button.title=term+' 설명';
+ button.setAttribute('aria-label',term+' 설명 보기');
+ button.dataset.short=INFO_TERMS[term].split(/[.。\n]/)[0].slice(0,105);
+ parent.appendChild(button);
+}
+function installInfoButtons(){
+ for(const [id,term] of [['goodStat','우수 커버리지'],['scoreStat','중요도 반영 품질'],['weakStat','취약 공간 비율'],['meanStat','RSSI']]){
+  addInfoButton($(id)?.parentElement?.querySelector('span'),term);
+ }
+ const pairs=[['#profileComparison h3','신호 원활 · 중간 · 혼잡'],['#topThreeCandidates h3','후보 검토와 TOP3'],['#calibrationComparison h3','MAE 개선량'],['#requiredStatus','핀 여유'],['#offlineModeInfo','Robust'],['#calibrationHint','Robust worst-case'],['#routerAdvancedInfo label:nth-child(2)','dBm'],['#routerAdvancedInfo label:nth-child(3)','안테나 이득'],['#routerAdvancedInfo label:nth-child(4)','거리 감쇠 지수'],['#recommendation .recommend-heading','Robust']];
+ for(const [selector,term] of pairs)addInfoButton(document.querySelector(selector),term);
+ const glossary=$('glossaryContent');
+ for(const [term,description] of Object.entries(INFO_TERMS)){
+  const entry=document.createElement('details'),summary=document.createElement('summary'),text=document.createElement('p');
+  entry.className='info-entry';summary.textContent=term;text.textContent=description;
+  entry.append(summary,text);glossary.appendChild(entry);
+ }
+}
+document.addEventListener('click',e=>{
+ const target=e.target.closest?.('.info-dot');if(!target)return;
+ e.preventDefault();e.stopPropagation();
+ const term=target.dataset.term;
+ if(!INFO_TERMS[term])return;
+ $('infoTitle').textContent=term;$('infoContent').textContent=INFO_TERMS[term];
+ if(!$('infoDialog').open)$('infoDialog').showModal();
+});
+$('infoClose').onclick=()=>$('infoDialog').close();
+installInfoButtons();
 // Isolated offline mode. One sample per pin; no LAN/cable/ceiling constraints.
 async function optimizeOfflinePins(){
  const pins=L.requiredPins||[],step=Math.max(.65,Math.max(L.width,L.depth)/12),search=Math.max(.5,Math.max(L.width,L.depth)/14),sample=[];
