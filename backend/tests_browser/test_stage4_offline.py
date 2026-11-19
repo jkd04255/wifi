@@ -856,6 +856,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         canvas.press("Enter")
         self.assertEqual(self.export()["requiredPins"][0]["minQualityScore"], 64)
         self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#expertToggle").click()
         self.page.locator("#receiverY").fill("25")
         self.page.locator("#receiverY").press("Tab")
         self.assertEqual(self.export()["receiverY"], 25)
