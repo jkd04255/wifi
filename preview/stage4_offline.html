@@ -478,12 +478,37 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 
 .portrait-quickbar{display:none}
 @media (orientation:portrait) and (min-width:700px) and (max-width:1200px){
- .portrait-quickbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ .portrait-quickbar{display:grid;grid-template-columns:minmax(0,1fr);
    gap:9px;margin:0 0 12px;padding:0;width:100%}
  .portrait-quickbar button{width:100%;min-width:0;min-height:46px;padding:8px 6px;
    font-size:13px;white-space:normal;line-height:1.35;border-radius:2px}
 }
 
+/* Collapsible analysis cards with an uncluttered primary action. */
+.analysis-buttons{grid-template-columns:minmax(0,1fr)!important;gap:8px}
+.analysis-buttons #optimizeBtn{grid-column:1!important;min-height:49px;font-weight:700}
+.analysis-buttons #plainBtn{grid-column:1!important;min-height:36px}
+.analysis-fold{border:1px solid #99b2d2;background:#fffef9;padding:10px;margin:10px 0;min-width:0;border-radius:2px}
+.analysis-fold>summary{cursor:pointer;display:list-item;padding:4px 6px;font-weight:700;color:#174b89;line-height:1.5;overflow-wrap:anywhere}
+.analysis-fold>summary:focus-visible{outline:2px solid #236cd0;outline-offset:2px}
+.analysis-fold>summary span{font-size:11px;font-weight:400;color:#506985;margin-left:5px}
+.analysis-fold[open]>summary{border-bottom:1px solid #d7e3ef;margin-bottom:8px;padding-bottom:9px}
+.analysis-fold[hidden]{display:none!important}
+#positionJudgment{margin:4px 0 0}
+#requiredSummary{white-space:normal;word-break:keep-all}
+#requiredResults[hidden]{display:none!important}
+#doorAnalysisPanel:not([open])>:not(summary){display:none!important}
+.plan-zoom-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;margin-top:2px}
+.plan-zoom-toolbar button{border:1px solid #8ba5c7;background:linear-gradient(#fff,#e3ebf7);color:#174a84;padding:7px 10px;min-height:33px}
+.plan-zoom-toolbar #planZoomLabel{font-weight:700;min-width:44px;text-align:center;color:#244e88}
+.plan-zoom-help{font-size:11px;color:#506b87;line-height:1.4}
+#planExpandBtn[aria-pressed="true"]{background:#e2edff;color:#1958a2}
+#editorFrame{overflow:auto!important;overscroll-behavior:contain;scrollbar-width:thin;background:#eaf1fb}
+#editorCanvas{max-width:none!important;width:var(--editor-zoom,100%)!important;height:var(--editor-zoom,100%)!important;min-width:0!important;min-height:0!important;margin:0 auto;touch-action:none}
+#editorWorkarea.plan-expanded{display:block!important;grid-template-columns:minmax(0,1fr)!important}
+#editorWorkarea.plan-expanded .canvas-column{width:100%!important;max-width:none!important}
+#editorWorkarea.plan-expanded #toolsRail{display:none!important}
+@media(max-width:650px){.plan-zoom-help{flex-basis:100%}.plan-zoom-toolbar button{padding:6px 8px}}
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -525,7 +550,7 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
   </div>
   <p class="door-editor-help">문은 콘크리트 벽을 대체합니다. 문을 클릭하면 열림·닫힘이 바뀝니다. 닫힘: 2.4 GHz 4dB / 5 GHz 6dB, 열림: 추가 손실 0dB (시험용 가정)</p>
  </div></div>
- <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="editor-resize-strip drag-handle" data-resize-edge="top" tabindex="0" role="slider" aria-label="도면 높이 조절" aria-valuemin="280" aria-valuemax="1100" aria-valuenow="520"><button type="button" id="sizeUpBtn">＋</button><span>↕ 드래그하여 높이 조절</span><button type="button" id="sizeDownBtn">−</button><span id="editorSizeLabel">520px</span></div><div class="canvas-frame editor-frame" id="editorFrame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 신호 세기 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">신호 세기 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="editor-resize-strip drag-handle" data-resize-edge="bottom" tabindex="0" role="slider" aria-label="도면 아래쪽 높이 조절" aria-valuemin="280" aria-valuemax="1100" aria-valuenow="520"><span>↕ 아래쪽 경계를 드래그하세요</span></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="door-mini-legend"></span> 나무문 <span class="legend-zone"></span> 신호 세기 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
+ <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="editor-resize-strip drag-handle" data-resize-edge="top" tabindex="0" role="slider" aria-label="도면 높이 조절" aria-valuemin="280" aria-valuemax="1100" aria-valuenow="520"><button type="button" id="sizeUpBtn">＋</button><span>↕ 드래그하여 높이 조절</span><button type="button" id="sizeDownBtn">−</button><span id="editorSizeLabel">520px</span></div><div class="plan-zoom-toolbar" role="group" aria-label="도면 확대 및 편집 영역 확장"><button type="button" id="planZoomOutBtn" aria-label="도면 축소">−</button><span id="planZoomLabel" aria-live="polite">100%</span><button type="button" id="planZoomInBtn" aria-label="도면 확대">＋</button><button type="button" id="planZoomResetBtn">100% 초기화</button><button type="button" id="planExpandBtn" aria-pressed="false">⛶ 도면 확장</button><span class="plan-zoom-help">확대 후 스크롤해서 이동 · Ctrl+휠 확대/축소</span></div><div class="canvas-frame editor-frame" id="editorFrame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 신호 세기 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">신호 세기 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="editor-resize-strip drag-handle" data-resize-edge="bottom" tabindex="0" role="slider" aria-label="도면 아래쪽 높이 조절" aria-valuemin="280" aria-valuemax="1100" aria-valuenow="520"><span>↕ 아래쪽 경계를 드래그하세요</span></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="door-mini-legend"></span> 나무문 <span class="legend-zone"></span> 신호 세기 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
  <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
   <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
   <details class="palette-drawer" id="eraserDrawer"><summary><span>◌ 부분 지우개</span><span class="summary-meta">크기 조절</span></summary><div class="drawer-content"><div class="brush-controls"><label for="eraserSize">지우개 반경 <output id="eraserSizeValue">0.22 m</output></label><input type="range" id="eraserSize" min="0.1" max="1.2" step="0.02" value="0.22"></div><p>지우개가 지나간 <b>선과 벽의 해당 부분만</b> 사라집니다. 직사각형의 한 변 중간을 지워도 나머지 벽은 남습니다. 중요도 칠하기도 지운 위치만 기본 0%로 돌아갑니다. 한 번의 드래그는 실행 취소 1회로 복원합니다.</p></div></details>
@@ -586,26 +611,23 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 04 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>우리 집 와이파이 예상 점수를 확인하고, 더 좋은 공유기 위치를 찾아보세요.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="expert-toggle"><span class="wizard-note">기본 화면은 100점 만점 점수를 사용합니다.</span><button id="expertToggle" type="button" class="secondary" aria-pressed="false">고급 보기</button></div><div class="result-workarea"><div class="result-map">
-<div class="portrait-quickbar" role="group" aria-label="세로형 화면 빠른 분석 도구">
- <button type="button" class="secondary" id="portraitRecalculateBtn">↻ 신호 다시 계산</button>
- <button type="button" class="primary" id="portraitOptimizeBtn">✦ 최고의 위치 찾기</button>
- <button type="button" class="secondary" id="portraitPositionBtn">⌖ 위치 판단</button>
-</div>
+<div class="portrait-quickbar" role="group" aria-label="최적 공유기 위치 찾기"><button type="button" class="primary" id="portraitOptimizeBtn">✦ 최고의 위치 찾기</button></div>
 <div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">신호 지도 · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>‘신호 분석’을 시작하면 결과가 표시됩니다.</small></div></div><div class="placement-guide" id="placementGuide" hidden aria-live="polite">
   <div class="placement-guide-head"><strong id="placementGuideHeading">추천 위치</strong><span class="placement-key">■ 현재 공유기 <span class="placement-mark">➤</span> 추천 위치</span></div>
   <div class="placement-guide-direction" id="placementGuideDirection">위치 찾기 전</div>
   <div class="placement-guide-detail" id="placementGuideDetail">추천 위치를 비교하면 지도에 이동 화살표가 표시됩니다.</div>
 </div><div class="signal-legend"><span id="legendLow">0점</span><div class="heat-gradient"></div><span id="legendHigh">100점</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span id="meanStatLabel">평균 신호 점수</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small id="goodStatExplanation">신호가 좋은 공간 비율</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small id="weakStatExplanation">신호가 약한 공간 비율</small></div></div><section class="comparison-card" id="profileComparison" aria-label="2.4 GHz 환경별 예상 RSSI" hidden><h3>신호 원활 · 중간 · 혼잡 지점별 비교</h3><div id="profileComparisonRows"></div><p class="comparison-note">모델별 예측 차이입니다. 실제 RSSI 오차나 측정값은 아닙니다.</p></section><div id="simpleProbeScore" class="beginner-only">선택 위치 신호 점수 <strong id="probeQualityValue">— / 100</strong></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body expert-only">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
- <aside class="result-controls"><div class="side-title"><strong id="analysisSideTitle">분석 도구</strong><small id="analysisSideDesc">필요한 기능만 선택하세요</small></div><div class="router-grid expert-only"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config expert-only"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><button type="button" class="secondary" id="positionJudgmentBtn">위치 판단 · 좌/우/상/하 벽 거리</button><div id="positionJudgment" hidden aria-live="polite"></div>
- <section class="wood-door-panel" id="doorAnalysisPanel" hidden>
-  <h3>나무 방문 열림·닫힘</h3>
+ <aside class="result-controls"><div class="side-title"><strong id="analysisSideTitle">분석 도구</strong><small id="analysisSideDesc">필요한 기능만 선택하세요</small></div><div class="router-grid expert-only"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config expert-only"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div>
+ <details class="analysis-fold" id="positionJudgmentFold"><summary>위치 판단 · 좌/우/상/하 벽 거리 <span id="positionSummary">현재 공유기 기준</span></summary><div id="positionJudgment" aria-live="polite"></div></details>
+ <details class="wood-door-panel analysis-fold" id="doorAnalysisPanel"><summary>나무 방문 열림·닫힘 <span id="doorCountSummary">방문 0개</span></summary>
+  <h3 class="visually-hidden">나무 방문 열림·닫힘</h3>
   <p class="door-explainer"><strong>무엇을 비교하나요?</strong> 같은 공유기·수신 위치에서 방문을 열었을 때와 닫았을 때의 예측 신호를 비교합니다.</p>
   <p class="door-explainer"><strong>방문 감쇠:</strong> 닫힌 나무문을 신호가 통과하면 <strong>2.4GHz 약 4dB / 5GHz 약 6dB</strong>가 추가로 감소합니다. 열린 문은 추가 감쇠 0dB로 가정합니다.</p>
   <p class="door-explainer">① 도면 그리기에서 <strong>나무문 도구</strong>로 콘크리트 벽을 클릭해 문을 만드세요. ② 여기서 문마다 <strong>열기/닫기</strong>를 눌러 히트맵 변화를 확인하세요.</p>
   <div id="doorAnalysisList"></div>
   <p id="doorAnalysisEmpty" class="door-empty" hidden>현재 도면에는 나무 방문이 없습니다. ① 도면 그리기 → 나무문 도구 → 벽 클릭으로 추가해 주세요.</p>
   <div id="doorComparison" class="door-comparison" aria-live="polite"></div>
- </section><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><section class="comparison-card expert-only" id="calibrationComparison" aria-label="보정 전후 예상 RSSI 비교" hidden><h3>보정 전·후 비교 (2.4 GHz)</h3><div id="calibrationComparisonRows" class="profile-metrics"></div><p class="comparison-note">동일 도면·공유기 위치에서 이전 Wiplan 모델(n=2.2, 콘크리트 12dB/회)과 중간 모델(n=2.0011, 콘크리트 6.8491dB/회)의 예상값을 비교합니다. 실측 MAE 개선량이 아닙니다.</p></section><p id="offlineModeInfo" class="footnote expert-only">2.4 GHz는 CAMPUSRSSI 기반 신호 원활 · 중간 · 혼잡 보정을 동시에 계산해 공통 조건을 만족하는 Robust 위치를 추천합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><p id="calibrationHint" class="footnote expert-only">2.4 GHz 히트맵은 중간(n=2.00, 콘크리트 6.85 dB/회) 기준입니다. 추천 위치는 신호 원활/중간/혼잡 세 모델의 worst-case를 최적화합니다. 2개 이상 콘크리트 교차는 외삽입니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><div class="comparison-card" id="topThreeCandidates" hidden><h3>Robust 추천 Top 3</h3><div id="topThreeRows"></div><section class="stability-tools"><label for="stabilityToggle"><input type="checkbox" id="stabilityToggle" checked>지도에 추천 안정 후보 분포 표시</label><p id="stabilitySummary">최적화 후 근접 후보 수를 표시합니다.</p></section><div id="candidateCompare" class="compare-detail" aria-live="polite"></div><p class="comparison-note">조건을 충족한 공유기 후보이며, 서로 0.5m 이상 떨어진 위치를 우선 표시합니다.</p></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><details id="infoGlossary" class="expert-only"><summary>전문 용어 자세히 보기</summary><div id="glossaryContent"></div></details><p class="footnote">RSSI는 근사 예측치입니다. 2.4 GHz Robust 보정은 CAMPUSRSSI 연구결과를 사용하며 실제 통신 속도·CSI·모든 건물의 절대 RSSI를 보장하지 않습니다.</p></aside></div>
+ </details><div class="status-line" id="statusLine">분석 준비됨</div><details class="analysis-fold" id="requiredResultsFold"><summary id="requiredSummary">신호 세기 핀 없음</summary><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div></details><div id="requiredStatus" role="status" class="visually-hidden">신호 세기 핀 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><section class="comparison-card expert-only" id="calibrationComparison" aria-label="보정 전후 예상 RSSI 비교" hidden><h3>보정 전·후 비교 (2.4 GHz)</h3><div id="calibrationComparisonRows" class="profile-metrics"></div><p class="comparison-note">동일 도면·공유기 위치에서 이전 Wiplan 모델(n=2.2, 콘크리트 12dB/회)과 중간 모델(n=2.0011, 콘크리트 6.8491dB/회)의 예상값을 비교합니다. 실측 MAE 개선량이 아닙니다.</p></section><p id="offlineModeInfo" class="footnote expert-only">2.4 GHz는 CAMPUSRSSI 기반 신호 원활 · 중간 · 혼잡 보정을 동시에 계산해 공통 조건을 만족하는 Robust 위치를 추천합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><p id="calibrationHint" class="footnote expert-only">2.4 GHz 히트맵은 중간(n=2.00, 콘크리트 6.85 dB/회) 기준입니다. 추천 위치는 신호 원활/중간/혼잡 세 모델의 worst-case를 최적화합니다. 2개 이상 콘크리트 교차는 외삽입니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><div class="comparison-card" id="topThreeCandidates" hidden><h3>Robust 추천 Top 3</h3><div id="topThreeRows"></div><section class="stability-tools"><label for="stabilityToggle"><input type="checkbox" id="stabilityToggle" checked>지도에 추천 안정 후보 분포 표시</label><p id="stabilitySummary">최적화 후 근접 후보 수를 표시합니다.</p></section><div id="candidateCompare" class="compare-detail" aria-live="polite"></div><p class="comparison-note">조건을 충족한 공유기 후보이며, 서로 0.5m 이상 떨어진 위치를 우선 표시합니다.</p></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><details id="infoGlossary" class="expert-only"><summary>전문 용어 자세히 보기</summary><div id="glossaryContent"></div></details><p class="footnote">RSSI는 근사 예측치입니다. 2.4 GHz Robust 보정은 CAMPUSRSSI 연구결과를 사용하며 실제 통신 속도·CSI·모든 건물의 절대 RSSI를 보장하지 않습니다.</p></aside></div>
 </section></main><footer class="xp-statusbar" aria-label="프로그램 상태 표시줄"><span id="xpStatusState">준비 · 도면 편집</span><span id="xpStatusDimensions">도면 크기 확인 중</span><span id="xpStatusPins">신호 핀 0개</span><span id="xpStatusBand">2.4 GHz</span><span id="xpStatusModel">CAMPUSRSSI · 중간</span></footer>
 </div><dialog id="xpHelpDialog" class="xp-help-dialog" aria-labelledby="xpHelpTitle"><div id="xpHelpTitle" class="xp-help-heading">Wiplan 도움말</div><div class="xp-help-content">도면에서 콘크리트 벽을 그리고 공유기와 신호 세기 핀을 배치합니다. 신호 세기 핀은 각 위치에 독립적인 4~0칸 기준을 설정할 수 있습니다. 시뮬레이션에서 예상 RSSI를 확인하고 최적 위치를 계산할 수 있습니다.<p>2.4GHz: 신호 원활·중간·혼잡 Robust 보정 / 5GHz: 기존 미보정 모델</p><p>실제 통신 품질은 환경과 장비에 따라 다릅니다. 계산 결과는 예측값입니다.</p><button type="button" id="xpHelpClose">확인</button></div></dialog><dialog id="infoDialog"><h2 id="infoTitle">용어 설명</h2><p id="infoContent"></p><button type="button" class="secondary" id="infoClose">확인</button></dialog><div class="toast" id="toast" role="status" aria-live="polite"></div><script>
 /* Browser-offline companion of backend/wifi_engine/core.py.
@@ -1118,7 +1140,7 @@ function sizeForPyeong(pyeong){const sqm=pyeong*SQM_PER_PYEONG;return {width:Mat
 function sample(){const areaPyeong=24.2,{width,height}=sizeForPyeong(areaPyeong);return {schemaVersion:'1.1',coordinateSystem:{...coords},width,depth:height,roomHeightM:2.7,receiverY:1.0,areaPyeong,
  router:{x:width/2,y:1.2,z:height/2,frequency:2.4,txPowerDbm:20,antennaGainDbi:0},
  walls:[], zones:[],requiredPins:[],doors:[],sketches:[],importanceStrokes:[],modelOverrides:{pathLossExponent:2.2,wallScale:1}};}
-let L=sample(),tool='sketch',material='concrete',result=null,weighted=false,best=null,dirty=true,showStableOverlay=true,selectedCompareRank=1,
+let L=sample(),tool='sketch',material='concrete',result=null,weighted=true,best=null,dirty=true,showStableOverlay=true,selectedCompareRank=1,
  probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[],selectedRequiredId=null,requiredDrag=null,selectedDoorId=null;
 const geometry=window.WifiGeometry,cleanup=window.WifiCleanup;
 if(!geometry||!cleanup)throw Error('geometry.js / cleanup.js not loaded');
@@ -1130,9 +1152,17 @@ const escapeHTML=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2900)}
 function pushUndoSnapshot(snapshot){undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift()}
 function pushUndo(){pushUndoSnapshot(JSON.stringify(L))}
-function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
+let automaticTimer=null,simulationRevision=0;
+function queueAutomaticAnalysis(){
+ if(document.body.dataset.view!=='analysis')return;
+ clearTimeout(automaticTimer);
+ automaticTimer=setTimeout(()=>{automaticTimer=null;void simulate(weighted);},120);
+}
+function changed(reason='도면이 변경되어 신호를 자동 갱신합니다.'){
  dirty=true;best=null;$('recommendation').hidden=true;for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
  $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderDoorPanels();renderRequiredStatus();
+ if($('positionJudgmentFold').open)renderPositionJudgment();
+ queueAutomaticAnalysis();
 }
 function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty');syncXPStatus();}
 function resizeCanvas(canvas,ctx){const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return {w:1,h:1};const dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:rect.width,h:rect.height};}
@@ -1298,7 +1328,7 @@ function drawRequiredPin(ctx,pin,sx,sy,passed=null){
 function renderRequiredStatus(){
  const pins=L.requiredPins||[],box=$('requiredResults');box.replaceChildren();
  if(!pins.length){
-  box.hidden=true;$('requiredStatus').textContent='신호 세기 핀 없음 · 기본 4칸(64점 이상) · 단일 지점';
+  $('requiredSummary').textContent='신호 세기 핀 없음';box.hidden=true;$('requiredStatus').textContent='신호 세기 핀 없음 · 기본 4칸(64점 이상) · 단일 지점';
   $('requiredStatus').style.color='#62788c';return;
  }
  const currentScores=pins.map(pin=>robustRequiredMinimum(pin,L.router));
@@ -1309,6 +1339,7 @@ function renderRequiredStatus(){
  $('requiredStatus').textContent='신호 세기 '+pins.length+'곳 · 현재 배치 '+passedCount+'/'+pins.length+'곳 기준 충족 · '+scoreLabel+' 최소 '+fmt(Math.min(...currentScores),1)+'/100 (모델 예측)';
  $('requiredStatus').style.color=ok?'#15845c':'#ba4e48';
  const suggestion=best?.stage3&&best.requiredAreaSatisfied===true?best.best:null;
+ $('requiredSummary').textContent=pins.map((pin,i)=>'신호 세기 '+(i+1)+': '+(currentScores[i]+1e-8>=signalMinScore(pin)?'충족':'미충족')).join(' · ');
  const title=document.createElement('div');title.textContent='신호 세기 지점별 품질 확인';
  title.style.cssText='font-size:13px;font-weight:700;margin:0 0 7px;color:#293b55';box.appendChild(title);
  pins.forEach((pin,i)=>{
@@ -1801,6 +1832,7 @@ function renderDoorPanels(){
  }
  const list=$('doorAnalysisList');list.replaceChildren();
  $('doorAnalysisPanel').hidden=false;
+ $('doorCountSummary').textContent='방문 '+(L.doors||[]).length+'개';
  $('doorAnalysisEmpty').hidden=!!(L.doors||[]).length;
  $('doorComparison').hidden=!(L.doors||[]).length||!result;
  for(const [i,door] of (L.doors||[]).entries()){
@@ -1817,7 +1849,7 @@ function toggleDoor(id,auto=false){
  const d=(L.doors||[]).find(x=>x.id===id);if(!d)return;
  pushUndo();d.state=d.state==='open'?'closed':'open';selectedDoorId=id;
  changed('나무 방문 '+(d.state==='open'?'열림':'닫힘')+' · 신호 예측 변경');
- if(auto&&document.body.dataset.view==='analysis')void simulate(weighted);
+ // changed() automatically schedules the newest prediction.
 }
 function putDoorAt(p){
  const hit=closestDoor(p.x,p.y);
@@ -1948,7 +1980,7 @@ $('areaApplyBtn').onclick=applyArea;
 $('pyeongInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyArea();}});
 $('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());selectedDoorId=null;changed();};
 $('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.doors=[];selectedDoorId=null;L.sketches=[];changed()};
-$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
+$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=true;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
 function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
 $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 위치가 변경되었습니다. Apply로 다시 계산하세요.')};
 $('receiverY').onchange=e=>{
@@ -1959,14 +1991,17 @@ $('powerInput').onchange=e=>setRouterField('txPowerDbm',e.target.value,0,35);
 $('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20);
 $('exponentInput').onchange=e=>{if(Number(L.router.frequency)===2.4){toast('2.4 GHz는 CAMPUSRSSI Robust 보정으로 감쇠 지수를 자동 적용합니다.');syncLayout();return;}const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('5 GHz 감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
 function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;}
-function setBusy(busy){for(const id of ['applyBtn','weightBtn','optimizeBtn','plainBtn'])$(id).disabled=busy;}
+function setBusy(busy){for(const id of ['optimizeBtn','portraitOptimizeBtn','plainBtn'])$(id).disabled=busy;}
 async function simulate(w){
+ clearTimeout(automaticTimer);automaticTimer=null;
+ const revision=++simulationRevision;
  if(L.router.mountMode==='wall'&&!ensureWallMount()){toast('벽에 부착할 수 있는 위치가 없습니다. 도면에 벽을 추가해 주세요.');return;}
  weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
  await new Promise(resolve=>setTimeout(resolve,25));
+ if(revision!==simulationRevision)return;
  try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent=Number(L.router.frequency)===2.4?'오프라인 JS · CAMPUSRSSI 중간 + Robust 추천':'오프라인 JS · 5 GHz 미보정 예측';
  applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();renderCalibrationComparison();renderDoorPanels();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'중간 히트맵 + 중요도 평가 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.':'중간 보정 히트맵 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
- }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{setBusy(false)}
+ }catch(e){$('statusLine').classList.add('error');$('statusLine').textContent='계산 실패: '+e.message;toast('계산 실패: '+e.message)}finally{if(revision===simulationRevision)setBusy(false)}
 }
 function expertOn(){return document.body.classList.contains('expert-on');}
 function renderStats(){if(!result)return;const s=result.statistics;
@@ -2041,7 +2076,7 @@ function renderProbe(){if(!result)return;
  ['전체 장애물 감쇠량','−'+fmt(d.totalObstacleLossDb)+' dB'],...(L.router.mountMode==='wall'?[['벽 부착 방향 시험 감쇠','−'+fmt(d.mountDirectionLossDb)+' dB · 실측 안테나 패턴 아님']]:[]),...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
  renderProfileComparison();
- if(!$('positionJudgment').hidden)renderPositionJudgment();
+ if($('positionJudgmentFold').open)renderPositionJudgment();
 }
 
 let positionReferenceMode='auto';
@@ -2084,15 +2119,11 @@ function renderPositionJudgment(){
  foot.textContent='벽 부착 공유기는 계산을 위해 벽에서 약 4cm 띄워 표시됩니다. 위치 안내에서는 6cm 이내를 0m(벽 부착)로 나타냅니다.';
  panel.appendChild(foot);
  panel.dataset.reference=mode;panel.dataset.positionX=String(point.x);panel.dataset.positionZ=String(point.z);
+ $('positionSummary').textContent=(mode==='recommendation'?'추천 '+(candidate.rank||1)+'순위':mode==='probe'?'선택한 수신 지점':'현재 공유기')+' 기준';
  panel.hidden=false;
 }
-$('positionJudgmentBtn').onclick=()=>{positionReferenceMode='auto';renderPositionJudgment();};
-$('portraitRecalculateBtn').onclick=()=>$('applyBtn').click();
+$('positionJudgmentFold').addEventListener('toggle',()=>{if($('positionJudgmentFold').open)renderPositionJudgment();});
 $('portraitOptimizeBtn').onclick=()=>$('optimizeBtn').click();
-$('portraitPositionBtn').onclick=()=>{
- $('positionJudgmentBtn').click();
- $('positionJudgment').scrollIntoView({behavior:'smooth',block:'center'});
-};
 $('expertToggle').onclick=()=>{
  const on=!expertOn();document.body.classList.toggle('expert-on',on);
  $('expertToggle').setAttribute('aria-pressed',String(on));
@@ -2103,7 +2134,11 @@ $('expertToggle').onclick=()=>{
  $('weakStatExplanation').textContent=on?'−75 dBm 미만':'신호가 약한 공간 비율';
  if(result){renderStats();renderProbe();}
 };
-$('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(true);$('plainBtn').onclick=()=>simulate(false);
+$('plainBtn').onclick=()=>{
+ weighted=!weighted;
+ $('plainBtn').textContent=weighted?'가중치 없이 보기':'중요도 반영 보기';
+ void simulate(weighted);
+};
 async function applyRecommendedPoint(point){
  if(!best||!point)return;
  pushUndo();L.router.x=point.x;L.router.z=point.z;
@@ -2212,7 +2247,7 @@ $('importFile').onchange=async e=>{
   pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
     router,
     walls,doors,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(overrides.p0==null?{}:{p0:overrides.p0}),wallLoss:importedWallLoss}};
-  probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;
+  probe={x:w/2,z:depth/2};weighted=true;result=null;best=null;selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
  }catch(err){toast('JSON 불러오기 실패: '+err.message)}finally{e.target.value='';}
@@ -2235,7 +2270,7 @@ function switchView(view){
  syncXPStatus();
  requestAnimationFrame(()=>{if(view==='design')renderEditor();if(view==='analysis')renderHeat();});
 }
-async function enterAnalysis(){switchView('analysis');await simulate(false);}
+async function enterAnalysis(){switchView('analysis');await simulate(weighted);}
 $('designTab').onclick=()=>switchView('design');
 $('backToEditorBtn').onclick=()=>switchView('design');
 $('analysisTab').onclick=enterAnalysis;
@@ -2339,6 +2374,40 @@ $('manualReceiverHeightInput').onchange=()=>{
 let editorHeight=520;
 const portraitWorkspace=()=>window.matchMedia('(orientation: portrait) and (min-width:700px) and (max-width:1200px)').matches;
 if(portraitWorkspace())editorHeight=clamp(Math.round(window.innerHeight*.46),600,940);
+let planZoom=1,planPreviousHeight=null;
+function setPlanZoom(value){
+ const frame=$('editorFrame'),canvas=$('editorCanvas');
+ const next=clamp(Math.round(value*100)/100,.75,2.5);
+ const oldWidth=Math.max(1,canvas.getBoundingClientRect().width);
+ const oldHeight=Math.max(1,canvas.getBoundingClientRect().height);
+ const centerX=(frame.scrollLeft+frame.clientWidth/2)/oldWidth;
+ const centerY=(frame.scrollTop+frame.clientHeight/2)/oldHeight;
+ planZoom=next;
+ frame.style.setProperty('--editor-zoom',(next*100)+'%');
+ $('planZoomLabel').textContent=Math.round(next*100)+'%';
+ requestAnimationFrame(()=>{
+  frame.scrollLeft=Math.max(0,canvas.getBoundingClientRect().width*centerX-frame.clientWidth/2);
+  frame.scrollTop=Math.max(0,canvas.getBoundingClientRect().height*centerY-frame.clientHeight/2);
+  renderEditor();
+ });
+}
+$('planZoomInBtn').onclick=()=>setPlanZoom(planZoom+.25);
+$('planZoomOutBtn').onclick=()=>setPlanZoom(planZoom-.25);
+$('planZoomResetBtn').onclick=()=>setPlanZoom(1);
+$('planExpandBtn').onclick=()=>{
+ const area=$('editorWorkarea'),expand=!area.classList.contains('plan-expanded');
+ area.classList.toggle('plan-expanded',expand);
+ $('planExpandBtn').setAttribute('aria-pressed',String(expand));
+ $('planExpandBtn').textContent=expand?'▣ 기본 크기':'⛶ 도면 확장';
+ if(expand){planPreviousHeight=editorHeight;setEditorHeight(clamp(Math.round(window.innerHeight*.72),600,1100));}
+ else if(planPreviousHeight!==null){setEditorHeight(planPreviousHeight);planPreviousHeight=null;}
+ requestAnimationFrame(renderEditor);
+};
+$('editorFrame').addEventListener('wheel',event=>{
+ if(!(event.ctrlKey||event.metaKey))return;
+ event.preventDefault();
+ setPlanZoom(planZoom+(event.deltaY<0?.25:-.25));
+},{passive:false});
 function setEditorHeight(value){
  editorHeight=clamp(Math.round(value),280,1100);
  $('editorFrame').style.setProperty('--editor-height',editorHeight+'px');
@@ -2538,7 +2607,7 @@ function renderCandidateComparison(){
   button.setAttribute('aria-pressed',String(Number(button.dataset.compareRank)===candidate.rank));
  });
  renderHeat();
- if(!$('positionJudgment').hidden)renderPositionJudgment();
+ if($('positionJudgmentFold').open)renderPositionJudgment();
 }
 $('stabilityToggle').onchange=e=>{showStableOverlay=e.target.checked;renderHeat();};
 function renderTopThree(){
