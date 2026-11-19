@@ -90,6 +90,54 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#xpHelpClose").click()
         self.assertTrue(self.page.locator("#editorCanvas").is_visible())
 
+
+    def test_xp_desktop_tool_palette_is_on_left_and_can_collapse(self):
+        self.assertTrue(self.page.locator("#toolsRail").is_hidden())
+        self.page.locator("#paletteToggleBtn").click()
+        self.assertTrue(self.page.locator("#toolsRail").is_visible())
+        canvas=self.page.locator(".editor-workarea .canvas-column").bounding_box()
+        palette=self.page.locator("#toolsRail").bounding_box()
+        self.assertLess(palette["x"],canvas["x"])
+        self.assertLessEqual(palette["width"],310)
+        self.assertEqual(self.page.locator("#paletteToggleBtn").get_attribute("aria-expanded"),"true")
+        self.page.locator(".xp-toolbar [data-xp-action='palette']").click()
+        self.assertTrue(self.page.locator("#toolsRail").is_hidden())
+        self.assertEqual(self.page.locator("#paletteToggleBtn").get_attribute("aria-expanded"),"false")
+        self.assertTrue(self.page.locator("#editorCanvas").is_visible())
+
+    def test_xp_canvas_numeric_tool_shortcuts_respect_form_focus(self):
+        self.page.locator("#editorCanvas").focus()
+        self.page.keyboard.press("5")
+        self.assertEqual(self.page.locator('[data-tool="required"]').get_attribute("aria-pressed"),"true")
+        self.assertEqual(self.page.locator("#xpActiveTool").inner_text(),"신호 세기")
+        self.page.keyboard.press("Enter")
+        self.assertEqual(len(self.export()["requiredPins"]),1)
+        self.page.locator("#pyeongInput").focus()
+        self.page.keyboard.press("2")
+        self.assertEqual(self.page.locator('[data-tool="required"]').get_attribute("aria-pressed"),"true")
+        self.page.locator("#editorCanvas").focus()
+        self.page.keyboard.press("2")
+        self.assertEqual(self.page.locator('[data-tool="rectangle"]').get_attribute("aria-pressed"),"true")
+        self.assertEqual(self.page.locator("#xpActiveTool").inner_text(),"직사각형")
+        self.assertEqual(len(self.export()["requiredPins"]),1)
+
+    def test_xp_menu_dismisses_other_menus_and_mobile_palette_stays_below_canvas(self):
+        menus=self.page.locator(".xp-menu")
+        menus.nth(0).locator("summary").click()
+        self.assertTrue(menus.nth(0).evaluate("(el)=>el.open"))
+        menus.nth(1).locator("summary").click()
+        self.page.wait_for_function(
+            "document.querySelectorAll('.xp-menu[open]').length===1 && document.querySelectorAll('.xp-menu')[1].open"
+        )
+        self.page.locator("#pyeongInput").click()
+        self.assertEqual(self.page.locator(".xp-menu[open]").count(),0)
+        self.page.set_viewport_size({"width":390,"height":844})
+        self.page.locator("#paletteToggleBtn").click()
+        canvas=self.page.locator(".editor-workarea .canvas-column").bounding_box()
+        palette=self.page.locator("#toolsRail").bounding_box()
+        self.assertGreaterEqual(palette["y"],canvas["y"]+canvas["height"]-1)
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"),410)
+
     def test_xp_luna_chrome_and_menus_visible(self):
         self.assertTrue(self.page.locator(".xp-caption").is_visible())
         self.assertIn("Wiplan - Wi-Fi 배치 시뮬레이터", self.page.locator(".xp-caption").inner_text())
