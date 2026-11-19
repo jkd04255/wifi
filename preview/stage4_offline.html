@@ -1760,6 +1760,29 @@ $('importFile').onchange=async e=>{
   const r=converted.router;
   if(![2.4,5].includes(Number(r.frequency)))throw Error('주파수는 2.4 또는 5 GHz여야 합니다.');
   const walls=converted.walls.map((q,i)=>({id:String(q.id||'wall-'+i),x1:val(q.x1,w),x2:val(q.x2,w),z1:val(q.z1,depth),z2:val(q.z2,depth),material:'concrete'}));
+  // Doors are normalized against the parent wall before the old layout changes.
+  if(converted.doors!=null&&!Array.isArray(converted.doors))throw Error('문 목록은 배열이어야 합니다.');
+  const rawDoors=converted.doors||[],doors=[],doorIds=new Set();
+  if(rawDoors.length>100)throw Error('나무문은 최대 100개까지 설치할 수 있습니다.');
+  for(const [index,item] of rawDoors.entries()){
+   if(!item||typeof item!=='object'||Array.isArray(item))throw Error('문 항목 형식이 잘못됐습니다.');
+   const wall=walls.find(v=>v.id===item.wallId);
+   if(!wall)throw Error('나무문이 설치될 콘크리트 벽이 없습니다.');
+   if(item.type!=='wood'||!['open','closed'].includes(item.state))throw Error('나무문 유형이나 상태가 잘못됐습니다.');
+   const x1=val(item.x1,w),z1=val(item.z1,depth),x2=val(item.x2,w),z2=val(item.z2,depth);
+   const widthM=Number(item.widthM),length=Math.hypot(x2-x1,z2-z1);
+   if(!Number.isFinite(widthM)||widthM<.4||widthM>2||Math.abs(widthM-length)>.015)throw Error('문 폭과 양 끝 좌표가 일치하지 않습니다.');
+   const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1;
+   const project=(x,z)=>{const t=window.WifiEngine.doorT(wall,x,z);
+     return {t,x:wall.x1+t*dx,z:wall.z1+t*dz};};
+   const a=project(x1,z1),b=project(x2,z2);
+   if(a.t< -1e-5||a.t>1+1e-5||b.t< -1e-5||b.t>1+1e-5||
+       Math.hypot(x1-a.x,z1-a.z)>.015||Math.hypot(x2-b.x,z2-b.z)>.015)throw Error('문은 실제 벽 위에만 설치할 수 있습니다.');
+   const shape=window.WifiEngine.createDoor({walls,doors},wall.id,(a.t+b.t)/2,widthM);
+   const id=typeof item.id==='string'&&item.id.trim()?item.id:'door-import-'+index;
+   if(doorIds.has(id))throw Error('나무문 ID가 중복됩니다.');
+   doorIds.add(id);doors.push({id,type:'wood',state:item.state,...shape});
+  }
   const rawPins=Array.isArray(converted.requiredPins)?converted.requiredPins:[];
   if(rawPins.length>PIN_MAX_COUNT)throw Error('신호 세기 핀은 최대 12개까지 지정할 수 있습니다.');
   const importedPinIds=new Set();
@@ -1812,8 +1835,8 @@ $('importFile').onchange=async e=>{
   }
   pushUndo();L={schemaVersion:'1.1',coordinateSystem:{...coords},width:w,depth,roomHeightM,receiverY,areaPyeong:w*depth/SQM_PER_PYEONG,
     router,
-    walls,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(overrides.p0==null?{}:{p0:overrides.p0}),wallLoss:importedWallLoss}};
-  probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedRequiredId=null;requiredDrag=null;
+    walls,doors,zones,requiredPins,sketches,importanceStrokes,modelOverrides:{pathLossExponent:clamp(cleanNum(converted.modelOverrides?.pathLossExponent,2.2),1,6),wallScale:clamp(cleanNum(converted.modelOverrides?.wallScale,1),0,5),...(overrides.p0==null?{}:{p0:overrides.p0}),wallLoss:importedWallLoss}};
+  probe={x:w/2,z:depth/2};weighted=false;result=null;best=null;selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;
   $('heatmapEmpty').style.display='flex';resetStats();changed('도면을 XZ 평면 좌표로 불러왔습니다.');
   toast((Array.isArray(converted.zones)&&converted.zones.length?'이전 방 용도 항목은 불러오지 않았습니다. ':'')+(raw.schemaVersion==='1.1'?'XZ 도면을 불러왔습니다.':'기존 XY 도면을 XZ 좌표계로 자동 변환했습니다.'));switchView('design');
  }catch(err){toast('JSON 불러오기 실패: '+err.message)}finally{e.target.value='';}
