@@ -385,7 +385,7 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
   <div class="side-help"><strong>도면 그리는 방법</strong><p>‘그리기’는 자유선, ‘선 추가’는 시작점과 끝점 사이의 직선 벽, ‘직사각형’은 벽 네 면을 만듭니다. <b>도면화</b>는 자유선과 사선을 직각으로 보정합니다. <b>부분 지우개</b>는 닿은 부분만 지웁니다.</p><p>벽은 모두 콘크리트로 계산됩니다. 중요도는 신호 세기를 직접 바꾸지 않고 최적 배치 평가에 사용됩니다.</p></div>
   <button type="button" id="resetBtn" class="ghost full">＋ 새 도면 시작</button>
  </aside></div>
- <div class="editor-bottom"><span id="drawingHelp">그리기·선 추가·직사각형을 사용하세요. 부분 지우개로 선의 일부만 잘라낼 수 있습니다.</span><button type="button" class="primary" id="applyBottomBtn">빠른 신호 분석 (기본 설정) →</button></div>
+ <div class="editor-bottom"><span id="drawingHelp">그리기·선 추가·직사각형을 사용하세요. 부분 지우개로 선의 일부만 잘라낼 수 있습니다.</span><button type="button" class="primary" id="applyBottomBtn">다음 · ② 공유기 설정 →</button></div>
 </section>
 
 <section id="wizardRouter" class="wizard-screen screen" hidden>
@@ -1928,7 +1928,7 @@ $('designTab').onclick=()=>switchView('design');
 $('backToEditorBtn').onclick=()=>switchView('design');
 $('analysisTab').onclick=enterAnalysis;
 $('applyFromEditorBtn').onclick=()=>switchView('router');
-$('applyBottomBtn').onclick=enterAnalysis;
+$('applyBottomBtn').onclick=()=>switchView('router');
 
 
 const HEIGHT_OPTIONS=[[0,'바닥'],[.3,'바닥에 앉은 높이'],[1,'책상 높이'],[1.2,'가슴 높이'],[1.6,'사람 키'],[2.2,'천장']];
