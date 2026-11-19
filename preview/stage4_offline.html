@@ -2122,6 +2122,9 @@ function renderPositionJudgment(){
  $('positionSummary').textContent=(mode==='recommendation'?'추천 '+(candidate.rank||1)+'순위':mode==='probe'?'선택한 수신 지점':'현재 공유기')+' 기준';
  panel.hidden=false;
 }
+// Native details toggle events are async. Populate immediately on summary
+// activation too so keyboard and mouse users see the distances right away.
+$('positionJudgmentFold').querySelector('summary').addEventListener('click',()=>renderPositionJudgment());
 $('positionJudgmentFold').addEventListener('toggle',()=>{if($('positionJudgmentFold').open)renderPositionJudgment();});
 $('portraitOptimizeBtn').onclick=()=>$('optimizeBtn').click();
 $('expertToggle').onclick=()=>{
