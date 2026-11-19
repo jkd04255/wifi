@@ -352,6 +352,125 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 .position-grid span[data-contact="true"]{border:2px solid #2764a9;background:#e9f2ff;color:#184b86;font-weight:bold}
 .position-grid span{min-height:47px;display:flex;align-items:center}
 @media(max-width:560px){.placement-guide-direction{font-size:16px}.position-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 1080 × 1920 portrait workspace; portrait widths 700–1200 CSS pixels.
+   Keep the actual XZ map geometry unchanged: reflow panels, not coordinates. */
+@media (orientation:portrait) and (min-width:700px) and (max-width:1200px){
+ html,body{width:100%;max-width:100%;overflow-x:clip}
+ .app-shell{width:calc(100% - 20px);max-width:1080px;min-height:calc(100vh - 16px);
+   margin:8px auto;border-radius:7px 7px 2px 2px}
+ .xp-caption{height:42px;font-size:16px;padding:0 12px}
+ .xp-menu-bar{min-height:32px;padding:3px 10px}
+ .xp-menu>summary{font-size:13px;padding:5px 11px}
+ .xp-toolbar{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));
+   padding:5px 9px;gap:4px;overflow:visible}
+ .xp-toolbar>button{min-width:0;max-width:100%;min-height:54px;white-space:normal;
+   padding:5px 3px;font-size:12px;line-height:1.25}
+ .xp-toolbar-icon{font-size:22px}
+ .xp-toolbar-divider{display:none}
+ .topbar{display:flex;flex-direction:column;align-items:stretch;gap:0;
+   min-height:0;padding:0 10px 8px}
+ .view-nav{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+   margin:0;padding:8px 0 0;gap:5px;order:0;align-self:stretch}
+ .view-tab{width:100%;min-width:0;padding:11px 4px;font-size:14px;line-height:1.25;
+   white-space:normal;text-align:center;border-radius:4px 4px 0 0}
+ .top-actions{order:1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;
+   padding:8px 0 0;margin:0}
+ .top-actions .ghost{min-height:36px;font-size:12px}
+ main{padding:12px 16px 18px;min-width:0}
+ main>section{min-width:0}
+ .page-intro{display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+   padding:9px 6px 12px;margin:0 0 12px}
+ .page-intro h1{font-size:22px;margin:0 0 5px}
+ .page-intro p{font-size:13px;line-height:1.55;max-width:800px}
+ .page-intro .proceed{min-height:44px;margin-left:auto;white-space:normal}
+ .layout-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+   gap:12px;padding:12px;margin:0 0 12px;align-items:center}
+ .layout-bar>*{min-width:0}
+ .area-controls{flex-wrap:wrap;justify-content:flex-start}
+ .layout-metrics{flex-wrap:wrap;min-width:0}
+ .draw-toolbar{display:flex;flex-direction:column;align-items:stretch;
+   padding:10px;gap:10px;margin:0 0 12px}
+ .tool-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+   gap:7px;width:100%;min-width:0}
+ .tool-row .tool{width:100%;min-width:0;max-width:none;min-height:58px;
+   padding:8px 12px 8px 5px;justify-content:center;white-space:normal;
+   font-size:13px;line-height:1.2}
+ .tool-icon{font-size:20px}
+ .edit-actions{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+ .edit-actions button{min-width:0;width:100%;min-height:42px;padding:7px 6px;
+   font-size:12px;white-space:normal;line-height:1.3}
+ .xp-tool-hint{font-size:12px;line-height:1.5}
+ .door-editor{width:100%}
+ .editor-workarea,.editor-workarea:not(.palette-collapsed){display:grid;
+   grid-template-columns:minmax(0,1fr)!important;gap:12px;align-items:start}
+ .editor-workarea .canvas-column{order:0;grid-column:auto!important;grid-row:auto!important;
+   min-width:0;max-width:100%;padding:12px}
+ .editor-workarea:not(.palette-collapsed) .side-controls{order:1;
+   grid-column:auto!important;grid-row:auto!important;
+   position:static!important;max-height:none!important;overflow:visible!important}
+ .editor-workarea.palette-collapsed .side-controls{display:none!important}
+ #editorFrame{max-width:100%}
+ .editor-resize-strip{min-height:34px;font-size:12px}
+ .canvas-foot{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;line-height:1.5}
+ .wizard-screen{width:min(100%,930px);margin:12px auto 18px;padding:23px 28px}
+ .wizard-screen h1{font-size:22px}
+ .wizard-screen p{font-size:13px;line-height:1.5}
+ .wizard-settings{padding:16px}
+ .wizard-height-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ .wizard-height-grid button{min-height:64px;font-size:13px}
+ .wizard-actions button{min-height:45px;font-size:13px}
+ .expert-toggle{padding:4px 0 10px;font-size:13px}
+ .result-workarea{display:flex!important;flex-direction:column;gap:15px;width:100%}
+ .result-workarea>.result-map,.result-workarea>.result-controls{width:100%;min-width:0;
+   flex:0 0 auto;padding:15px;max-width:100%}
+ .result-workarea>.result-map{order:0}
+ .result-workarea>.result-controls{order:1}
+ .result-map>.canvas-frame{width:min(100%,880px);margin:0 auto;max-width:100%}
+ .canvas-corner{font-size:12px}
+ .signal-legend,.signal-labels{width:min(100%,880px);margin-left:auto;margin-right:auto;
+   font-size:12px}
+ .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+   gap:12px;margin:14px 0}
+ .stat{min-width:0;min-height:118px;padding:16px 18px;border-radius:2px}
+ .stat>span{font-size:13px}
+ .stat>strong{font-size:26px;margin:7px 0 5px}
+ .stat>small{font-size:12px;line-height:1.5}
+ #simpleProbeScore{padding:12px;font-size:14px}
+ #simpleProbeScore strong{font-size:22px}
+ .comparison-card,.inspector{padding:14px}
+ .comparison-card h3,.inspector-head strong{font-size:15px}
+ .profile-row,.compare-line{font-size:13px;grid-template-columns:95px minmax(0,1fr) 95px}
+ .profile-row .profile-meter{height:13px}
+ .readout-row{font-size:13px;line-height:1.5;gap:12px}
+ .readout-row>*{min-width:0;overflow-wrap:anywhere}
+ .side-title{padding:11px 13px;margin:-15px -15px 15px}
+ .side-title strong{font-size:15px}
+ .side-title small{font-size:12px}
+ .analysis-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .analysis-buttons button:first-child{grid-column:auto}
+ .analysis-buttons button{min-width:0;min-height:48px;font-size:13px;padding:10px;line-height:1.4}
+ #positionJudgmentBtn{min-height:44px;font-size:13px}
+ .position-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .position-grid span{min-width:0;min-height:60px;word-break:keep-all;overflow-wrap:anywhere}
+ .placement-guide{padding:14px 16px;margin:12px 0}
+ .placement-guide-head{font-size:14px}
+ .placement-guide-direction{font-size:22px}
+ .placement-guide-detail{font-size:13px}
+ .recommendation,.wood-door-panel{padding:15px;margin-top:14px}
+ .recommendation #recommendBody{font-size:13px;line-height:1.65}
+ .top-candidate{gap:12px;padding:11px 0;font-size:13px}
+ .top-candidate strong{font-size:14px}
+ .top-candidate small{font-size:12px;line-height:1.5}
+ .candidate-actions{flex:0 0 auto}
+ .candidate-actions button{min-height:38px;font-size:12px}
+ .compare-detail{padding:13px}
+ .compare-detail strong{font-size:13px}
+ .xp-statusbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:5px 8px}
+ .xp-statusbar span{font-size:12px;min-height:26px}
+ .xp-statusbar span:nth-child(4),.xp-statusbar span:nth-child(5){display:block}
+}
+
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
