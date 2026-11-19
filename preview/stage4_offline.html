@@ -1866,28 +1866,49 @@ function renderProbe(){if(!result)return;
  if(!$('positionJudgment').hidden)renderPositionJudgment();
 }
 
+let positionReferenceMode='auto';
 function renderPositionJudgment(){
  const panel=$('positionJudgment');panel.replaceChildren();
- const heading=document.createElement('strong');heading.textContent='선택 위치에서 가장 가까운 벽 (도면 XZ 기준)';
+ const candidate=selectedPlacement();
+ const mode=positionReferenceMode==='auto'?(candidate?'recommendation':'router'):
+   (positionReferenceMode==='recommendation'&&!candidate?'router':positionReferenceMode);
+ const point=mode==='recommendation'?candidate:(mode==='probe'?probe:L.router);
+ const heading=document.createElement('strong');
+ heading.textContent=(mode==='recommendation'?'추천 '+(candidate.rank||1)+'순위':
+   mode==='router'?'현재 공유기':'선택한 수신 지점')+' 기준 · 좌/우/상/하 벽 거리';
  panel.appendChild(heading);
- const dirs=[['왼쪽',-1,0,probe.x],['오른쪽',1,0,L.width-probe.x],['위쪽',0,-1,probe.z],['아래쪽',0,1,L.depth-probe.z]];
+ const controls=document.createElement('div');controls.className='position-choice';
+ const label=document.createElement('label');label.htmlFor='positionReferenceSelect';label.textContent='거리 기준 위치';
+ const select=document.createElement('select');select.id='positionReferenceSelect';
+ for(const [value,title] of [
+   ['router','현재 공유기'],...(candidate?[['recommendation','선택한 추천 위치']]:[]),['probe','선택한 수신 지점']
+ ]){
+  const item=document.createElement('option');item.value=value;item.textContent=title;
+  select.appendChild(item);
+ }
+ select.value=mode;
+ select.onchange=()=>{positionReferenceMode=select.value;renderPositionJudgment();};
+ controls.append(label,select);panel.appendChild(controls);
+ const coords=document.createElement('p');coords.className='position-point-detail';
+ coords.textContent='기준 좌표 X '+fmt(point.x,2)+'m · Z '+fmt(point.z,2)+'m / 위쪽=12시 · 오른쪽=3시';
+ panel.appendChild(coords);
  const grid=document.createElement('div');grid.className='position-grid';
- for(const [name,dx,dz,boundary] of dirs){
-  let closest=Infinity;
-  for(const wall of window.WifiEngine.effectiveWalls(L)){
-   const sx=wall.x2-wall.x1,sz=wall.z2-wall.z1,den=dx*sz-dz*sx;
-   if(Math.abs(den)<1e-9)continue;
-   const ex=wall.x1-probe.x,ez=wall.z1-probe.z;
-   const distance=(ex*sz-ez*sx)/den,along=(ex*dz-ez*dx)/den;
-   if(distance>=-1e-8&&along>=-1e-8&&along<=1+1e-8)closest=Math.min(closest,Math.max(0,distance));
-  }
+ for(const dir of cardinalWallDistancesAt(point)){
   const item=document.createElement('span');
-  item.textContent=name+': '+(Number.isFinite(closest)?fmt(closest,2)+'m · 벽':fmt(boundary,2)+'m · 도면 경계(벽 없음)');
+  item.dataset.direction=dir.name;item.dataset.contact=String(dir.contact);
+  item.textContent=dir.name+': '+(dir.wall
+     ?fmt(dir.distance,2)+'m · '+(dir.contact?'벽에 붙음':'벽')
+     :fmt(dir.boundary,2)+'m · 도면 경계(벽 없음)');
   grid.appendChild(item);
  }
- panel.appendChild(grid);panel.hidden=false;
+ panel.appendChild(grid);
+ const foot=document.createElement('small');foot.className='position-point-detail';
+ foot.textContent='벽 부착 공유기는 계산을 위해 벽에서 약 4cm 띄워 표시됩니다. 위치 안내에서는 6cm 이내를 0m(벽 부착)로 나타냅니다.';
+ panel.appendChild(foot);
+ panel.dataset.reference=mode;panel.dataset.positionX=String(point.x);panel.dataset.positionZ=String(point.z);
+ panel.hidden=false;
 }
-$('positionJudgmentBtn').onclick=renderPositionJudgment;
+$('positionJudgmentBtn').onclick=()=>{positionReferenceMode='auto';renderPositionJudgment();};
 $('expertToggle').onclick=()=>{
  const on=!expertOn();document.body.classList.toggle('expert-on',on);
  $('expertToggle').setAttribute('aria-pressed',String(on));
@@ -2331,6 +2352,7 @@ function renderCandidateComparison(){
   button.setAttribute('aria-pressed',String(Number(button.dataset.compareRank)===candidate.rank));
  });
  renderHeat();
+ if(!$('positionJudgment').hidden)renderPositionJudgment();
 }
 $('stabilityToggle').onchange=e=>{showStableOverlay=e.target.checked;renderHeat();};
 function renderTopThree(){
@@ -2368,7 +2390,7 @@ $('optimizeBtn').onclick=async()=>{
  setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='오프라인 최적 위치 계산 중…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{best=await optimizeOfflinePins();const b=best.best,box=$('recommendBody');box.replaceChildren();
- const lines=['추천 위치 X '+fmt(b.x,2)+'m · Y '+fmt(b.y,2)+'m · Z '+fmt(b.z,2)+'m',best.robust24?'Robust worst-case 품질 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점':'품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점',best.robust24?'배치 신뢰도 '+best.confidence+' · 프로파일별 최적점 최대거리 '+fmt(best.maxProfileDistance,2)+' m':'5 GHz 기존 모델','후보 '+best.candidates+'개 검토'+(best.robust24?' · 공통 feasible '+best.commonCandidates+'개':'')+' · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · worst-case 최저 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),best.robust24?'CAMPUSRSSI 2.4 GHz · 신호 원활/중간/혼잡 동시 보정 · 콘크리트 6.28~7.21 dB/회':'5 GHz는 CAMPUSRSSI 실측보정 미적용','LAN·케이블·천장·벽 높이 제한 미적용'];
+ const lines=['설치 위치: '+placementDirection(L.router,b).text+' · X '+fmt(b.x,2)+'m / Z '+fmt(b.z,2)+'m', '도면의 빨간 네모와 이동 화살표를 따라 공유기를 설치하세요.', '추천 높이 Y '+fmt(b.y,2)+'m',best.robust24?'Robust worst-case 품질 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점':'품질 점수 '+fmt(best.currentStats.qualityScore)+' → '+fmt(best.bestStats.qualityScore)+'점',best.robust24?'배치 신뢰도 '+best.confidence+' · 프로파일별 최적점 최대거리 '+fmt(best.maxProfileDistance,2)+' m':'5 GHz 기존 모델','후보 '+best.candidates+'개 검토'+(best.robust24?' · 공통 feasible '+best.commonCandidates+'개':'')+' · '+(best.weightsUsed?'중요도 반영':'동일 가중치'),'신호 세기 핀 '+(L.requiredPins||[]).length+'개'+((L.requiredPins||[]).length?' · 설정한 최소 칸수 모두 충족 · worst-case 최저 '+fmt(best.requiredAreaMinimumQualityScore,1)+'점':''),best.robust24?'CAMPUSRSSI 2.4 GHz · 신호 원활/중간/혼잡 동시 보정 · 콘크리트 6.28~7.21 dB/회':'5 GHz는 CAMPUSRSSI 실측보정 미적용','LAN·케이블·천장·벽 높이 제한 미적용'];
  for(const s of lines){const p=document.createElement('div');p.textContent=s;box.appendChild(p)}
  $('recommendation').hidden=false;renderTopThree();$('statusLine').textContent=best.robust24?'추천 완료 · 신호 원활/중간/혼잡 공통 Robust 최적화 · 신뢰도 '+best.confidence:'추천 완료 · 5 GHz 기존 오프라인 모델';$('engineMode').textContent=best.robust24?'오프라인 JS · CAMPUSRSSI Robust 2.4 GHz':'오프라인 JS · 5 GHz 미보정 예측';renderHeat();renderRequiredStatus();
  }catch(err){best=null;$('recommendation').hidden=true;$('topThreeCandidates').hidden=true;renderHeat();renderRequiredStatus();$('statusLine').classList.add('error');$('statusLine').textContent='추천 불가: '+err.message;}
