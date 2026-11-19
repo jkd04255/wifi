@@ -471,6 +471,15 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
  .xp-statusbar span:nth-child(4),.xp-statusbar span:nth-child(5){display:block}
 }
 
+
+.portrait-quickbar{display:none}
+@media (orientation:portrait) and (min-width:700px) and (max-width:1200px){
+ .portrait-quickbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+   gap:9px;margin:0 0 12px;padding:0;width:100%}
+ .portrait-quickbar button{width:100%;min-width:0;min-height:46px;padding:8px 6px;
+   font-size:13px;white-space:normal;line-height:1.35;border-radius:2px}
+}
+
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -572,7 +581,13 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 </section>
 <section id="resultScreen" class="screen results-screen" hidden>
  <div class="page-intro"><div><div class="eyebrow">STEP 04 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>우리 집 와이파이 예상 점수를 확인하고, 더 좋은 공유기 위치를 찾아보세요.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
- <div class="expert-toggle"><span class="wizard-note">기본 화면은 100점 만점 점수를 사용합니다.</span><button id="expertToggle" type="button" class="secondary" aria-pressed="false">고급 보기</button></div><div class="result-workarea"><div class="result-map"><div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">신호 지도 · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>‘신호 분석’을 시작하면 결과가 표시됩니다.</small></div></div><div class="placement-guide" id="placementGuide" hidden aria-live="polite">
+ <div class="expert-toggle"><span class="wizard-note">기본 화면은 100점 만점 점수를 사용합니다.</span><button id="expertToggle" type="button" class="secondary" aria-pressed="false">고급 보기</button></div><div class="result-workarea"><div class="result-map">
+<div class="portrait-quickbar" role="group" aria-label="세로형 화면 빠른 분석 도구">
+ <button type="button" class="secondary" id="portraitRecalculateBtn">↻ 신호 다시 계산</button>
+ <button type="button" class="primary" id="portraitOptimizeBtn">✦ 최고의 위치 찾기</button>
+ <button type="button" class="secondary" id="portraitPositionBtn">⌖ 위치 판단</button>
+</div>
+<div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">신호 지도 · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>‘신호 분석’을 시작하면 결과가 표시됩니다.</small></div></div><div class="placement-guide" id="placementGuide" hidden aria-live="polite">
   <div class="placement-guide-head"><strong id="placementGuideHeading">추천 위치</strong><span class="placement-key">■ 현재 공유기 <span class="placement-mark">➤</span> 추천 위치</span></div>
   <div class="placement-guide-direction" id="placementGuideDirection">위치 찾기 전</div>
   <div class="placement-guide-detail" id="placementGuideDetail">추천 위치를 비교하면 지도에 이동 화살표가 표시됩니다.</div>
@@ -2028,6 +2043,12 @@ function renderPositionJudgment(){
  panel.hidden=false;
 }
 $('positionJudgmentBtn').onclick=()=>{positionReferenceMode='auto';renderPositionJudgment();};
+$('portraitRecalculateBtn').onclick=()=>$('applyBtn').click();
+$('portraitOptimizeBtn').onclick=()=>$('optimizeBtn').click();
+$('portraitPositionBtn').onclick=()=>{
+ $('positionJudgmentBtn').click();
+ $('positionJudgment').scrollIntoView({behavior:'smooth',block:'center'});
+};
 $('expertToggle').onclick=()=>{
  const on=!expertOn();document.body.classList.toggle('expert-on',on);
  $('expertToggle').setAttribute('aria-pressed',String(on));
@@ -2272,6 +2293,8 @@ $('manualReceiverHeightInput').onchange=()=>{
  pushUndo();L.receiverY=n;changed('스마트폰 높이 직접 입력');syncWizardFields();
 };
 let editorHeight=520;
+const portraitWorkspace=()=>window.matchMedia('(orientation: portrait) and (min-width:700px) and (max-width:1200px)').matches;
+if(portraitWorkspace())editorHeight=clamp(Math.round(window.innerHeight*.46),600,940);
 function setEditorHeight(value){
  editorHeight=clamp(Math.round(value),280,1100);
  $('editorFrame').style.setProperty('--editor-height',editorHeight+'px');
@@ -2577,6 +2600,7 @@ window.addEventListener('keydown',event=>{
   void xpAction(actions[key]);
  }
 });
+setEditorHeight(editorHeight);
 switchView('design');
 })();
 
