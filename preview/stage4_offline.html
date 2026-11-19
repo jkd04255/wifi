@@ -1465,7 +1465,13 @@ $('applyBtn').onclick=()=>simulate(false);$('weightBtn').onclick=()=>simulate(tr
 async function applyRecommendedPoint(point){
  if(!best||!point)return;
  pushUndo();L.router.x=point.x;L.router.z=point.z;
- if(L.router.mountMode==='wall'&&!ensureWallMount()){toast('추천 위치를 벽에 부착할 수 없습니다.');return;}
+ if(L.router.mountMode==='wall'){
+   if(point.mountFace&&Number.isFinite(point.mountNormalX)&&Number.isFinite(point.mountNormalZ)){
+     Object.assign(L.router,{wallId:point.wallId,mountFace:point.mountFace,
+       mountNormalX:point.mountNormalX,mountNormalZ:point.mountNormalZ});
+   }
+   if(!ensureWallMount()){toast('추천 위치를 벽에 부착할 수 없습니다.');return;}
+ }
  best=null;changed('선택한 추천 위치를 적용했습니다. 히트맵을 갱신합니다.');
  await simulate(weighted);
 }
@@ -1749,11 +1755,11 @@ async function optimizeOfflinePins(){
  for(let z=step/2;z<L.depth;z+=step)for(let x=step/2;x<L.width;x+=step)sample.push({x,z,w:isWeighted?window.WifiEngine.weight(L,x,z):1});
  if(!sample.some(s=>s.w>0))for(const s of sample)s.w=1;
  const sumW=sample.reduce((n,s)=>n+s.w,0);
- const scoreProfile=(x,z,name)=>{const trial={...L,router:{...L.router,x,z}},cfg=robust24?window.WifiEngine.profileSettings(trial,name):window.WifiEngine.settings(trial);let sum=0,weak=0;
+ const scoreProfile=(router,name)=>{const trial={...L,router},cfg=robust24?window.WifiEngine.profileSettings(trial,name):window.WifiEngine.settings(trial);let sum=0,weak=0;
   for(const p of sample){const v=window.WifiEngine.value(trial,p.x,p.z,cfg);sum+=qualityPoint(v)*p.w;if(v< -75)weak+=p.w;}
   return {quality:sum/sumW,objective:(sum-12*weak)/sumW};};
- const scoreAll=(x,z)=>Object.fromEntries(profiles.map(name=>[name,scoreProfile(x,z,name)]));
- const beforeProfiles=scoreAll(L.router.x,L.router.z),beforeWorst=Math.min(...Object.values(beforeProfiles).map(v=>v.objective));
+ const scoreAll=router=>Object.fromEntries(profiles.map(name=>[name,scoreProfile(router,name)]));
+ const beforeProfiles=scoreAll(L.router),beforeWorst=Math.min(...Object.values(beforeProfiles).map(v=>v.objective));
  const valid=(x,z)=>(L.walls||[]).every(w=>{
    const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
  let bestPoint=null,candidates=0,commonCandidates=0;
@@ -1762,28 +1768,30 @@ async function optimizeOfflinePins(){
  const profilePinMin=(pin,router,name)=>robust24?requiredMinimumProfile(pin,router,name):requiredMinimum(pin,router);
  const seenWallCandidates=new Set();
  const check=(qx,qz)=>{
-  let x=qx,z=qz;
+  let x=qx,z=qz,router={...L.router,x,z};
   if(L.router.mountMode==='wall'){
-   const mount=window.WifiEngine.mountCandidate(L,qx,qz,L.router.mountFace||'right');
+   const mount=window.WifiEngine.mountCandidate(L,qx,qz);
    if(!mount)return;
    x=mount.x;z=mount.z;
-   const key=x.toFixed(5)+','+z.toFixed(5);
+   Object.assign(router,{x,z,wallId:mount.wallId,mountFace:mount.face,
+     mountNormalX:mount.mountNormalX,mountNormalZ:mount.mountNormalZ});
+   const key=x.toFixed(5)+','+z.toFixed(5)+','+mount.face;
    if(seenWallCandidates.has(key))return;
    seenWallCandidates.add(key);
   }else if(!valid(x,z))return;
   candidates++;
-  const router={...L.router,x,z},scores=scoreAll(x,z),feasible={};
+  const scores=scoreAll(router),feasible={};
   for(const name of profiles){
    feasible[name]=pins.every(pin=>profilePinMin(pin,router,name)>=signalMinScore(pin)-1e-8);
    if(feasible[name]&&(!bestByProfile[name]||scores[name].objective>bestByProfile[name].score.objective))bestByProfile[name]={x,z,score:scores[name]};
   }
   if(!robust24){
-   if(pins.some(pin=>requiredMinimum(pin,{...L.router,x,z})<signalMinScore(pin)-1e-8))return;
+   if(pins.some(pin=>requiredMinimum(pin,router)<signalMinScore(pin)-1e-8))return;
   }else if(profiles.some(name=>!feasible[name]))return;
   commonCandidates++;
   const robustObjective=Math.min(...profiles.map(name=>scores[name].objective));
   const robustQuality=Math.min(...profiles.map(name=>scores[name].quality));
-  const candidate={x,z,scores,robustObjective,robustQuality};
+  const candidate={x,z,router,scores,robustObjective,robustQuality};
   feasiblePool.push(candidate);
   if(!bestPoint||robustObjective>bestPoint.robustObjective)bestPoint=candidate;
  };
@@ -1800,7 +1808,7 @@ async function optimizeOfflinePins(){
  check(L.router.x,L.router.z);
  if(bestPoint)for(const stepSize of [search/2,search/4]){const{x,z}=bestPoint;for(const dx of [-stepSize,0,stepSize])for(const dz of [-stepSize,0,stepSize])check(clamp(x+dx,0,L.width),clamp(z+dz,0,L.depth));}
  if(!bestPoint)throw Error(robust24?'CALIBRATION_CONFLICT · 신호 원활/중간/혼잡에서 신호 세기 핀 조건을 동시에 만족하는 배치가 없습니다.':(pins.length?'선택한 신호 세기 핀별 최소 칸수 조건을 모두 만족하는 배치가 없습니다.':'유효한 공유기 위치가 없습니다.'));
- const robustMin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,{...L.router,x:bestPoint.x,z:bestPoint.z}))):null;
+ const robustMin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,bestPoint.router))):null;
  // Discrete near-optimal feasible candidates only. These are sampled points,
  // not a continuous physically verified area or guaranteed building coverage.
  const stabilityTolerance=1;
@@ -1820,9 +1828,10 @@ async function optimizeOfflinePins(){
   if(topCandidates.every(prev=>Math.hypot(candidate.x-prev.x,candidate.z-prev.z)>=.5-1e-8))topCandidates.push(candidate);
  }
  const topThree=topCandidates.map((candidate,i)=>{
-  const router={...L.router,x:candidate.x,z:candidate.z};
+  const router=candidate.router;
   const margin=pins.length?Math.min(...pins.map(pin=>robustRequiredMinimum(pin,router)-signalMinScore(pin))):null;
   return {rank:i+1,x:candidate.x,y:L.router.y,z:candidate.z,
+   ...(L.router.mountMode==='wall'?{wallId:router.wallId,mountFace:router.mountFace,mountNormalX:router.mountNormalX,mountNormalZ:router.mountNormalZ}:{}),
    worstObjective:+candidate.robustObjective.toFixed(2),worstQuality:+candidate.robustQuality.toFixed(1),
    worstMargin:margin===null?null:+margin.toFixed(1),
    deltaFromBest:+(bestPoint.robustObjective-candidate.robustObjective).toFixed(2),
@@ -1834,7 +1843,10 @@ async function optimizeOfflinePins(){
  const confidence=!robust24?'LEGACY':maxProfileDistance<=.5?'HIGH':maxProfileDistance<=1?'MEDIUM':'LOW';
  const bestWorstQuality=robust24?bestPoint.robustQuality:bestPoint.scores.LEGACY.quality;
  const currentWorstQuality=Math.min(...Object.values(beforeProfiles).map(v=>v.quality));
- return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z},currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,topThree,
+ return {best:{x:bestPoint.x,y:L.router.y,z:bestPoint.z,
+   ...(L.router.mountMode==='wall'?{wallId:bestPoint.router.wallId,mountFace:bestPoint.router.mountFace,
+     mountNormalX:bestPoint.router.mountNormalX,mountNormalZ:bestPoint.router.mountNormalZ}:{})},
+   currentStats:{qualityScore:+currentWorstQuality.toFixed(1)},bestStats:{qualityScore:+bestWorstQuality.toFixed(1)},improvementPoints:+(bestPoint.robustObjective-beforeWorst).toFixed(1),stage3:true,robust24,confidence,maxProfileDistance:+maxProfileDistance.toFixed(2),profileBest:profilePoints,requiredAreaSatisfied:pins.length>0?true:null,requiredAreaMinimumQualityScore:robustMin,requiredAreaSampleCount:pins.length,candidates,commonCandidates,topThree,
   stability:{tolerancePoints:stabilityTolerance,feasibleSampleCount:uniqueStable.size,points:stablePoints},
   weightsUsed:isWeighted};
 }
