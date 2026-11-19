@@ -59,6 +59,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertEqual(self.page.locator(".analysis-buttons button").first.get_attribute("id"), "optimizeBtn")
         self.assertIn("신호 세기 핀 없음", self.page.locator("#requiredSummary").inner_text())
         previous = self.page.locator("#meanStat").inner_text()
+        self.page.locator("#expertToggle").click()
         self.page.locator("#routerY").fill("6.5")
         self.page.locator("#routerY").press("Tab")
         self.page.wait_for_function(
