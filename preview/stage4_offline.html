@@ -331,7 +331,11 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 .wood-door-panel .door-analysis-row{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid #d7e2ee;padding:8px 0}
 .wood-door-panel .door-analysis-row button{min-width:100px;border-radius:2px}
 .door-comparison{background:#f3f7fd;border:1px solid #c2d3e7;padding:11px;margin-top:7px;line-height:1.7;color:#243f63}
-.door-mini-legend{display:inline-block;width:22px;height:5px;vertical-align:middle;background:#c78f43;border-bottom:2px dashed #643a11}
+ .door-explainer{margin:7px 0;line-height:1.65;font-size:12px;color:#254667;overflow-wrap:anywhere}
+ .door-explainer strong{color:#184b86}
+ .door-empty{margin:10px 0;padding:10px;background:#f1f6fc;border:1px dashed #90acce;color:#335773;line-height:1.6;font-size:12px}
+ .door-comparison p{margin:5px 0}
+ .door-mini-legend{display:inline-block;width:22px;height:5px;vertical-align:middle;background:#c78f43;border-bottom:2px dashed #643a11}
 .position-grid span{border-radius:2px}
 @media(max-width:560px){.door-editor-fields{display:grid;grid-template-columns:1fr 1fr}.door-editor-fields label{min-width:0}.door-editor-fields input[type="range"]{width:100%}.door-editor-fields button{font-size:11px}}
 
@@ -595,8 +599,11 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
  <aside class="result-controls"><div class="side-title"><strong id="analysisSideTitle">분석 도구</strong><small id="analysisSideDesc">필요한 기능만 선택하세요</small></div><div class="router-grid expert-only"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config expert-only"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="applyBtn">▶ Apply · 재계산</button><button class="secondary" type="button" id="weightBtn">▧ 중요도 반영 출력</button><button class="secondary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div><button type="button" class="secondary" id="positionJudgmentBtn">위치 판단 · 좌/우/상/하 벽 거리</button><div id="positionJudgment" hidden aria-live="polite"></div>
  <section class="wood-door-panel" id="doorAnalysisPanel" hidden>
   <h3>나무 방문 열림·닫힘</h3>
-  <p class="wizard-note">문을 열거나 닫으면 신호 지도를 자동으로 다시 계산합니다.</p>
+  <p class="door-explainer"><strong>무엇을 비교하나요?</strong> 같은 공유기·수신 위치에서 방문을 열었을 때와 닫았을 때의 예측 신호를 비교합니다.</p>
+  <p class="door-explainer"><strong>방문 감쇠:</strong> 닫힌 나무문을 신호가 통과하면 <strong>2.4GHz 약 4dB / 5GHz 약 6dB</strong>가 추가로 감소합니다. 열린 문은 추가 감쇠 0dB로 가정합니다.</p>
+  <p class="door-explainer">① 도면 그리기에서 <strong>나무문 도구</strong>로 콘크리트 벽을 클릭해 문을 만드세요. ② 여기서 문마다 <strong>열기/닫기</strong>를 눌러 히트맵 변화를 확인하세요.</p>
   <div id="doorAnalysisList"></div>
+  <p id="doorAnalysisEmpty" class="door-empty" hidden>현재 도면에는 나무 방문이 없습니다. ① 도면 그리기 → 나무문 도구 → 벽 클릭으로 추가해 주세요.</p>
   <div id="doorComparison" class="door-comparison" aria-live="polite"></div>
  </section><div class="status-line" id="statusLine">분석 준비됨</div><div id="requiredResults" aria-label="신호 세기 품질 점검 결과" aria-live="polite" hidden style="margin:9px 0 12px"></div><div id="requiredStatus" role="status" style="font-size:11px;margin:3px 0 10px;color:#62788c">신호 세기 없음 · 기본은 단일 지점 4칸(64점 이상)입니다.</div><section class="comparison-card expert-only" id="calibrationComparison" aria-label="보정 전후 예상 RSSI 비교" hidden><h3>보정 전·후 비교 (2.4 GHz)</h3><div id="calibrationComparisonRows" class="profile-metrics"></div><p class="comparison-note">동일 도면·공유기 위치에서 이전 Wiplan 모델(n=2.2, 콘크리트 12dB/회)과 중간 모델(n=2.0011, 콘크리트 6.8491dB/회)의 예상값을 비교합니다. 실측 MAE 개선량이 아닙니다.</p></section><p id="offlineModeInfo" class="footnote expert-only">2.4 GHz는 CAMPUSRSSI 기반 신호 원활 · 중간 · 혼잡 보정을 동시에 계산해 공통 조건을 만족하는 Robust 위치를 추천합니다. LAN 포트·랜선 길이 및 천장·벽 높이 제한은 적용하지 않습니다.</p><p id="calibrationHint" class="footnote expert-only">2.4 GHz 히트맵은 중간(n=2.00, 콘크리트 6.85 dB/회) 기준입니다. 추천 위치는 신호 원활/중간/혼잡 세 모델의 worst-case를 최적화합니다. 2개 이상 콘크리트 교차는 외삽입니다.</p><div class="recommendation" id="recommendation" hidden><div class="recommend-heading"><strong>✦ 추천 공유기 위치</strong></div><div id="recommendBody"></div><div class="comparison-card" id="topThreeCandidates" hidden><h3>Robust 추천 Top 3</h3><div id="topThreeRows"></div><section class="stability-tools"><label for="stabilityToggle"><input type="checkbox" id="stabilityToggle" checked>지도에 추천 안정 후보 분포 표시</label><p id="stabilitySummary">최적화 후 근접 후보 수를 표시합니다.</p></section><div id="candidateCompare" class="compare-detail" aria-live="polite"></div><p class="comparison-note">조건을 충족한 공유기 후보이며, 서로 0.5m 이상 떨어진 위치를 우선 표시합니다.</p></div><button type="button" class="primary" id="useBestBtn">추천 위치 적용</button></div><details id="infoGlossary" class="expert-only"><summary>전문 용어 자세히 보기</summary><div id="glossaryContent"></div></details><p class="footnote">RSSI는 근사 예측치입니다. 2.4 GHz Robust 보정은 CAMPUSRSSI 연구결과를 사용하며 실제 통신 속도·CSI·모든 건물의 절대 RSSI를 보장하지 않습니다.</p></aside></div>
 </section></main><footer class="xp-statusbar" aria-label="프로그램 상태 표시줄"><span id="xpStatusState">준비 · 도면 편집</span><span id="xpStatusDimensions">도면 크기 확인 중</span><span id="xpStatusPins">신호 핀 0개</span><span id="xpStatusBand">2.4 GHz</span><span id="xpStatusModel">CAMPUSRSSI · 중간</span></footer>
@@ -1395,31 +1402,46 @@ function placementDirection(from,to){
  return {text:arrow+' '+clock+'시 방향 · '+fmt(distance,2)+'m 이동',distance,clock,arrow};
 }
 function cardinalWallDistancesAt(point){
+ // Trace a ray in each X/Z direction. A wall lying ALONG the ray is not a
+ // wall encountered in that direction (the old collinear case made 4 x 0 m).
  const dirs=[['왼쪽',-1,0,point.x],['오른쪽',1,0,L.width-point.x],
              ['위쪽',0,-1,point.z],['아래쪽',0,1,L.depth-point.z]];
  const walls=window.WifiEngine.effectiveWalls(L);
- return dirs.map(([name,dx,dz,boundary])=>{
-  let closest=Infinity;
+ const readings=dirs.map(([name,dx,dz,boundary])=>{
+  const hits=[];
   for(const wall of walls){
    const sx=wall.x2-wall.x1,sz=wall.z2-wall.z1,den=dx*sz-dz*sx;
+   if(Math.abs(den)<1e-10)continue; // Parallel/collinear, not a transverse crossing
    const ex=wall.x1-point.x,ez=wall.z1-point.z;
-   if(Math.abs(den)<1e-10){
-    // Parallel wall segments: if our position lies *on* the wall, this is contact.
-    const cross=ex*dz-ez*dx;
-    if(Math.abs(cross)>.00001)continue;
-    const a=ex*dx+ez*dz,c=(wall.x2-point.x)*dx+(wall.z2-point.z)*dz;
-    if(Math.max(a,c)>=-1e-8)closest=Math.min(closest,Math.max(0,Math.min(a,c)));
-    continue;
-   }
    const distance=(ex*sz-ez*sx)/den,along=(ex*dz-ez*dx)/den;
-   if(distance>=-1e-8&&along>=-1e-8&&along<=1+1e-8)closest=Math.min(closest,Math.max(0,distance));
+   if(distance>=-1e-8&&distance<=boundary+1e-8&&along>=-1e-8&&along<=1+1e-8)
+    hits.push({distance:Math.max(0,distance),id:wall.id});
   }
-  // Wall-mounted APs are intentionally offset 4 cm to avoid numerical
-  // self-intersection. A 6 cm tolerance makes the display say 0 m (attached),
-  // without changing the physical RSSI/door-crossing geometry.
-  const contact=Number.isFinite(closest)&&closest<=.06;
-  return {name,wall:Number.isFinite(closest),contact,distance:contact?0:closest,
-          boundary:Math.max(0,boundary)};
+  hits.sort((a,b)=>a.distance-b.distance);
+  return {name,boundary:Math.max(0,boundary),hits};
+ });
+ // On an exact corner, the SAME wall intersects two opposite rays at t=0.
+ // The router is on one side of that wall, not trapped on both sides.
+ // Resolve that degenerate case using its mounted face, then floor bounds.
+ for(const [negative,positive,axis] of [[0,1,'X'],[2,3,'Z']]){
+  const a=readings[negative],b=readings[positive];
+  if(!a.hits.length||!b.hits.length)continue;
+  const first=a.hits[0],second=b.hits[0];
+  if(first.distance>.06||second.distance>.06||first.id!==second.id)continue;
+  let normal=Number(point['mountNormal'+axis]);
+  if(!Number.isFinite(normal)||Math.abs(normal)<.1){
+   // Without a mounted face, assume the open interior lies toward the
+   // farther floor boundary; the near exterior side retains wall contact.
+   normal=a.boundary>=b.boundary?-1:1;
+  }
+  const nonContact=normal>0?b:a;
+  const wallId=first.id;
+  nonContact.hits=nonContact.hits.filter(hit=>hit.id!==wallId);
+ }
+ return readings.map(({name,boundary,hits})=>{
+  const hit=hits[0]||null,contact=!!hit&&hit.distance<=.06;
+  return {name,wall:!!hit,contact,distance:contact?0:(hit?hit.distance:Infinity),
+          boundary};
  });
 }
 function renderPlacementGuide(){
@@ -1452,18 +1474,35 @@ function drawPlacementArrow(ctx,sx,sy,target,w,h){
   ctx.strokeStyle='#fff';ctx.lineWidth=7;ctx.stroke();
   ctx.strokeStyle='#d62f26';ctx.lineWidth=3.8;ctx.stroke();
  }
- // A square destination pin remains readable beside straight walls/corners.
+ // Single square marker and a single label. The old separate BEST label
+ // collided with "#1 설치" and nearby signal-pin text.
  ctx.fillStyle='#fff';ctx.fillRect(bx-10,by-10,20,20);
  ctx.fillStyle='#d92d23';ctx.fillRect(bx-7,by-7,14,14);
  ctx.strokeStyle='#6c1c16';ctx.lineWidth=1.4;ctx.strokeRect(bx-7,by-7,14,14);
  const label='#'+(target.rank||1)+' 설치';
- ctx.font='bold 12px Tahoma, Malgun Gothic, sans-serif';
- const textWidth=ctx.measureText(label).width,pad=7;
- const lx=clamp(bx+14,5,Math.max(5,w-textWidth-2*pad-5));
- const ly=clamp(by-24,3,Math.max(3,h-26));
- ctx.fillStyle='#fffdeb';ctx.fillRect(lx,ly,textWidth+2*pad,23);
- ctx.strokeStyle='#b52b22';ctx.lineWidth=1;ctx.strokeRect(lx+.5,ly+.5,textWidth+2*pad-1,22);
- ctx.fillStyle='#8e221b';ctx.fillText(label,lx+pad,ly+16);
+ ctx.font='bold 12px Tahoma, Malgun Gothic, sans-serif';ctx.textBaseline='top';
+ const width=ctx.measureText(label).width+14,height=24;
+ const xMax=Math.max(4,w-width-4),yMax=Math.max(4,h-height-4);
+ const raw=[[bx+17,by-31],[bx-width-17,by-31],[bx+17,by+13],[bx-width-17,by+13]];
+ const avoid=[{x:bx,y:by,r:15},
+   {x:L.router.x*sx,y:L.router.z*sy,r:15},
+   {x:probe.x*sx,y:probe.z*sy,r:12},
+   ...(L.requiredPins||[]).map(p=>({x:p.x*sx,y:p.z*sy,r:24}))];
+ const options=raw.map(([rx,ry],i)=>{
+  const x=clamp(rx,4,xMax),y=clamp(ry,4,yMax);
+  let penalty=Math.abs(rx-x)+Math.abs(ry-y);
+  for(const p of avoid){
+   const nearX=Math.max(x,Math.min(p.x,x+width)),nearY=Math.max(y,Math.min(p.y,y+height));
+   const gap=Math.hypot(nearX-p.x,nearY-p.y);
+   if(gap<p.r)penalty+=1000+(p.r-gap)*20;
+  }
+  return {x,y,penalty,i};
+ });
+ options.sort((a,b)=>a.penalty-b.penalty||a.i-b.i);
+ const {x,y}=options[0];
+ ctx.fillStyle='#fffdeb';ctx.fillRect(x,y,width,height);
+ ctx.strokeStyle='#b52b22';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,width-1,height-1);
+ ctx.fillStyle='#8e221b';ctx.fillText(label,x+7,y+5);
  ctx.restore();
 }
 function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h);background(hCtx,w,h,false);
@@ -1486,9 +1525,11 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  for(const pin of (L.requiredPins||[]))drawRequiredPin(hCtx,pin,sx,sy,robustRequiredMinimum(pin,L.router)+1e-8>=signalMinScore(pin));
  renderRequiredStatus();
  if(best){
+  // Draw the 1st-choice ring UNDER the selected square and label.
+  hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.restore();
   const selected=selectedPlacement();
-  if(selected){drawPlacementArrow(hCtx,sx,sy,selected,w,h);}
-  hCtx.save();hCtx.strokeStyle='#fffffe';hCtx.lineWidth=4;hCtx.beginPath();hCtx.arc(best.best.x*sx,best.best.z*sy,13,0,Math.PI*2);hCtx.stroke();hCtx.strokeStyle='#8e32d7';hCtx.lineWidth=2.5;hCtx.stroke();hCtx.font='bold 10px Malgun Gothic,sans-serif';hCtx.fillStyle='#6310c8';hCtx.fillText('BEST',best.best.x*sx+16,best.best.z*sy-11);hCtx.restore();}
+  if(selected)drawPlacementArrow(hCtx,sx,sy,selected,w,h);
+ }
  hCtx.beginPath();hCtx.arc(probe.x*sx,probe.z*sy,6,0,2*Math.PI);hCtx.fillStyle='#fff';hCtx.fill();hCtx.lineWidth=2;hCtx.strokeStyle='#263347';hCtx.stroke();
  $('heatmapBand').textContent=fmt(L.router.frequency, L.router.frequency===5?0:1)+' GHz';
 }
@@ -1736,7 +1777,8 @@ function selectedDoor(){
 }
 function renderDoorComparison(){
  const panel=$('doorComparison');panel.replaceChildren();
- if(!(L.doors||[]).length)return;
+ if(!(L.doors||[]).length){panel.hidden=true;return;}
+ panel.hidden=false;
  const open={...L,doors:L.doors.map(d=>({...d,state:'open'}))};
  const closed={...L,doors:L.doors.map(d=>({...d,state:'closed'}))};
  const a=window.WifiEngine.value(open,probe.x,probe.z),b=window.WifiEngine.value(closed,probe.x,probe.z);
@@ -1744,7 +1786,7 @@ function renderDoorComparison(){
  const head=document.createElement('strong');head.textContent='선택 지점에서 문 열림·닫힘 비교';
  const text=document.createElement('p');text.textContent='모두 열림: '+fmt(qualityPoint(a),1)+'점 ('+fmt(a,1)+' dBm) · 모두 닫힘: '+fmt(qualityPoint(b),1)+'점 ('+fmt(b,1)+' dBm)';
  const diff=document.createElement('p');diff.textContent='문 상태 차이 '+fmt(a-b,1)+' dB · 현재 경로의 닫힌 문 '+now.doors.length+'개';
- const note=document.createElement('small');note.textContent='동일 위치·주파수에서 문 상태만 변경한 예측값입니다. 다중경로·회절은 포함되지 않습니다.';
+ const note=document.createElement('small');note.textContent='아래 수치는 선택한 수신 지점까지의 예상값이며, 모든 방문을 동시에 열거나 닫았을 때를 비교합니다. 0dB 차이는 이 직선 경로가 나무문을 지나지 않을 수 있다는 뜻입니다. 문 감쇠는 시험용 가정값이며 다중경로·회절·실측값은 포함되지 않습니다.';
  panel.append(head,text,diff,note);
 }
 function renderDoorPanels(){
@@ -1758,7 +1800,9 @@ function renderDoorPanels(){
   $('doorStateBtn').textContent=d.state==='open'?'문 닫기':'문 열기';
  }
  const list=$('doorAnalysisList');list.replaceChildren();
- $('doorAnalysisPanel').hidden=!(L.doors||[]).length;
+ $('doorAnalysisPanel').hidden=false;
+ $('doorAnalysisEmpty').hidden=!!(L.doors||[]).length;
+ $('doorComparison').hidden=!(L.doors||[]).length||!result;
  for(const [i,door] of (L.doors||[]).entries()){
   const row=document.createElement('div');row.className='door-analysis-row';
   const label=document.createElement('span');
