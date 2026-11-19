@@ -1573,6 +1573,7 @@ $('applyBottomBtn').onclick=enterAnalysis;
 
 
 const HEIGHT_OPTIONS=[[0,'바닥'],[.3,'바닥에 앉은 높이'],[1,'책상 높이'],[1.2,'가슴 높이'],[1.6,'사람 키'],[2.2,'천장']];
+const RECEIVER_HEIGHT_OPTIONS=[[0,'바닥'],[.3,'낮은 위치'],[.7,'앉아서 사용'],[1,'책상에서 사용'],[1.2,'가슴 높이'],[1.6,'서서 사용']];
 function ensureWallMount(){
  if(L.router.mountMode!=='wall')return true;
  const point=window.WifiEngine.mountCandidate(L,L.router.x,L.router.z);
@@ -1590,16 +1591,26 @@ function syncWizardFields(){
  const wall=r.mountMode==='wall';
  for(const radio of document.querySelectorAll('[name="wizardMount"]'))radio.checked=radio.value===(wall?'wall':'furniture');
  $('wallMountControls').hidden=!wall;
- $('mountFace').value=r.mountFace||'right';
+ const mount=wall?window.WifiEngine.mountCandidate(L,r.x,r.z):null;
+ $('mountAutoSummary').textContent=!wall?'자유 배치':
+   mount?'가장 가까운 벽 · '+({left:'왼쪽',right:'오른쪽',up:'위쪽',down:'아래쪽'}[mount.face]||'자동')+' 방향 자동 적용':'부착 가능한 벽 없음';
  $('manualHeightInput').value=String(r.y);
  const preset=HEIGHT_OPTIONS.find(([v])=>Math.abs(v-r.y)<1e-8);
  $('heightSummary').textContent=fmt(r.y,2)+'m'+(preset?' · '+preset[1]:' · 직접 입력');
  document.querySelectorAll('[data-height]').forEach(button=>button.setAttribute('aria-pressed',String(Math.abs(Number(button.dataset.height)-r.y)<1e-8)));
+ const receiverPreset=RECEIVER_HEIGHT_OPTIONS.find(([v])=>Math.abs(v-L.receiverY)<1e-8);
+ $('manualReceiverHeightInput').value=String(L.receiverY);
+ $('receiverHeightSummary').textContent=fmt(L.receiverY,2)+'m'+(receiverPreset?' · '+receiverPreset[1]:' · 직접 입력');
+ document.querySelectorAll('[data-receiver-height]').forEach(button=>button.setAttribute('aria-pressed',String(Math.abs(Number(button.dataset.receiverHeight)-L.receiverY)<1e-8)));
  const advanced=document.querySelector('[name="wizardRouterMode"]:checked')?.value==='advanced';
  $('routerAdvancedInfo').hidden=!advanced;$('routerSimpleInfo').hidden=advanced;
  const custom=document.querySelector('[name="wizardHeightMode"]:checked')?.value==='advanced';
  $('heightManual').hidden=!custom;$('heightPresets').hidden=custom;
- $('mountStatus').textContent=wall?(L.walls.length?'벽 부착 선택됨 · 방향: '+({left:'왼쪽',right:'오른쪽',up:'위쪽',down:'아래쪽'}[r.mountFace]||'오른쪽')+' · 부착 위치를 계산합니다.':'벽이 없습니다. ① 도면에서 벽을 그려야 진행할 수 있습니다.'):'';
+ const receiverCustom=document.querySelector('[name="receiverHeightMode"]:checked')?.value==='advanced';
+ $('receiverHeightManual').hidden=!receiverCustom;
+ $('receiverHeightPresets').hidden=receiverCustom;
+ $('mountStatus').textContent=wall?
+   (mount?'부착면을 프로그램이 자동으로 결정했습니다. 정확한 안테나 방향은 제품별 실측이 필요합니다.':'도면에 벽이 없습니다. ① 도면에서 벽을 먼저 그려 주세요.'):'';
 }
 $('routerTab').onclick=()=>switchView('router');
 $('heightTab').onclick=()=>switchView('height');
@@ -1614,6 +1625,7 @@ for(const radio of document.querySelectorAll('[name="wizardRouterMode"]'))radio.
  syncWizardFields();
 };
 for(const radio of document.querySelectorAll('[name="wizardHeightMode"]'))radio.onchange=()=>syncWizardFields();
+for(const radio of document.querySelectorAll('[name="receiverHeightMode"]'))radio.onchange=()=>syncWizardFields();
 for(const key of ['wizardFrequency','wizardPower','wizardGain','wizardExponent']){
  $(key).onchange=()=>{
   const mapping={wizardFrequency:['frequency',2.4,5],wizardPower:['txPowerDbm',0,35],wizardGain:['antennaGainDbi',-10,20]};
@@ -1635,15 +1647,24 @@ for(const radio of document.querySelectorAll('[name="wizardMount"]'))radio.oncha
  if(radio.value==='wall'){L.router.mountFace??='right';ensureWallMount();}
  changed('공유기 설치 방식 변경');syncWizardFields();
 };
-$('mountFace').onchange=()=>{pushUndo();L.router.mountFace=$('mountFace').value;
- if(L.router.mountMode==='wall')ensureWallMount();
- changed('벽 부착 방향 변경');syncWizardFields();};
-$('snapMountBtn').onclick=()=>{if(!ensureWallMount()){toast('먼저 도면에 콘크리트 벽을 그려주세요.');return;}changed('공유기를 가장 가까운 벽에 부착했습니다.');syncWizardFields();};
+$('snapMountBtn').onclick=()=>{
+ if(L.router.mountMode!=='wall'){toast('먼저 벽 부착을 선택하세요.');return;}
+ if(!window.WifiEngine.mountCandidate(L,L.router.x,L.router.z)){toast('먼저 도면에 벽을 그려 주세요.');return;}
+ pushUndo();ensureWallMount();changed('공유기 위치와 벽 방향을 자동 적용했습니다.');syncWizardFields();
+};
 for(const button of document.querySelectorAll('[data-height]'))button.onclick=()=>{
  const n=Number(button.dataset.height);pushUndo();L.router.y=n;changed('공유기 높이 변경');syncWizardFields();};
 $('manualHeightInput').onchange=()=>{const n=Number($('manualHeightInput').value);
  if(!Number.isFinite(n)||n<0){toast('높이는 0m 이상이어야 합니다.');syncWizardFields();return;}
  pushUndo();L.router.y=n;changed('공유기 높이 변경');syncWizardFields();};
+for(const button of document.querySelectorAll('[data-receiver-height]'))button.onclick=()=>{
+ const n=Number(button.dataset.receiverHeight);pushUndo();L.receiverY=n;changed('스마트폰 높이 변경');syncWizardFields();
+};
+$('manualReceiverHeightInput').onchange=()=>{
+ const raw=$('manualReceiverHeightInput').value,n=Number(raw);
+ if(!raw.trim()||!Number.isFinite(n)||n<0){toast('스마트폰 높이는 0m 이상이어야 합니다.');syncWizardFields();return;}
+ pushUndo();L.receiverY=n;changed('스마트폰 높이 직접 입력');syncWizardFields();
+};
 let editorHeight=520;
 function setEditorHeight(value){
  editorHeight=clamp(Math.round(value),280,1100);
@@ -1685,7 +1706,7 @@ const INFO_TERMS={
  '1순위 대비 J N점':'J는 후보 위치의 평균(중요도 반영) 품질점수에서 취약 공간 비율의 0.12배를 뺀 Wiplan 내부 목적함수입니다: J=평균품질점수−0.12×취약공간비율(%). 후보별로 세 모델 중 최소 J를 구하고, 1순위 후보의 최악 J에서 해당 후보의 최악 J를 뺀 값을 표시합니다. 예: 1순위 J=71, 2순위 J=68.5이면 2.5점 낮습니다.',
  'MAE 개선량':'MAE는 측정 RSSI와 예측 RSSI의 차이 절댓값을 평균한 오차입니다. 개선량 = 이전 모델 MAE − 개선 모델 MAE로 계산합니다. 현재 프로그램의 보정 전후 비교는 모델 예측값의 차이이며, 해당 집에서 실제로 MAE가 줄었다는 증거가 아닙니다.',
  '콘크리트 벽 감쇠':'공유기와 수신 지점 사이 직선이 콘크리트 벽과 교차할 때 RSSI에서 빼는 dB 손실입니다. 동일 교차 위치 중복은 한 번만 차감합니다. 다중 벽 교차 손실은 측정범위 밖 외삽일 수 있습니다.',
- '벽 부착 방향':'공유기를 벽 선분의 지정한 쪽으로 4cm 떨어진 위치에 제약합니다. 방향별 추가 손실은 앞쪽 0dB~반대편 8dB의 시험용 패턴입니다. 실제 제품 안테나 방사 패턴 측정값이 아니므로 정확한 예측으로 사용하면 안 됩니다.',
+ '벽 부착 방향':'공유기를 가장 가까운 벽의 양쪽 중 도면 내부 공간, 기존 공유기 위치, 신호 핀 분포를 참고해 자동으로 선택합니다. 벽에서 약 4cm 떨어진 위치에 배치하며 앞 0dB~반대편 8dB의 시험용 방향 손실을 적용합니다. 실제 기종별 안테나 패턴을 측정한 값이 아닙니다.',
  'CAMPUSRSSI':'실내 공간에서 측정한 Wi-Fi RSSI 데이터를 이용해 경로손실지수와 벽 감쇠를 추정한 연구 근거입니다. 특정 가정에서 자동 측정한 결과가 아니며 AP별 기준 세기를 실제 가정 공유기에 그대로 적용하지 않습니다.',
  '가중치':'중요도 구역에 더 많은 평가 비중을 주는 숫자입니다. 신호 자체를 증폭하지 않고, 공유기 위치를 선택하는 평가에만 반영됩니다.'
 };
