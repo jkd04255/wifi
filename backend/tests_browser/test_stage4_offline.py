@@ -232,10 +232,11 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         panel=self.page.locator("#doorAnalysisPanel")
         self.assertTrue(panel.is_visible())
+        self.assertFalse(panel.get_attribute("open"))
+        self.page.locator("#doorAnalysisPanel summary").click()
         self.assertIn("2.4GHz 약 4dB",panel.inner_text())
         self.assertIn("5GHz 약 6dB",panel.inner_text())
         self.assertIn("나무문 도구",panel.inner_text())
-        self.page.locator("#doorAnalysisPanel summary").click()
         self.assertTrue(self.page.locator("#doorAnalysisEmpty").is_visible())
         self.assertTrue(self.page.locator("#doorComparison").is_hidden())
         html=FILE_URL
