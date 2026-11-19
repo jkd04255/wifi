@@ -1350,6 +1350,7 @@ function renderProbe(){if(!result)return;
  ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(L.router.mountMode==='wall'?[['벽 부착 방향 시험 감쇠','−'+fmt(d.mountDirectionLossDb)+' dB · 실측 안테나 패턴 아님']]:[]),...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
  renderProfileComparison();
+ if(!$('positionJudgment').hidden)renderPositionJudgment();
 }
 
 function renderPositionJudgment(){
