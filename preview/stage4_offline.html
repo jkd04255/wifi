@@ -979,7 +979,8 @@ function syncLayout(){
  $('exponentInput').value=calibrated24?'2.0011':(L.modelOverrides?.pathLossExponent??2.2);
  $('exponentInput').disabled=calibrated24;
  $('exponentInput').title=calibrated24?'2.4 GHz CAMPUSRSSI Robust 모드에서는 GENERAL 값 2.0011을 중앙 히트맵에 사용합니다.':'5 GHz는 실측 보정이 없어 기존 수동 감쇠 지수를 사용합니다.';
- for(const canvas of [editor,heat])canvas.parentElement.style.aspectRatio=L.width+'/'+L.depth;
+ $('editorFrame').style.aspectRatio='auto';
+ heat.parentElement.style.aspectRatio=L.width+'/'+L.depth;
  syncXPStatus();
 }
 // Geometric eraser: remove intersections with a swept circle (capsule), retaining
@@ -1378,21 +1379,111 @@ if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>{renderEd
 syncLayout();renderElements();renderEditor();renderHeat();
 // New sessions open with a completely empty, large drawing canvas.
 function switchView(view){
- const design=view==='design';document.body.dataset.view=view;
- $('editorScreen').hidden=!design;$('resultScreen').hidden=design;
- $('designTab').classList.toggle('active',design);$('analysisTab').classList.toggle('active',!design);
- $('designTab').setAttribute('aria-current',design?'page':'false');
- $('analysisTab').setAttribute('aria-current',design?'false':'page');
+ const views=['design','router','height','analysis'];
+ if(!views.includes(view))return;
+ document.body.dataset.view=view;
+ for(const [name,screenId,tabId] of [['design','editorScreen','designTab'],['router','wizardRouter','routerTab'],['height','wizardHeight','heightTab'],['analysis','resultScreen','analysisTab']]){
+  const active=view===name;
+  $(screenId).hidden=!active;$(tabId).classList.toggle('active',active);
+  $(tabId).setAttribute('aria-current',active?'page':'false');
+ }
+ if(view==='router'||view==='height')syncWizardFields();
  syncXPStatus();
- requestAnimationFrame(()=>{design?renderEditor():renderHeat();});
+ requestAnimationFrame(()=>{if(view==='design')renderEditor();if(view==='analysis')renderHeat();});
 }
 async function enterAnalysis(){switchView('analysis');await simulate(false);}
 $('designTab').onclick=()=>switchView('design');
 $('backToEditorBtn').onclick=()=>switchView('design');
 $('analysisTab').onclick=enterAnalysis;
-$('applyFromEditorBtn').onclick=enterAnalysis;
+$('applyFromEditorBtn').onclick=()=>switchView('router');
 $('applyBottomBtn').onclick=enterAnalysis;
 
+
+const HEIGHT_OPTIONS=[[0,'바닥'],[.3,'바닥에 앉은 높이'],[1,'책상 높이'],[1.2,'가슴 높이'],[1.6,'사람 키'],[2.2,'천장']];
+function syncWizardFields(){
+ const r=L.router;
+ $('wizardFrequency').value=String(r.frequency);$('wizardPower').value=String(r.txPowerDbm??20);
+ $('wizardGain').value=String(r.antennaGainDbi??0);
+ $('wizardExponent').value=String(Number(r.frequency)===2.4?2.0011:L.modelOverrides?.pathLossExponent??2.2);
+ $('wizardExponent').disabled=Number(r.frequency)===2.4;
+ const wall=r.mountMode==='wall';
+ for(const radio of document.querySelectorAll('[name="wizardMount"]'))radio.checked=radio.value===(wall?'wall':'furniture');
+ $('wallMountControls').hidden=!wall;
+ $('mountFace').value=r.mountFace||'right';
+ $('manualHeightInput').value=String(r.y);
+ const preset=HEIGHT_OPTIONS.find(([v])=>Math.abs(v-r.y)<1e-8);
+ $('heightSummary').textContent=fmt(r.y,2)+'m'+(preset?' · '+preset[1]:' · 직접 입력');
+ document.querySelectorAll('[data-height]').forEach(button=>button.setAttribute('aria-pressed',String(Math.abs(Number(button.dataset.height)-r.y)<1e-8)));
+ const advanced=document.querySelector('[name="wizardRouterMode"]:checked')?.value==='advanced';
+ $('routerAdvancedInfo').hidden=!advanced;$('routerSimpleInfo').hidden=advanced;
+ const custom=document.querySelector('[name="wizardHeightMode"]:checked')?.value==='advanced';
+ $('heightManual').hidden=!custom;$('heightPresets').hidden=custom;
+ $('mountStatus').textContent=wall?(L.walls.length?'벽 부착 선택됨 · 방향: '+({left:'왼쪽',right:'오른쪽',up:'위쪽',down:'아래쪽'}[r.mountFace]||'오른쪽')+' · 부착 위치를 계산합니다.':'벽이 없습니다. ① 도면에서 벽을 그려야 진행할 수 있습니다.'):'';
+}
+$('routerTab').onclick=()=>switchView('router');
+$('heightTab').onclick=()=>switchView('height');
+$('backWizardDesign').onclick=()=>switchView('design');
+$('backWizardRouter').onclick=()=>switchView('router');
+$('nextWizardHeight').onclick=()=>{if(L.router.mountMode==='wall'&&!ensureWallMount()){toast('먼저 벽을 그려야 합니다.');return;}switchView('height');};
+$('nextWizardAnalysis').onclick=async()=>{if(L.router.mountMode==='wall'&&!ensureWallMount()){switchView('router');return;}await enterAnalysis();};
+for(const radio of document.querySelectorAll('[name="wizardRouterMode"]'))radio.onchange=()=>{
+ if(radio.checked&&radio.value==='simple'){
+  pushUndo();L.router.frequency=2.4;L.router.txPowerDbm=20;L.router.antennaGainDbi=0;
+  changed('일반 공유기 설정 적용 · 2.4GHz 기본 보정');}
+ syncWizardFields();
+};
+for(const radio of document.querySelectorAll('[name="wizardHeightMode"]'))radio.onchange=()=>syncWizardFields();
+for(const key of ['wizardFrequency','wizardPower','wizardGain','wizardExponent']){
+ $(key).onchange=()=>{
+  const mapping={wizardFrequency:['frequency',2.4,5],wizardPower:['txPowerDbm',0,35],wizardGain:['antennaGainDbi',-10,20]};
+  if(key==='wizardExponent'){
+   const n=Number($('wizardExponent').value);
+   if(Number(L.router.frequency)===2.4||!Number.isFinite(n)||n<1||n>6){toast('5GHz에서 1~6 사이의 값을 입력하세요.');syncWizardFields();return;}
+   pushUndo();L.modelOverrides.pathLossExponent=n;changed('5GHz 거리 감쇠 지수 변경');
+  }else{
+   const [field,lo,hi]=mapping[key],n=Number($(key).value);
+   if(!Number.isFinite(n)||n<lo||n>hi||(field==='frequency'&&![2.4,5].includes(n))){toast('설정값 범위를 확인하세요.');syncWizardFields();return;}
+   pushUndo();L.router[field]=n;changed('공유기 고급 설정 변경');
+  }
+  syncWizardFields();
+ };
+}
+for(const radio of document.querySelectorAll('[name="wizardMount"]'))radio.onchange=()=>{
+ if(!radio.checked)return;
+ pushUndo();L.router.mountMode=radio.value;
+ if(radio.value==='wall')ensureWallMount();
+ changed('공유기 설치 방식 변경');syncWizardFields();
+};
+$('mountFace').onchange=()=>{pushUndo();L.router.mountFace=$('mountFace').value;
+ if(L.router.mountMode==='wall')ensureWallMount();
+ changed('벽 부착 방향 변경');syncWizardFields();};
+$('snapMountBtn').onclick=()=>{if(!ensureWallMount()){toast('먼저 도면에 콘크리트 벽을 그려주세요.');return;}changed('공유기를 가장 가까운 벽에 부착했습니다.');syncWizardFields();};
+for(const button of document.querySelectorAll('[data-height]'))button.onclick=()=>{
+ const n=Number(button.dataset.height);pushUndo();L.router.y=n;changed('공유기 높이 변경');syncWizardFields();};
+$('manualHeightInput').onchange=()=>{const n=Number($('manualHeightInput').value);
+ if(!Number.isFinite(n)||n<0){toast('높이는 0m 이상이어야 합니다.');syncWizardFields();return;}
+ pushUndo();L.router.y=n;changed('공유기 높이 변경');syncWizardFields();};
+let editorHeight=520;
+function setEditorHeight(value){
+ editorHeight=clamp(Math.round(value),280,1100);
+ $('editorFrame').style.setProperty('--editor-height',editorHeight+'px');
+ $('editorSizeLabel').textContent=editorHeight+'px';
+ document.querySelectorAll('[data-resize-edge]').forEach(el=>el.setAttribute('aria-valuenow',String(editorHeight)));
+ requestAnimationFrame(renderEditor);
+}
+$('sizeUpBtn').onclick=e=>{e.stopPropagation();setEditorHeight(editorHeight+70);};
+$('sizeDownBtn').onclick=e=>{e.stopPropagation();setEditorHeight(editorHeight-70);};
+for(const strip of document.querySelectorAll('[data-resize-edge]')){
+ strip.addEventListener('pointerdown',e=>{
+  if(e.target.closest('button'))return;
+  e.preventDefault();const origin=e.clientY,from=editorHeight,top=strip.dataset.resizeEdge==='top';
+  try{strip.setPointerCapture(e.pointerId);}catch(err){}
+  const move=event=>setEditorHeight(from+(event.clientY-origin)*(top?-1:1));
+  const finish=()=>{strip.removeEventListener('pointermove',move);strip.removeEventListener('pointerup',finish);strip.removeEventListener('pointercancel',finish);};
+  strip.addEventListener('pointermove',move);strip.addEventListener('pointerup',finish);strip.addEventListener('pointercancel',finish);
+ });
+ strip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();setEditorHeight(editorHeight+(e.key==='ArrowUp'?40:-40));}});
+}
 // Isolated offline mode. One sample per pin; no LAN/cable/ceiling constraints.
 async function optimizeOfflinePins(){
  const pins=L.requiredPins||[],step=Math.max(.65,Math.max(L.width,L.depth)/12),search=Math.max(.5,Math.max(L.width,L.depth)/14),sample=[];
