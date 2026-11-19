@@ -1564,6 +1564,7 @@ let editorHeight=520;
 function setEditorHeight(value){
  editorHeight=clamp(Math.round(value),280,1100);
  $('editorFrame').style.setProperty('--editor-height',editorHeight+'px');
+ $('editorFrame').style.height=editorHeight+'px';
  $('editorSizeLabel').textContent=editorHeight+'px';
  document.querySelectorAll('[data-resize-edge]').forEach(el=>el.setAttribute('aria-valuenow',String(editorHeight)));
  requestAnimationFrame(renderEditor);
@@ -1575,9 +1576,9 @@ for(const strip of document.querySelectorAll('[data-resize-edge]')){
   if(e.target.closest('button'))return;
   e.preventDefault();const origin=e.clientY,from=editorHeight,top=strip.dataset.resizeEdge==='top';
   try{strip.setPointerCapture(e.pointerId);}catch(err){}
-  const move=event=>setEditorHeight(from+(event.clientY-origin)*(top?-1:1));
-  const finish=()=>{strip.removeEventListener('pointermove',move);strip.removeEventListener('pointerup',finish);strip.removeEventListener('pointercancel',finish);};
-  strip.addEventListener('pointermove',move);strip.addEventListener('pointerup',finish);strip.addEventListener('pointercancel',finish);
+  const move=event=>{if(event.pointerId===e.pointerId)setEditorHeight(from+(event.clientY-origin)*(top?-1:1));};
+  const finish=()=>{window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',finish,true);window.removeEventListener('pointercancel',finish,true);};
+  window.addEventListener('pointermove',move,true);window.addEventListener('pointerup',finish,true);window.addEventListener('pointercancel',finish,true);
  });
  strip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();setEditorHeight(editorHeight+(e.key==='ArrowUp'?40:-40));}});
 }
