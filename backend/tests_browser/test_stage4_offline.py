@@ -96,6 +96,77 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertLess(stats[0]["y"]+stats[0]["height"]/2,stats[2]["y"])
         self.assertLess(abs(stats[0]["y"]-stats[1]["y"]),5)
 
+    def test_exact_wall_corner_reports_two_open_directions(self):
+        # At an exact corner the old collinear/zero-length ray logic reported
+        # all four directions as 0m. Only north and east should touch a wall.
+        layout=self.export()
+        layout["width"]=10;layout["depth"]=8
+        layout["walls"]=[
+            {"id":"north","x1":2,"z1":2,"x2":8,"z2":2,"material":"concrete"},
+            {"id":"east","x1":8,"z1":2,"x2":8,"z2":7,"material":"concrete"}
+        ]
+        layout["router"]["x"]=8;layout["router"]["z"]=2
+        layout["router"]["mountMode"]="furniture"
+        self.page.locator("#importFile").set_input_files({
+            "name":"exact-corner.json","mimeType":"application/json",
+            "buffer":json.dumps(layout).encode()
+        })
+        self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 2')")
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentBtn").click()
+        points=self.page.locator("#positionJudgment [data-direction]")
+        states={p.get_attribute("data-direction"):
+                (p.get_attribute("data-contact"),p.inner_text()) for p in points.all()}
+        for direction in ["위쪽","오른쪽"]:
+            self.assertEqual(states[direction][0],"true",states)
+            self.assertIn("0.00m",states[direction][1])
+        for direction in ["아래쪽","왼쪽"]:
+            self.assertEqual(states[direction][0],"false",states)
+            self.assertNotIn("0.00m",states[direction][1])
+        self.assertEqual(sum(v[0]=="true" for v in states.values()),2)
+
+    def test_parallel_wall_does_not_block_both_along_wall_directions(self):
+        layout=self.export()
+        layout["width"]=10;layout["depth"]=8
+        layout["walls"]=[
+            {"id":"long-wall","x1":8,"z1":1,"x2":8,"z2":7,"material":"concrete"}
+        ]
+        layout["router"]["x"]=8;layout["router"]["z"]=4
+        layout["router"]["mountMode"]="furniture"
+        self.page.locator("#importFile").set_input_files({
+            "name":"collinear-wall.json","mimeType":"application/json",
+            "buffer":json.dumps(layout).encode()
+        })
+        self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 1')")
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentBtn").click()
+        readings={p.get_attribute("data-direction"):(p.get_attribute("data-contact"),p.inner_text())
+                  for p in self.page.locator("#positionJudgment [data-direction]").all()}
+        self.assertEqual(readings["오른쪽"][0],"true",readings)
+        self.assertIn("0.00m",readings["오른쪽"][1])
+        for direction in ["왼쪽","위쪽","아래쪽"]:
+            self.assertEqual(readings[direction][0],"false",readings)
+            self.assertNotIn("0.00m",readings[direction][1])
+
+    def test_no_wood_door_shows_explanation_and_empty_state(self):
+        layout=self.export()
+        layout["doors"]=[]
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        panel=self.page.locator("#doorAnalysisPanel")
+        self.assertTrue(panel.is_visible())
+        self.assertIn("2.4GHz 약 4dB",panel.inner_text())
+        self.assertIn("5GHz 약 6dB",panel.inner_text())
+        self.assertIn("나무문 도구",panel.inner_text())
+        self.assertTrue(self.page.locator("#doorAnalysisEmpty").is_visible())
+        self.assertTrue(self.page.locator("#doorComparison").is_hidden())
+        html=FILE_URL
+        source=(Path(__file__).resolve().parents[2] / "preview" / "stage4_offline.html").read_text(encoding="utf-8")
+        self.assertNotIn("fillText('BEST'",source)
+        self.assertIn("Single square marker and a single label",source)
+
     def test_corner_attachment_both_directions_report_zero_metres(self):
         layout=self.export()
         layout["width"]=10;layout["depth"]=8
