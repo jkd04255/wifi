@@ -173,6 +173,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#sizeDownBtn").click()
         self.assertAlmostEqual(self.page.locator("#editorFrame").bounding_box()["height"],start,delta=3)
         handle=self.page.locator('[data-resize-edge="bottom"]')
+        handle.evaluate("(el)=>el.scrollIntoView({block:'center',behavior:'instant'})")
         box=handle.bounding_box()
         self.page.mouse.move(box["x"]+box["width"]/2,box["y"]+box["height"]/2)
         self.page.mouse.down()
