@@ -452,6 +452,56 @@ body.expert-on .beginner-only{display:none!important}
    const u=((w.x1-ax)*dz-(w.z1-az)*dx)/den;
    return t>1e-10&&t<1-1e-10&&u>1e-10&&u<1-1e-10?t:null;
  }
+
+ // Doors are geometric wall replacements, not a second obstacle drawn on top.
+ // Original wall lines are retained for reversible edits/JSON compatibility,
+ // while only the physically remaining segments participate in RF calculations.
+ const WOOD_DOOR_DB=Object.freeze({'2.4':4,'5':6});
+ const doorT=(wall,x,z)=>{
+   const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,len2=dx*dx+dz*dz;
+   return len2>1e-12?((x-wall.x1)*dx+(z-wall.z1)*dz)/len2:0;
+ };
+ const wallPoint=(wall,t)=>({x:wall.x1+(wall.x2-wall.x1)*t,z:wall.z1+(wall.z2-wall.z1)*t});
+ function doorInterval(wall,door){
+   const a=doorT(wall,door.x1,door.z1),b=doorT(wall,door.x2,door.z2);
+   return {a:Math.max(0,Math.min(a,b)),b:Math.min(1,Math.max(a,b))};
+ }
+ function effectiveWalls(L){
+   const segments=[];
+   for(const wall of (L.walls||[])){
+     const cuts=(L.doors||[]).filter(d=>d.wallId===wall.id).map(d=>doorInterval(wall,d))
+       .filter(v=>v.b-v.a>1e-8).sort((a,b)=>a.a-b.a);
+     let last=0;
+     const piece=(a,b)=>{
+       if(b-a<=1e-8)return;
+       const start=wallPoint(wall,a),end=wallPoint(wall,b);
+       segments.push({...wall,x1:start.x,z1:start.z,x2:end.x,z2:end.z});
+     };
+     for(const cut of cuts){if(cut.a>last)piece(last,cut.a);last=Math.max(last,cut.b);}
+     if(last<1)piece(last,1);
+   }
+   return segments;
+ }
+ function createDoor(L,wallId,centerT,widthM=.9,excludeId=null){
+   const wall=(L.walls||[]).find(w=>w.id===wallId);
+   if(!wall)throw Error('문을 설치할 콘크리트 벽을 찾을 수 없습니다.');
+   const length=Math.hypot(wall.x2-wall.x1,wall.z2-wall.z1);
+   if(!Number.isFinite(widthM)||widthM<.4||widthM>2||widthM>length-1e-7)
+     throw Error('문 폭은 0.4~2m이며, 설치할 벽보다 길 수 없습니다.');
+   const half=widthM/(2*length),t=Math.max(half,Math.min(1-half,centerT));
+   const left=t-half,right=t+half;
+   for(const other of L.doors||[]){
+     if(other.wallId!==wallId||other.id===excludeId)continue;
+     const range=doorInterval(wall,other);
+     if(Math.min(right,range.b)-Math.max(left,range.a)>1e-7)
+       throw Error('같은 벽의 기존 문과 겹치는 위치입니다.');
+   }
+   const a=wallPoint(wall,left),b=wallPoint(wall,right);
+   return {wallId,x1:+a.x.toFixed(7),z1:+a.z.toFixed(7),
+     x2:+b.x.toFixed(7),z2:+b.z.toFixed(7),widthM:+widthM.toFixed(3),centerT:+t.toFixed(7)};
+ }
+ function doorAttenuation(L){return WOOD_DOOR_DB[String(L.router.frequency)]??0;}
+
  function crosses(rx,rz,x,z,w){return wallFraction(rx,rz,x,z,w)!==null;}
  function wallHit(L,x,z,wall,receiverY){return wallFraction(L.router.x,L.router.z,x,z,wall)!==null;}
  // Experimental wall-side model: geometric wall attachment plus a simple
@@ -468,7 +518,7 @@ body.expert-on .beginner-only{display:none!important}
      samples.push({x:w*fractionX,z:depth*fractionZ});
    }
    let closest=null;
-   for(const wall of walls){
+   for(const wall of effectiveWalls(L)){
      const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,length=Math.hypot(dx,dz);
      if(length<.05)continue;
      const t=Math.max(0,Math.min(1,((x-wall.x1)*dx+(z-wall.z1)*dz)/(length*length)));
@@ -520,8 +570,8 @@ body.expert-on .beginner-only{display:none!important}
    const r=L.router,ry=receiverY??L.receiverY??1;
    const d=Math.max(.5,Math.hypot(x-r.x,z-r.z,ry-r.y));
    const base=p.p0-10*p.n*Math.log10(d);const mountLoss=mountDirectionLoss(r,x,z);
-   let total=base-mountLoss;const hits=[],concreteFractions=[];
-   for(const w of (L.walls||[])){
+   let total=base-mountLoss,concreteLossDb=0,doorLossDb=0;const hits=[],doorHits=[],concreteFractions=[];
+   for(const w of effectiveWalls(L)){
      if(w.x1===w.x2&&w.z1===w.z2)continue;
      const t=wallFraction(r.x,r.z,x,z,w);
      if(t!==null){
@@ -530,11 +580,25 @@ body.expert-on .beginner-only{display:none!important}
          concreteFractions.push(t);
        }
        const loss=p.wallLoss[w.material];if(loss===undefined)throw Error('알 수 없는 벽 재질: '+w.material);
-       total-=loss;if(details)hits.push({id:w.id,material:w.material,lossDb:loss});
+       total-=loss;concreteLossDb+=loss;
+       if(details)hits.push({id:w.id,material:w.material,lossDb:loss});
      }
    }
+   for(const door of L.doors||[]){
+     if(door.type!=='wood'||door.state==='open')continue;
+     const t=wallFraction(r.x,r.z,x,z,door);
+     if(t===null)continue;
+     // One intersection per door ID. The wall segments have already been cut.
+     if(doorHits.some(hit=>hit.id===door.id))continue;
+     const loss=doorAttenuation(L);
+     total-=loss;doorLossDb+=loss;
+     doorHits.push({id:door.id,material:'wood',lossDb:loss});
+   }
    if(!details)return total;
-   return {x,z,y:ry,distanceM:+d.toFixed(2),beforeWallsDbm:+base.toFixed(1),walls:hits,mountDirectionLossDb:+mountLoss.toFixed(1),wallLossDb:+(base-mountLoss-total).toFixed(1),rssiDbm:+total.toFixed(1)};
+   return {x,z,y:ry,distanceM:+d.toFixed(2),beforeWallsDbm:+base.toFixed(1),
+     walls:hits,doors:doorHits,mountDirectionLossDb:+mountLoss.toFixed(1),
+     wallLossDb:+concreteLossDb.toFixed(1),doorLossDb:+doorLossDb.toFixed(1),
+     totalObstacleLossDb:+(concreteLossDb+doorLossDb).toFixed(1),rssiDbm:+total.toFixed(1)};
  }
  function weight(L,x,z){L=normalizeLayout(L);let base=1;
    for(const a of L.zones||[]){
@@ -609,7 +673,7 @@ body.expert-on .beginner-only{display:none!important}
    const current=evaluate(L.router.x,L.router.z);
    return {best:{x:+best.x.toFixed(2),y:+L.router.y.toFixed(2),z:+best.z.toFixed(2)},bestStats:best.stats,currentStats:current.stats,improvementPoints:+(best.objective-current.objective).toFixed(1),criterion:'weighted RSSI quality index minus weak-area penalty (XZ plane, fixed Y)',candidates:cols*rcount+18,weightsUsed:weighted};
  }
- global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,mountCandidate,mountDirectionLoss,value,grid,optimize,weight,score,crosses,normalizeLayout};
+ global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,mountCandidate,mountDirectionLoss,value,grid,optimize,weight,score,crosses,normalizeLayout,effectiveWalls,createDoor,doorAttenuation,doorT};
 })(window);
 
 </script><script>
