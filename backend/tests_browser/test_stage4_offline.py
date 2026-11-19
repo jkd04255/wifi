@@ -183,38 +183,102 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.pin()
         self.assertEqual(self.export()["requiredPins"][0]["signalBars"],4)
 
-    def test_wall_mount_snap_direction_json_and_wall_only_optimize(self):
+    def test_auto_wall_mount_and_wall_only_optimizer(self):
         data=self.export()
         data["walls"]=[{"id":"vertical","x1":5,"x2":5,"z1":1,"z2":7,"material":"concrete"}]
+        data["router"]["x"]=6
+        data["router"]["z"]=4
         data["requiredPins"]=[{"id":"p","x":6,"z":4,"signalBars":0,"minQualityScore":0}]
-        self.page.locator("#importFile").set_input_files({"name":"walls.json","mimeType":"application/json","buffer":json.dumps(data).encode()})
+        self.page.locator("#importFile").set_input_files({
+            "name":"wall-auto.json","mimeType":"application/json",
+            "buffer":json.dumps(data).encode()
+        })
         self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 1')")
         self.page.locator("#routerTab").click()
+        self.assertEqual(self.page.locator("#mountFace").count(),0)
         self.page.locator('[name="wizardMount"][value="wall"]').check()
-        self.assertIn("벽 부착",self.page.locator("#mountStatus").inner_text())
-        self.assertAlmostEqual(self.export()["router"]["x"],5.04,places=2)
-        self.page.locator("#mountFace").select_option("left")
-        self.assertAlmostEqual(self.export()["router"]["x"],4.96,places=2)
-        self.page.locator("#mountFace").select_option("right")
-        self.assertAlmostEqual(self.export()["router"]["x"],5.04,places=2)
-        signal=self.page.evaluate("""layout=>{
-            const e=window.WifiEngine;
-            const right=e.value(layout,7,4);
-            const flipped={...layout,router:{...layout.router,mountFace:'left'}};
-            return [right,e.value(flipped,7,4),e.mountDirectionLoss(layout.router,7,4)];
-        }""",self.export())
-        self.assertGreater(signal[0],signal[1])
-        self.assertAlmostEqual(signal[2],0,places=3)
+        self.assertIn("자동",self.page.locator("#mountStatus").inner_text())
+        self.assertIn("오른쪽",self.page.locator("#mountAutoSummary").inner_text())
+        mounted=self.export()
+        self.assertAlmostEqual(mounted["router"]["x"],5.04,places=2)
+        self.assertEqual(mounted["router"]["mountFace"],"right")
+        self.assertGreater(mounted["router"]["mountNormalX"],.99)
+        auto=self.page.evaluate("""layout=>{
+          const e=window.WifiEngine;
+          const right=e.mountCandidate(layout,6,4);
+          const left=e.mountCandidate(layout,4,4);
+          const leftRouter={...layout.router,x:left.x,z:left.z,mountFace:left.face,
+             mountNormalX:left.mountNormalX,mountNormalZ:left.mountNormalZ};
+          const rightRssi=e.value(layout,7,4);
+          const facingAway=e.value({...layout,router:leftRouter},7,4);
+          return {right,left,rightRssi,facingAway};
+        }""",mounted)
+        self.assertEqual(auto["right"]["face"],"right")
+        self.assertEqual(auto["left"]["face"],"left")
+        self.assertAlmostEqual(auto["right"]["x"],5.04,places=2)
+        self.assertAlmostEqual(auto["left"]["x"],4.96,places=2)
+        self.assertGreater(auto["rightRssi"],auto["facingAway"])
         self.page.locator("#nextWizardHeight").click()
         self.page.locator("#nextWizardAnalysis").click()
         self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(),self.page.locator("#statusLine").inner_text())
-        positions=self.page.locator("#topThreeRows button[data-top-rank]").evaluate_all(
-            "(els)=>els.map(el=>Number(el.dataset.candidateX))")
-        self.assertTrue(positions)
-        for x in positions:self.assertAlmostEqual(x,5.04,places=2)
+        candidates=self.page.locator("#topThreeRows button[data-top-rank]").evaluate_all(
+            "(els)=>els.map(el=>({x:Number(el.dataset.candidateX),z:Number(el.dataset.candidateZ)}))")
+        self.assertTrue(candidates)
+        for candidate in candidates:self.assertLess(abs(candidate["x"]-5),.06)
+        self.page.locator("#topThreeRows button[data-top-rank]").first.click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        final=self.export()["router"]
+        self.assertLess(abs(final["x"]-5),.06)
+        self.assertIn(final["mountFace"],["right","left"])
+
+    def test_receiver_height_independent_presets_manual_and_json(self):
+        self.page.locator("#heightTab").click()
+        self.assertIn("공유기 설치 높이",self.page.locator("#wizardHeight").inner_text())
+        self.assertIn("스마트폰 사용 높이",self.page.locator("#wizardHeight").inner_text())
+        self.assertAlmostEqual(self.export()["receiverY"],1)
+        self.page.locator('[data-height="1.6"]').click()
+        self.page.locator('[data-receiver-height=".7"]').click()
+        saved=self.export()
+        self.assertAlmostEqual(saved["router"]["y"],1.6)
+        self.assertAlmostEqual(saved["receiverY"],.7)
+        self.assertIn("앉아서 사용",self.page.locator("#receiverHeightSummary").inner_text())
+        self.page.locator('[name="receiverHeightMode"][value="advanced"]').check()
+        self.assertTrue(self.page.locator("#receiverHeightManual").is_visible())
+        self.assertTrue(self.page.locator("#receiverHeightPresets").is_hidden())
+        self.page.locator("#manualReceiverHeightInput").fill("2.8")
+        self.page.locator("#manualReceiverHeightInput").press("Tab")
+        saved=self.export()
+        self.assertAlmostEqual(saved["receiverY"],2.8)
+        self.assertAlmostEqual(saved["router"]["y"],1.6)
+        self.page.locator("#importFile").set_input_files({
+            "name":"heights.json","mimeType":"application/json",
+            "buffer":json.dumps(saved).encode()
+        })
+        self.page.wait_for_function(
+            "document.getElementById('toast').textContent.includes('XZ 도면을 불러왔습니다')",
+            timeout=30000
+        )
+        loaded=self.export()
+        self.assertAlmostEqual(loaded["receiverY"],2.8)
+        self.assertAlmostEqual(loaded["router"]["y"],1.6)
+        self.page.locator("#heightTab").click()
+        self.assertIn("2.80m",self.page.locator("#receiverHeightSummary").inner_text())
+
+    def test_mobile_four_step_labels_and_compact_toolbar(self):
+        self.page.set_viewport_size({"width":390,"height":844})
+        labels=self.page.locator(".view-tab").all_inner_texts()
+        self.assertEqual(labels,["① 도면 그리기","② 공유기 설정","③ 공유기 높이","④ 신호 분석"])
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"),410)
+        toolbar=self.page.locator(".xp-toolbar")
+        self.assertLess(toolbar.bounding_box()["height"],65)
+        self.page.locator("#routerTab").click()
+        self.assertTrue(self.page.locator("#wizardRouter").is_visible())
+        self.assertEqual(self.page.locator("#mountFace").count(),0)
+        self.page.locator("#heightTab").click()
+        self.assertTrue(self.page.locator("#receiverHeightPresets").is_visible())
 
     def test_wall_mount_requires_actual_wall_and_rejects_invalid_json(self):
         self.page.locator("#routerTab").click()
