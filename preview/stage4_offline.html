@@ -903,9 +903,9 @@ const SQM_PER_PYEONG=3.305785, RATIO=1.25;
 function sizeForPyeong(pyeong){const sqm=pyeong*SQM_PER_PYEONG;return {width:Math.sqrt(sqm*RATIO),height:Math.sqrt(sqm/RATIO)};}
 function sample(){const areaPyeong=24.2,{width,height}=sizeForPyeong(areaPyeong);return {schemaVersion:'1.1',coordinateSystem:{...coords},width,depth:height,roomHeightM:2.7,receiverY:1.0,areaPyeong,
  router:{x:width/2,y:1.2,z:height/2,frequency:2.4,txPowerDbm:20,antennaGainDbi:0},
- walls:[], zones:[],requiredPins:[],sketches:[],importanceStrokes:[],modelOverrides:{pathLossExponent:2.2,wallScale:1}};}
+ walls:[], zones:[],requiredPins:[],doors:[],sketches:[],importanceStrokes:[],modelOverrides:{pathLossExponent:2.2,wallScale:1}};}
 let L=sample(),tool='sketch',material='concrete',result=null,weighted=false,best=null,dirty=true,showStableOverlay=true,selectedCompareRank=1,
- probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[],selectedRequiredId=null,requiredDrag=null;
+ probe={x:L.width*.75,z:L.depth*.75},start=null,preview=null,pointerId=null,undoStack=[],toastTimer,currentPath=null,hoverPoint=null,eraseLast=null,eraseChanged=false,erasedBrushPoints=[],selectedRequiredId=null,requiredDrag=null,selectedDoorId=null;
 const geometry=window.WifiGeometry,cleanup=window.WifiCleanup;
 if(!geometry||!cleanup)throw Error('geometry.js / cleanup.js not loaded');
 const editor=$('editorCanvas'), heat=$('heatmapCanvas'),eCtx=editor.getContext('2d'),hCtx=heat.getContext('2d');
@@ -1119,10 +1119,31 @@ function renderRequiredStatus(){
  caveat.textContent='칸수는 Wiplan 내부 점수이며 실제 휴대폰 표시와 다릅니다. 2.4 GHz는 CAMPUSRSSI 기반 경험 보정 및 신호 원활/중간/혼잡 최악값을 사용합니다. 각 가정의 절대 RSSI는 보증하지 않으며 5 GHz는 미보정입니다.';
  box.appendChild(caveat);box.hidden=false;
 }
-function drawWalls(ctx,sx,sy){for(const wall of L.walls){
- const a={x:wall.x1*sx,y:wall.z1*sy},b={x:wall.x2*sx,y:wall.z2*sy};
- line(ctx,a,b,'#ffffffd9',9);line(ctx,a,b,'#263b57',5);
-}}
+function drawDoors(ctx,sx,sy){
+ for(const door of L.doors||[]){
+  const a={x:door.x1*sx,y:door.z1*sy},b={x:door.x2*sx,y:door.z2*sy};
+  ctx.save();
+  if(selectedDoorId===door.id)line(ctx,a,b,'#3478ca',13);
+  if(door.state==='open'){
+   const dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy)||1;
+   line(ctx,a,b,'#fff7e3',9);line(ctx,a,b,'#b78f5f',2,[4,4]);
+   const leaf={x:a.x-dy/length*Math.min(length,22),y:a.y+dx/length*Math.min(length,22)};
+   line(ctx,a,leaf,'#ba8b4c',4);
+  }else{
+   line(ctx,a,b,'#f6e0b2',10);line(ctx,a,b,'#a36d35',6);
+   const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+   ctx.beginPath();ctx.arc(mid.x,mid.y,2.5,0,Math.PI*2);ctx.fillStyle='#443019';ctx.fill();
+  }
+  ctx.restore();
+ }
+}
+function drawWalls(ctx,sx,sy){
+ for(const wall of window.WifiEngine.effectiveWalls(L)){
+  const a={x:wall.x1*sx,y:wall.z1*sy},b={x:wall.x2*sx,y:wall.z2*sy};
+  line(ctx,a,b,'#ffffffd9',9);line(ctx,a,b,'#263b57',5);
+ }
+ drawDoors(ctx,sx,sy);
+}
 function drawRouter(ctx,x,y,rad=10){ctx.save();ctx.shadowColor='#245ee790';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fillStyle='#2469dc';ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=3;ctx.strokeStyle='white';ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.3;for(const r of [rad+5,rad+10]){ctx.beginPath();ctx.arc(x,y,r,Math.PI*1.24,Math.PI*1.76);ctx.stroke();}ctx.restore();}
 function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0,w,h);background(eCtx,w,h,true);
  const sx=w/L.width,sy=h/L.depth;
@@ -1179,13 +1200,17 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  $('heatmapBand').textContent=fmt(L.router.frequency, L.router.frequency===5?0:1)+' GHz';
 }
 function renderElements(){const box=$('elementList');box.replaceChildren();
- const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
+ const entries=[...L.walls.map(v=>({...v,type:'wall'})),...(L.doors||[]).map(v=>({...v,type:'door'})),...(L.requiredPins||[]).map(v=>({...v,type:'required'})),...(L.sketches||[]).map(v=>({...v,type:'sketch'})),...(L.importanceStrokes||[]).map(v=>({...v,type:'brush'}))];
  if(!entries.length){const n=document.createElement('div');n.className='element';n.textContent='벽이나 신호 세기 핀을 추가해 주세요.';box.appendChild(n);return;}
  entries.forEach(item=>{const row=document.createElement('div');row.className='element';const left=document.createElement('div');left.className='element-text';
- left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='required'?'◎ 신호 세기 '+signalBars(item)+'칸 (≥'+signalMinScore(item)+'점)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
- const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 단일 지점':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
- left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];L[key]=L[key].filter(v=>v.id!==item.id);changed();renderElements();};row.append(left,del);box.appendChild(row);});
- $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
+ left.textContent=item.type==='wall'?'▰ 콘크리트 벽':item.type==='door'?'▯ 나무 방문 · '+(item.state==='open'?'열림':'닫힘'):item.type==='required'?'◎ 신호 세기 '+signalBars(item)+'칸 (≥'+signalMinScore(item)+'점)':item.type==='sketch'?'✎ 자유선 (변환 대기)':item.kind==='outside-erase'?'◌ 방 밖 중요도 지우기':item.erase?'◌ 중요도 일부 지우기':'◉ 중요도 브러시';
+ const sub=document.createElement('small');sub.textContent=item.type==='wall'?fmt(Math.hypot(item.x2-item.x1,item.z2-item.z1))+'m · '+item.id:item.type==='door'?fmt(item.widthM,2)+'m · 벽 '+item.wallId:item.type==='required'?'X '+fmt(item.x,2)+' · Z '+fmt(item.z,2)+' · 단일 지점':item.type==='sketch'?item.points.length+'개 점 · 콘크리트':item.kind==='outside-erase'?'외부 연결 영역을 기본 +0%로 변경':(item.weightPct>=0?'+':'')+item.weightPct+'% · 반경 '+fmt(item.radiusM)+' m';
+ left.appendChild(sub);const del=document.createElement('button');del.textContent='×';del.title='요소 삭제';del.onclick=()=>{pushUndo();const key={wall:'walls',door:'doors',required:'requiredPins',sketch:'sketches',brush:'importanceStrokes'}[item.type];
+ if(item.type==='wall')L.doors=(L.doors||[]).filter(v=>v.wallId!==item.id);
+ L[key]=L[key].filter(v=>v.id!==item.id);
+ if(item.id===selectedDoorId)selectedDoorId=null;
+ changed();renderElements();};row.append(left,del);box.appendChild(row);});
+ $('numWallsChip').textContent='벽 '+L.walls.length+'개 · 문 '+(L.doors||[]).length+'개 · 신호 세기 '+(L.requiredPins||[]).length+'개 · 중요도 '+(L.importanceStrokes||[]).length+'획';
 }
 function syncXPStatus(){
  const view=({design:'도면 편집',router:'공유기 설정',height:'공유기 높이',analysis:'신호 분석'}[document.body.dataset.view])||'도면 편집';
@@ -1193,7 +1218,7 @@ function syncXPStatus(){
  const ready=dirty?'수정됨':'계산 완료';
  $('xpStatusState').textContent=view+' · '+ready;
  $('xpStatusDimensions').textContent=fmt(L.width,1)+' × '+fmt(L.depth,1)+' m';
- $('xpStatusPins').textContent='신호 핀 '+pinCount+'개 · 벽 '+L.walls.length+'개';
+ $('xpStatusPins').textContent='신호 핀 '+pinCount+'개 · 벽 '+L.walls.length+'개 · 문 '+(L.doors||[]).length+'개';
  $('xpStatusBand').textContent=fmt(L.router.frequency,L.router.frequency===5?0:1)+' GHz';
  $('xpStatusModel').textContent=Number(L.router.frequency)===2.4?'CAMPUSRSSI · 중간':'5 GHz · 미보정';
 }
