@@ -47,6 +47,81 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#requiredDrawer").evaluate("(el) => { el.open = true; }")
         self.page.locator("#signalBarsSelect").select_option(str(bars))
 
+    def test_compact_analysis_fold_and_live_recompute_without_apply(self):
+        self.assertEqual(self.page.locator("#applyBtn").count(), 0)
+        self.assertEqual(self.page.locator("#weightBtn").count(), 0)
+        self.assertEqual(self.page.locator("#positionJudgmentBtn").count(), 0)
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertFalse(self.page.locator("#doorAnalysisPanel").get_attribute("open"))
+        self.assertFalse(self.page.locator("#positionJudgmentFold").get_attribute("open"))
+        self.assertFalse(self.page.locator("#requiredResultsFold").get_attribute("open"))
+        self.assertEqual(self.page.locator(".analysis-buttons button").first.get_attribute("id"), "optimizeBtn")
+        self.assertIn("신호 세기 핀 없음", self.page.locator("#requiredSummary").inner_text())
+        previous = self.page.locator("#meanStat").inner_text()
+        self.page.locator("#routerY").fill("6.5")
+        self.page.locator("#routerY").press("Tab")
+        self.page.wait_for_function(
+            "document.getElementById('dirtyPill').textContent.includes('최신 결과') && document.getElementById('optimizeBtn').disabled===false",
+            timeout=30000,
+        )
+        self.assertNotEqual(previous, self.page.locator("#meanStat").inner_text())
+        self.page.locator("#positionJudgmentFold summary").click()
+        self.assertIn("왼쪽", self.page.locator("#positionJudgment").inner_text())
+
+    def test_signal_summary_updates_and_expanded_details_are_preserved(self):
+        self.pin(150, 180)
+        self.pin(290, 220)
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        summary=self.page.locator("#requiredSummary").inner_text()
+        self.assertIn("신호 세기 1:",summary)
+        self.assertIn("신호 세기 2:",summary)
+        self.assertFalse(self.page.locator("#requiredResultsFold").get_attribute("open"))
+        self.page.locator("#requiredResultsFold summary").click()
+        self.assertTrue(self.page.locator("#requiredResults").is_visible())
+        self.assertIn("핀 최악 여유점수", self.page.locator("#requiredResults").inner_text())
+        self.page.locator("#requiredResultsFold summary").click()
+        self.assertFalse(self.page.locator("#requiredResults").is_visible())
+
+    def test_floorplan_zoom_and_expand_preserve_metre_coordinates(self):
+        base=self.export()
+        self.page.locator("#planExpandBtn").click()
+        self.assertEqual(self.page.locator("#planExpandBtn").get_attribute("aria-pressed"),"true")
+        self.assertTrue(self.page.locator("#editorWorkarea").evaluate("(e)=>e.classList.contains('plan-expanded')"))
+        self.page.locator("#planZoomInBtn").click()
+        self.page.wait_for_function("document.getElementById('planZoomLabel').textContent==='125%'")
+        dims=self.page.evaluate("""() => {
+            const c=document.getElementById('editorCanvas'),f=document.getElementById('editorFrame');
+            return {canvas:c.getBoundingClientRect().width,viewport:f.clientWidth,
+                    scrollWidth:f.scrollWidth};
+        }""")
+        self.assertGreater(dims["canvas"],dims["viewport"])
+        self.assertGreater(dims["scrollWidth"],dims["viewport"])
+        self.page.locator("#editorFrame").evaluate("(e)=>{e.scrollLeft=90;e.scrollTop=110}")
+        self.page.locator('[data-tool="required"]').click()
+        canvas=self.page.locator("#editorCanvas")
+        # Scroll into view first, then use the actual (possibly clipped) pixel point.
+        coords=self.page.evaluate("""() => {
+            const c=document.getElementById('editorCanvas').getBoundingClientRect(),
+                  f=document.getElementById('editorFrame').getBoundingClientRect(),
+                  clientX=f.left+Math.min(f.width-30,125),
+                  clientY=f.top+Math.min(f.height-30,125);
+            return {clientX,clientY,expectedX:Math.max(0,Math.min(1,(clientX-c.left)/c.width)),
+                    expectedZ:Math.max(0,Math.min(1,(clientY-c.top)/c.height))};
+        }""")
+        self.page.mouse.click(coords["clientX"],coords["clientY"])
+        after=self.export()
+        self.assertEqual(len(after["requiredPins"]),1)
+        self.assertAlmostEqual(after["requiredPins"][0]["x"],coords["expectedX"]*base["width"],delta=.2)
+        self.assertAlmostEqual(after["requiredPins"][0]["z"],coords["expectedZ"]*base["depth"],delta=.2)
+        self.assertAlmostEqual(after["width"],base["width"])
+        self.assertAlmostEqual(after["depth"],base["depth"])
+        self.page.locator("#planZoomResetBtn").click()
+        self.assertEqual(self.page.locator("#planZoomLabel").inner_text(),"100%")
+        self.page.locator("#planExpandBtn").click()
+        self.assertEqual(self.page.locator("#planExpandBtn").get_attribute("aria-pressed"),"false")
+
     def test_step_one_bottom_continue_opens_router_not_analysis(self):
         self.assertTrue(self.page.locator("#applyBottomBtn").is_visible())
         self.assertIn("② 공유기 설정",self.page.locator("#applyBottomBtn").inner_text())
@@ -83,7 +158,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#heightTab").click()
         self.assertTrue(self.page.locator("#wizardHeight").is_visible())
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         work=self.page.locator(".result-workarea")
         self.assertEqual(work.evaluate("(e)=>getComputedStyle(e).flexDirection"),"column")
         mapbox=self.page.locator(".result-map").bounding_box()
@@ -113,8 +188,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
         })
         self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 2')")
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
-        self.page.locator("#positionJudgmentBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentFold summary").click()
         points=self.page.locator("#positionJudgment [data-direction]")
         states={p.get_attribute("data-direction"):
                 (p.get_attribute("data-contact"),p.inner_text()) for p in points.all()}
@@ -140,8 +215,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
         })
         self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 1')")
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
-        self.page.locator("#positionJudgmentBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentFold summary").click()
         readings={p.get_attribute("data-direction"):(p.get_attribute("data-contact"),p.inner_text())
                   for p in self.page.locator("#positionJudgment [data-direction]").all()}
         self.assertEqual(readings["오른쪽"][0],"true",readings)
@@ -154,12 +229,13 @@ class OfflineDesktopSmoke(unittest.TestCase):
         layout=self.export()
         layout["doors"]=[]
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         panel=self.page.locator("#doorAnalysisPanel")
         self.assertTrue(panel.is_visible())
         self.assertIn("2.4GHz 약 4dB",panel.inner_text())
         self.assertIn("5GHz 약 6dB",panel.inner_text())
         self.assertIn("나무문 도구",panel.inner_text())
+        self.page.locator("#doorAnalysisPanel summary").click()
         self.assertTrue(self.page.locator("#doorAnalysisEmpty").is_visible())
         self.assertTrue(self.page.locator("#doorComparison").is_hidden())
         html=FILE_URL
@@ -182,8 +258,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
         })
         self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 2')")
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
-        self.page.locator("#positionJudgmentBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentFold summary").click()
         self.assertEqual(self.page.locator("#positionJudgment").get_attribute("data-reference"),"router")
         for direction in ["위쪽","오른쪽"]:
             point=self.page.locator('#positionJudgment [data-direction="'+direction+'"]')
@@ -197,7 +273,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
     def test_portrait_top_three_updates_map_arrow_and_position_reference(self):
         self.page.set_viewport_size({"width":1080,"height":1920})
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertTrue(self.page.locator("#portraitOptimizeBtn").is_visible())
         self.page.locator("#portraitOptimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
@@ -205,7 +281,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertIn("방향",self.page.locator("#placementGuideDirection").inner_text())
         self.assertIn("빨간색 네모",self.page.locator("#placementGuideDetail").inner_text())
         before=self.page.locator("#placementGuideDirection").inner_text()
-        self.page.locator("#portraitPositionBtn").click()
+        self.page.locator("#positionJudgmentFold summary").click()
         self.assertEqual(self.page.locator("#positionJudgment").get_attribute("data-reference"),"recommendation")
         self.assertEqual(self.page.locator("#positionReferenceSelect").input_value(),"recommendation")
         buttons=self.page.locator('[data-compare-rank]')
@@ -230,7 +306,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertIn("신호 핀 1개",self.page.locator("#xpStatusPins").inner_text())
         self.page.locator(".xp-toolbar [data-xp-action='run']").click()
         self.page.wait_for_function(
-            "document.body.dataset.view==='analysis' && document.getElementById('applyBtn').disabled===false",
+            "document.body.dataset.view==='analysis' && document.getElementById('optimizeBtn').disabled===false",
             timeout=30000,
         )
         self.assertIn("신호 분석",self.page.locator("#xpStatusState").inner_text())
@@ -330,7 +406,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#manualHeightInput").press("Tab")
         self.assertAlmostEqual(self.export()["router"]["y"],15.5)
         self.page.locator("#nextWizardAnalysis").click()
-        self.page.wait_for_function("document.body.dataset.view==='analysis' && document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.body.dataset.view==='analysis' && document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertIn("/ 100",self.page.locator("#scoreStat").inner_text())
         self.assertIn("/ 100",self.page.locator("#meanStat").inner_text())
         self.assertEqual(self.page.locator("#legendLow").inner_text(),"0점")
@@ -393,7 +469,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertGreater(auto["rightRssi"],auto["facingAway"])
         self.page.locator("#nextWizardHeight").click()
         self.page.locator("#nextWizardAnalysis").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(),self.page.locator("#statusLine").inner_text())
@@ -402,7 +478,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertTrue(candidates)
         for candidate in candidates:self.assertLess(abs(candidate["x"]-5),.06)
         self.page.locator("#topThreeRows button[data-top-rank]").first.click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         final=self.export()["router"]
         self.assertLess(abs(final["x"]-5),.06)
         self.assertIn(final["mountFace"],["right","left"])
@@ -478,15 +554,15 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#importFile").set_input_files({"name":"rectangle.json","mimeType":"application/json","buffer":json.dumps(data).encode()})
         self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 4')")
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
-        self.page.locator("#positionJudgmentBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentFold summary").click()
         output=self.page.locator("#positionJudgment").inner_text()
         for expected in ["왼쪽: 3.00m","오른쪽: 3.00m","위쪽: 2.00m","아래쪽: 2.00m"]:
             self.assertIn(expected,output)
 
     def test_context_info_glossary_and_expert_restore(self):
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertGreaterEqual(self.page.locator(".info-dot").count(),10)
         self.page.locator(".stat .info-dot[data-term='중요도 반영 품질']").click()
         self.assertTrue(self.page.locator("#infoDialog").is_visible())
@@ -643,18 +719,19 @@ class OfflineDesktopSmoke(unittest.TestCase):
         box=self.page.locator("#editorCanvas").bounding_box()
         self.page.locator("#editorCanvas").click(position={"x":box["width"]*.5,"y":box["height"]*.5})
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertTrue(self.page.locator("#doorAnalysisPanel").is_visible())
-        self.assertIn("모두 열림",self.page.locator("#doorComparison").inner_text())
+        self.assertIn("모두 열림",self.page.locator("#doorComparison").text_content())
+        self.page.locator("#doorAnalysisPanel summary").click()
         panel=self.page.locator("#doorAnalysisList button")
         self.assertEqual(panel.count(),1)
         panel.click()
         self.page.wait_for_function(
-            "document.getElementById('applyBtn').disabled===false && document.getElementById('doorAnalysisList').textContent.includes('열림')",
+            "document.getElementById('optimizeBtn').disabled===false && document.getElementById('doorAnalysisList').textContent.includes('열림')",
             timeout=30000
         )
         self.assertEqual(self.export()["doors"][0]["state"],"open")
-        self.page.locator("#positionJudgmentBtn").click()
+        self.page.locator("#positionJudgmentFold summary").click()
         self.assertIn("왼쪽",self.page.locator("#positionJudgment").inner_text())
         dots=self.page.locator(".info-dot")
         self.assertGreater(dots.count(),0)
@@ -696,7 +773,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator(".xp-toolbar [data-xp-action='run']").click()
         self.page.wait_for_function(
             "document.body.dataset.view==='analysis' && "
-            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('optimizeBtn').disabled===false && "
             "document.getElementById('engineMode').textContent.includes('중간')",
             timeout=30000,
         )
@@ -788,7 +865,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
     def test_offline_engine_identical_on_http_and_file_origins(self):
         self.page.locator("#analysisTab").click()
         self.page.wait_for_function(
-            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('optimizeBtn').disabled===false && "
             "document.getElementById('engineMode').textContent.includes('오프라인 JS')",
             timeout=30000,
         )
@@ -804,7 +881,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.goto("http://standalone.test/offline.html", wait_until="load")
         self.page.locator("#analysisTab").click()
         self.page.wait_for_function(
-            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('optimizeBtn').disabled===false && "
             "document.getElementById('engineMode').textContent.includes('오프라인 JS')",
             timeout=30000,
         )
@@ -835,8 +912,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
         result = self.export()
         self.assertEqual(result["router"]["y"], 40)
         self.assertEqual(result["receiverY"], 35)
-        self.page.locator("#applyBtn").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertIn("오프라인 JS", self.page.locator("#engineMode").inner_text())
 
     def test_mobile_signal_palette_and_json(self):
@@ -903,7 +980,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
     def test_import_empty_pin_layout_clears_previous_state(self):
         self.pin()
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false")
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false")
         self.page.locator("#designTab").click()
         original = self.export()
         original["requiredPins"] = []
@@ -928,7 +1005,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
         self.page.locator("#useBestBtn").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         rows = self.page.locator("#requiredResults > div")
         self.assertGreaterEqual(rows.count(), 2)
         self.assertIn("2/2곳 기준 충족", self.page.locator("#requiredStatus").inner_text())
@@ -990,14 +1067,14 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.pin()
         self.change_bars(0)
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertIn("3개 프로파일 최악값", self.page.locator("#requiredStatus").inner_text())
-        self.assertIn("현재 3프로파일 최악 예상", self.page.locator("#requiredResults").inner_text())
+        self.assertIn("현재 3프로파일 최악 예상", self.page.locator("#requiredResults").text_content())
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
         self.assertIn("Robust", self.page.locator("#recommendBody").inner_text())
-        self.assertIn("Robust 추천 최악 예상", self.page.locator("#requiredResults").inner_text())
+        self.assertIn("Robust 추천 최악 예상", self.page.locator("#requiredResults").text_content())
 
     def test_baseline_24_matches_precalibration_git_commit_and_5ghz_unchanged(self):
         data = self.export()
@@ -1017,7 +1094,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
 
     def test_profiles_and_same_layout_before_after_visualization(self):
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#profileComparison").is_visible())
         self.assertEqual(self.page.locator("#profileComparisonRows .profile-row").count(), 3)
         self.assertEqual(
@@ -1036,21 +1113,21 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#powerInput").press("Tab")
         self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
         self.assertTrue(self.page.locator("#profileComparison").is_hidden())
-        self.page.locator("#applyBtn").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
 
     def test_pin_worst_case_margin_before_and_after_robust_optimization(self):
         self.pin()
         self.change_bars(2)
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
-        self.assertIn("핀 최악 여유점수", self.page.locator("#requiredResults").inner_text())
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertIn("핀 최악 여유점수", self.page.locator("#requiredResults").text_content())
         self.assertIn("3개 프로파일 최악값", self.page.locator("#requiredStatus").inner_text())
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#recommendation").is_visible(), self.page.locator("#statusLine").inner_text())
-        self.assertIn("→ 추천 +", self.page.locator("#requiredResults").inner_text())
+        self.assertIn("→ 추천 +", self.page.locator("#requiredResults").text_content())
 
     def test_robust_top_three_sorted_spaced_and_second_candidate_applies(self):
         self.page.locator("#analysisTab").click()
@@ -1070,7 +1147,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
                 self.assertGreaterEqual(distance, .5-1e-6)
         self.page.locator('[data-top-rank="2"]').click()
         self.page.wait_for_function(
-            "document.getElementById('applyBtn').disabled===false && "
+            "document.getElementById('optimizeBtn').disabled===false && "
             "document.getElementById('engineMode').textContent.includes('중간')",
             timeout=30000,
         )
@@ -1093,7 +1170,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         })
         self.page.wait_for_function("document.getElementById('frequencySelect').value==='5'")
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#profileComparison").is_hidden())
         self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
         self.assertIn("5 GHz",self.page.locator("#engineMode").inner_text())
@@ -1107,7 +1184,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.wait_for_function("document.getElementById('frequencySelect').value==='2.4'")
         self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false", timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false", timeout=30000)
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
         self.assertEqual(self.export()["requiredPins"],original["requiredPins"])
 
@@ -1167,7 +1244,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertNotIn("topThree",imported)
         self.assertNotIn("stability",imported)
         self.page.locator("#analysisTab").click()
-        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.page.locator("#optimizeBtn").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
         self.assertTrue(self.page.locator("#topThreeCandidates").is_visible(),self.page.locator("#statusLine").inner_text())
