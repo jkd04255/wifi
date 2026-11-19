@@ -294,6 +294,14 @@ body.expert-on .beginner-only{display:none!important}
  .wizard-settings{padding:10px}
  .wizard-actions button{flex:1 1 140px;white-space:normal}
 }
+
+/* Keep beginner setup forms readable on large desktop monitors. */
+@media(min-width:1080px){
+ .wizard-screen{width:min(100%,1000px);margin:12px auto 18px;padding:24px 28px}
+ .wizard-screen h1{font-size:21px}
+ .wizard-height-grid button{min-height:62px}
+ .wizard-settings-grid{column-gap:18px}
+}
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -340,7 +348,7 @@ body.expert-on .beginner-only{display:none!important}
 <section id="wizardRouter" class="wizard-screen screen" hidden>
 <h1>② 공유기 설정</h1><p>설치 방법부터 고르세요. 어렵다면 일반 설정을 유지해도 됩니다.</p>
 <div class="wizard-options"><label><input type="radio" name="wizardRouterMode" value="simple" checked>일반 · 기본값</label><label><input type="radio" name="wizardRouterMode" value="advanced">고급 · 직접 입력</label></div>
-<div class="wizard-settings" id="routerSimpleInfo">일반 기본값: 2.4GHz, 출력 20dBm, 안테나 0dBi. 중간 보정 모델을 사용합니다.</div>
+<div class="wizard-settings" id="routerSimpleInfo">일반 가정용 공유기 기준으로 자동 계산합니다. 제품의 상세 사양을 알고 계시면 '고급'에서 바꿀 수 있습니다.</div>
 <div class="wizard-settings" id="routerAdvancedInfo" hidden><div class="wizard-settings-grid">
 <label>주파수 대역<select id="wizardFrequency"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label>
 <label>송신 출력 (dBm)<input id="wizardPower" type="number" min="0" max="35" value="20"></label>
