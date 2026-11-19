@@ -175,6 +175,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
             "document.getElementById('engineMode').textContent.includes('중간')",
             timeout=30000,
         )
+        self.assertIn("/ 100",self.page.locator("#meanStat").inner_text())
+        self.page.locator("#expertToggle").click()
         self.assertIn("dBm",self.page.locator("#meanStat").inner_text())
         self.page.locator(".xp-toolbar [data-xp-action='optimize']").click()
         self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
@@ -300,6 +302,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
     def test_uncapped_router_and_receiver_height_and_no_ceiling_control(self):
         self.assertEqual(self.page.locator("#roomHeightM").count(), 0)
         self.page.locator("#applyBottomBtn").click()
+        self.page.locator("#expertToggle").click()
         self.page.locator("#routerY").fill("40")
         self.page.locator("#routerY").press("Tab")
         self.page.locator("#receiverY").fill("35")
@@ -497,6 +500,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
             ["신호 원활", "중간", "혼잡"],
         )
         self.assertEqual(self.page.locator("#profileComparisonRows .profile-meter span").count(), 3)
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+        self.page.locator("#expertToggle").click()
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
         self.assertEqual(self.page.locator("#calibrationComparisonRows > div").count(), 2)
         self.assertIn("보정 전 (기존)", self.page.locator("#calibrationComparisonRows").inner_text())
@@ -548,6 +553,8 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertAlmostEqual(saved["router"]["x"],coords[1][0],places=5)
         self.assertAlmostEqual(saved["router"]["z"],coords[1][1],places=5)
         self.assertTrue(self.page.locator("#recommendation").is_hidden())
+        self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
+        self.page.locator("#expertToggle").click()
         self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
 
     def test_calibration_visualizations_hidden_for_5ghz_and_restored_after_json(self):
@@ -565,6 +572,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator("#profileComparison").is_hidden())
         self.assertTrue(self.page.locator("#calibrationComparison").is_hidden())
         self.assertIn("5 GHz",self.page.locator("#engineMode").inner_text())
+        self.page.locator("#expertToggle").click()
         self.assertEqual(self.export()["requiredPins"],original["requiredPins"])
         self.page.locator("#designTab").click()
         self.page.locator("#importFile").set_input_files({
