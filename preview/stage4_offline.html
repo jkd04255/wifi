@@ -399,10 +399,38 @@ body.expert-on .beginner-only{display:none!important}
  }
  function crosses(rx,rz,x,z,w){return wallFraction(rx,rz,x,z,w)!==null;}
  function wallHit(L,x,z,wall,receiverY){return wallFraction(L.router.x,L.router.z,x,z,wall)!==null;}
+ // Experimental wall-side model: geometric wall attachment plus a simple
+ // 0..8 dB front-to-back pattern. This is NOT measured per-device antenna data.
+ function mountCandidate(L,x,z,face='right'){
+   const dirs={right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]},d=dirs[face]||dirs.right;
+   let best=null;
+   for(const wall of L.walls||[]){
+     const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,len=Math.hypot(dx,dz);
+     if(len<.05)continue;
+     let nx=-dz/len,nz=dx/len;
+     const alignment=nx*d[0]+nz*d[1];
+     if(Math.abs(alignment)<.25)continue;
+     if(alignment<0){nx=-nx;nz=-nz;}
+     const t=Math.max(0,Math.min(1,((x-wall.x1)*dx+(z-wall.z1)*dz)/(len*len)));
+     const ax=wall.x1+t*dx,az=wall.z1+t*dz,px=ax+nx*.04,pz=az+nz*.04;
+     if(px<0||px>L.width||pz<0||pz>L.depth)continue;
+     const dist=Math.hypot(x-ax,z-az);
+     if(!best||dist<best.distance)best={x:+px.toFixed(5),z:+pz.toFixed(5),wallId:wall.id,distance:dist,face};
+   }
+   return best;
+ }
+ function mountDirectionLoss(r,x,z){
+   if(r.mountMode!=='wall')return 0;
+   const dirs={right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]},v=dirs[r.mountFace]||dirs.right;
+   const dx=x-r.x,dz=z-r.z,len=Math.hypot(dx,dz);
+   if(len<1e-6)return 0;
+   return 4*(1-Math.max(-1,Math.min(1,(dx*v[0]+dz*v[1])/len)));
+ }
  function value(L,x,z,p=settings(L),details=false,receiverY=null){L=normalizeLayout(L);
    const r=L.router,ry=receiverY??L.receiverY??1;
    const d=Math.max(.5,Math.hypot(x-r.x,z-r.z,ry-r.y));
-   const base=p.p0-10*p.n*Math.log10(d);let total=base;const hits=[],concreteFractions=[];
+   const base=p.p0-10*p.n*Math.log10(d);const mountLoss=mountDirectionLoss(r,x,z);
+   let total=base-mountLoss;const hits=[],concreteFractions=[];
    for(const w of (L.walls||[])){
      if(w.x1===w.x2&&w.z1===w.z2)continue;
      const t=wallFraction(r.x,r.z,x,z,w);
@@ -416,7 +444,7 @@ body.expert-on .beginner-only{display:none!important}
      }
    }
    if(!details)return total;
-   return {x,z,y:ry,distanceM:+d.toFixed(2),beforeWallsDbm:+base.toFixed(1),walls:hits,wallLossDb:+(base-total).toFixed(1),rssiDbm:+total.toFixed(1)};
+   return {x,z,y:ry,distanceM:+d.toFixed(2),beforeWallsDbm:+base.toFixed(1),walls:hits,mountDirectionLossDb:+mountLoss.toFixed(1),wallLossDb:+(base-mountLoss-total).toFixed(1),rssiDbm:+total.toFixed(1)};
  }
  function weight(L,x,z){L=normalizeLayout(L);let base=1;
    for(const a of L.zones||[]){
@@ -491,7 +519,7 @@ body.expert-on .beginner-only{display:none!important}
    const current=evaluate(L.router.x,L.router.z);
    return {best:{x:+best.x.toFixed(2),y:+L.router.y.toFixed(2),z:+best.z.toFixed(2)},bestStats:best.stats,currentStats:current.stats,improvementPoints:+(best.objective-current.objective).toFixed(1),criterion:'weighted RSSI quality index minus weak-area penalty (XZ plane, fixed Y)',candidates:cols*rcount+18,weightsUsed:weighted};
  }
- global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,value,grid,optimize,weight,score,crosses,normalizeLayout};
+ global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,mountCandidate,mountDirectionLoss,value,grid,optimize,weight,score,crosses,normalizeLayout};
 })(window);
 
 </script><script>
@@ -1076,7 +1104,17 @@ editor.addEventListener('pointerdown',e=>{
    changed('신호 세기 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
  }
  if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}
- if(tool==='router'){pushUndo();L.router.x=p.x;L.router.z=p.y;changed();return;}
+ if(tool==='router'){
+  let px=p.x,pz=p.y,wallId=null;
+  if(L.router.mountMode==='wall'){
+   const target=window.WifiEngine.mountCandidate(L,p.x,p.y,L.router.mountFace||'right');
+   if(!target){toast('선택한 방향으로 부착할 수 있는 벽이 없습니다.');return;}
+   px=target.x;pz=target.z;wallId=target.wallId;
+  }
+  pushUndo();L.router.x=px;L.router.z=pz;
+  if(wallId)L.router.wallId=wallId;
+  changed();return;
+ }
  start=p;preview=p;hoverPoint=p;
  if(tool==='sketch')currentPath={tool:'sketch',points:[[p.x,p.y]],material:'concrete'};
  if(tool==='brush')currentPath={tool:'brush',points:[[p.x,p.y]],radiusM:Number($('brushSize').value),weightPct:selectedWeight};
@@ -1235,7 +1273,9 @@ $('gainInput').onchange=e=>setRouterField('antennaGainDbi',e.target.value,-10,20
 $('exponentInput').onchange=e=>{if(Number(L.router.frequency)===2.4){toast('2.4 GHz는 CAMPUSRSSI Robust 보정으로 감쇠 지수를 자동 적용합니다.');syncLayout();return;}const n=Number(e.target.value);if(!Number.isFinite(n)||n<1||n>6){toast('감쇠 지수는 1–6입니다.');syncLayout();return;}L.modelOverrides=L.modelOverrides||{};L.modelOverrides.pathLossExponent=n;changed('5 GHz 감쇠 모델이 변경되었습니다. Apply를 눌러 주세요.');};
 function resetStats(){for(const id of ['meanStat','goodStat','scoreStat','weakStat'])$(id).textContent='—';$('probeReadout').textContent='히트맵의 지점을 클릭하면 공유기 거리, 재질별 손실 및 최종 예상 RSSI가 표시됩니다.';for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;}
 function setBusy(busy){for(const id of ['applyBtn','weightBtn','optimizeBtn','plainBtn'])$(id).disabled=busy;}
-async function simulate(w){weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
+async function simulate(w){
+ if(L.router.mountMode==='wall'&&!ensureWallMount()){toast('벽에 부착할 수 있는 위치가 없습니다. 도면에 벽을 추가해 주세요.');return;}
+ weighted=w;setBusy(true);$('statusLine').classList.remove('error');$('statusLine').textContent='전파 손실을 계산하고 있습니다…';
  await new Promise(resolve=>setTimeout(resolve,25));
  try{result=window.WifiEngine.grid(L,.25,w);$('engineMode').textContent=Number(L.router.frequency)===2.4?'오프라인 JS · CAMPUSRSSI 중간 + Robust 추천':'오프라인 JS · 5 GHz 미보정 예측';
  applied();best=null;$('recommendation').hidden=true;$('heatmapEmpty').style.display='none';renderHeat();renderStats();renderProbe();renderCalibrationComparison();$('statusLine').textContent=Number(L.router.frequency)===2.4?(w?'중간 히트맵 + 중요도 평가 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.':'중간 보정 히트맵 완료 · 추천은 신호 원활/중간/혼잡 Robust 계산을 사용합니다.'):(w?'5 GHz 중요도 반영 예측 완료 · 실측 보정은 적용되지 않았습니다.':'5 GHz 예측 완료 · 실측 보정은 적용되지 않았습니다.');
@@ -1295,7 +1335,7 @@ function renderProbe(){if(!result)return;
  const concreteHits=d.walls.filter(w=>w.material==='concrete').length;
  const items=[['보정 모델',Number(L.router.frequency)===2.4?'중간 · Robust 추천용 중앙 모델':'5 GHz 기존 미보정 모델'],['공유기 높이 Y',fmt(L.router.y,2)+' m'],['수신기 높이 Y',fmt(L.receiverY,2)+' m'],['공유기와의 3D 직선거리',fmt(d.distanceM,2)+' m'],['벽 없는 환경의 예상 신호',fmt(d.beforeWallsDbm)+' dBm'],
  ...d.walls.map(w=>[(materials[w.material]||w.material)+' 통과','−'+fmt(w.lossDb)+' dB']),
- ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
+ ['벽 통과 손실 합계','−'+fmt(d.wallLossDb)+' dB'],...(L.router.mountMode==='wall'?[['벽 부착 방향 시험 감쇠','−'+fmt(d.mountDirectionLossDb)+' dB · 실측 안테나 패턴 아님']]:[]),...(concreteHits>=2&&Number(L.router.frequency)===2.4?[['다중 콘크리트 교차',concreteHits+'회 · 0/1회 실측 기반 선형 외삽']]:[]),...(weighted?[['해당 위치 중요도',fmt(window.WifiEngine.weight(L,probe.x,probe.z),2)+'배']]:[]),['최종 예상 RSSI',fmt(d.rssiDbm)+' dBm']];
  const box=$('probeReadout');box.replaceChildren();for(const [i,v] of items){const div=document.createElement('div');div.className='readout-row'+(i==='최종 예상 RSSI'?' main':'');const a=document.createElement('span');a.textContent=i;const b=document.createElement('strong');b.textContent=v;div.append(a,b);box.appendChild(div);}
  renderProfileComparison();
 }
@@ -1400,6 +1440,12 @@ $('applyBottomBtn').onclick=enterAnalysis;
 
 
 const HEIGHT_OPTIONS=[[0,'바닥'],[.3,'바닥에 앉은 높이'],[1,'책상 높이'],[1.2,'가슴 높이'],[1.6,'사람 키'],[2.2,'천장']];
+function ensureWallMount(){
+ if(L.router.mountMode!=='wall')return true;
+ const point=window.WifiEngine.mountCandidate(L,L.router.x,L.router.z,L.router.mountFace||'right');
+ if(!point)return false;
+ L.router.x=point.x;L.router.z=point.z;L.router.wallId=point.wallId;return true;
+}
 function syncWizardFields(){
  const r=L.router;
  $('wizardFrequency').value=String(r.frequency);$('wizardPower').value=String(r.txPowerDbm??20);
