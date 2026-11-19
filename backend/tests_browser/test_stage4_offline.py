@@ -270,7 +270,7 @@ class OfflineDesktopSmoke(unittest.TestCase):
     def test_mobile_four_step_labels_and_compact_toolbar(self):
         self.page.set_viewport_size({"width":390,"height":844})
         labels=self.page.locator(".view-tab").all_inner_texts()
-        self.assertEqual(labels,["① 도면 그리기","② 공유기 설정","③ 공유기 높이","④ 신호 분석"])
+        self.assertEqual(labels,["① 도면 그리기","② 공유기 설정","③ 높이 설정","④ 신호 분석"])
         self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"),410)
         toolbar=self.page.locator(".xp-toolbar")
         self.assertLess(toolbar.bounding_box()["height"],65)
