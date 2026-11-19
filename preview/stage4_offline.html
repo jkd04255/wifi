@@ -184,6 +184,40 @@ button:disabled{opacity:.54}
 @media(max-width:900px){.xp-statusbar{grid-template-columns:1.3fr 1fr 1fr}.xp-statusbar span:nth-child(4),.xp-statusbar span:nth-child(5){display:none}}
 @media(max-width:520px){.xp-caption{height:30px}.xp-statusbar{grid-template-columns:1fr 1fr}.xp-statusbar span:nth-child(3){display:none}.topbar{padding-top:4px}.xp-menu-content{min-width:155px}}
 
+
+/* Desktop toolbox and compact Luna layout. Keep initial canvas full-width. */
+.draw-toolbar{flex-wrap:wrap;gap:6px}
+.tool-row{gap:4px;min-width:0}
+.tool{position:relative;min-height:42px;padding:10px 16px 8px 10px;border:1px solid #b6b6ab}
+.tool[data-xp-key]::after{content:attr(data-xp-key);position:absolute;right:4px;top:2px;font:9px Tahoma,'Malgun Gothic',sans-serif;color:#7a8292}
+.tool[aria-pressed="true"]{border-color:#3469af;box-shadow:inset 1px 1px #fff,inset -1px -1px #c89c58}
+.xp-tool-hint{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;min-width:0;flex:1 0 100%;border-top:1px solid #d5d1c5;padding:6px 4px 1px;color:#4b5362;font:11px Tahoma,'Malgun Gothic',sans-serif}
+.xp-tool-hint strong{color:#144b95;font-weight:700}
+.xp-tool-hint kbd{display:inline-block;border:1px solid #b2b1a5;border-radius:2px;background:linear-gradient(#fff,#e5e3d9);color:#354b67;padding:1px 4px;font:10px Tahoma,sans-serif}
+#toolsRail{scrollbar-color:#93b4d8 #ece9d8;scrollbar-width:thin}
+#toolsRail .palette-drawer{background:#fffef9;box-shadow:inset 1px 1px #fff}
+#toolsRail .drawer-content{padding:11px}
+#toolsRail .field-label{color:#41556f}
+#toolsRail .side-help{margin:12px 0;padding:11px}
+@media(min-width:1080px){
+ .editor-workarea:not(.palette-collapsed){grid-template-columns:minmax(240px,280px) minmax(0,1fr);gap:11px}
+ .editor-workarea:not(.palette-collapsed) .side-controls{grid-column:1;grid-row:1;order:0;position:sticky;top:8px;max-height:min(740px,calc(100vh - 30px));overflow-y:auto;overscroll-behavior:contain}
+ .editor-workarea:not(.palette-collapsed) .canvas-column{grid-column:2;grid-row:1;order:1}
+}
+@media(min-width:561px) and (max-width:1079px){
+ .editor-workarea:not(.palette-collapsed){grid-template-columns:minmax(0,1fr)}
+ .editor-workarea:not(.palette-collapsed) .canvas-column{order:0}
+ .editor-workarea:not(.palette-collapsed) .side-controls{order:1;max-width:none}
+}
+@media(max-width:560px){
+ .draw-toolbar{padding:6px}
+ .tool-row{justify-content:flex-start}
+ .tool{min-height:42px;flex:1 1 66px;max-width:calc(25% - 4px);padding:8px 10px 6px 3px;font-size:10px}
+ .tool[data-xp-key]::after{font-size:8px;right:2px;top:2px}
+ .xp-tool-hint{font-size:10px}
+ .xp-tool-hint kbd{font-size:9px}
+ .editor-workarea:not(.palette-collapsed) .side-controls{order:2}
+}
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -214,7 +248,7 @@ button:disabled{opacity:.54}
 <section id="editorScreen" class="screen editor-screen">
  <div class="page-intro"><div><div class="eyebrow">STEP 01 · DRAW YOUR HOME</div><h1>우리 집 도면 그리기</h1><p>집의 구조를 자유롭게 그려 보세요. <span>그림을 원하는 위치에 신호 세기 핀을 배치해 최소 예상 품질을 지정하세요.</span></p></div><button type="button" class="primary proceed" id="applyFromEditorBtn">Apply · 신호 확인하기 <b>→</b></button></div>
  <div class="layout-bar"><div class="area-controls"><label for="pyeongInput">우리 집 크기</label><input id="pyeongInput" type="number" value="24.2" min="1" max="150" step="0.1" inputmode="decimal"><strong>평</strong><button id="areaApplyBtn" class="secondary">면적 적용</button></div><div class="layout-metrics"><strong id="mapSizeChip">10.0 × 8.0m</strong><span id="areaChip">약 80.0㎡</span><small>X–Z 평면 5:4 비율 가정 · Y는 바닥으로부터의 높이</small></div><div class="dirty-pill" id="dirtyPill">● 도면 작성 중</div></div>
- <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="신호 세기 핀 · 기본 4칸(64점 이상) · 단일 지점"><span class="tool-icon">◎</span>신호 세기</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div></div>
+ <div class="draw-toolbar"><div class="tool-row" role="group" aria-label="그리기 도구"><button class="tool active" type="button" data-tool="sketch" aria-pressed="true"><span class="tool-icon">✎</span>그리기</button><button class="tool" type="button" data-tool="rectangle" aria-pressed="false" title="드래그하여 콘크리트 벽 사각형을 만듭니다"><span class="tool-icon">▭</span>직사각형</button><button class="tool" type="button" data-tool="line" aria-pressed="false" title="드래그하여 직선 벽을 추가합니다"><span class="tool-icon">╱</span>선 추가</button><button class="tool" type="button" data-tool="brush" aria-pressed="false"><span class="tool-icon">◉</span>중요도</button><button class="tool" type="button" data-tool="required" aria-pressed="false" title="신호 세기 핀 · 기본 4칸(64점 이상) · 단일 지점"><span class="tool-icon">◎</span>신호 세기</button><button class="tool" type="button" data-tool="router" aria-pressed="false"><span class="tool-icon">⌖</span>공유기</button><button class="tool" type="button" data-tool="erase" aria-pressed="false" title="드래그한 지우개 범위만큼 선과 벽을 잘라냅니다"><span class="tool-icon">◌</span>부분 지우개</button></div><div class="edit-actions"><button type="button" class="secondary" id="undoBtn">↶ 실행 취소</button><button type="button" class="secondary" id="paletteToggleBtn" aria-controls="toolsRail" aria-expanded="false">☷ 팔레트 펼치기</button><button type="button" class="secondary orthogonal" id="orthogonalizeBtn">▣ 도면화 · 직각 보정</button><button type="button" class="secondary exterior-clean" id="clearOutsideWeightBtn" title="닫힌 벽 안의 중요도만 남깁니다. 열린 틈이 있으면 그 방의 중요도도 초기화됩니다.">◌ 방 밖 중요도 지우기</button></div><div class="xp-tool-hint" role="status"><span>선택한 도구: <strong id="xpActiveTool">그리기</strong></span><span>도면을 선택한 상태에서 <kbd>1</kbd>–<kbd>7</kbd> 도구 변경</span></div></div>
  <div class="editor-workarea palette-collapsed" id="editorWorkarea"><div class="canvas-column"><div class="canvas-frame editor-frame"><canvas id="editorCanvas" tabindex="0" role="group" aria-label="집 도면 그리기 및 신호 세기 핀 키보드 편집" aria-describedby="requiredCanvasHelp"></canvas><span id="requiredCanvasHelp" class="visually-hidden">신호 세기 도구를 선택하면 Enter 또는 스페이스로 도면 중앙에 핀을 추가할 수 있습니다. 핀을 선택한 상태에서는 방향키로 0.1미터씩, Shift와 방향키로 0.5미터씩 이동합니다. 핀 목록에서 선택할 수도 있습니다.</span><div class="canvas-corner">XZ FLOOR PLAN · <span>Y = HEIGHT</span></div></div><div class="canvas-foot"><span><span class="legend-line"></span> 콘크리트 벽 <span class="legend-zone"></span> 신호 세기 핀 <span class="legend-brush"></span> 중요도 <span class="legend-router">●</span> 공유기</span><span id="pointerLabel">마우스나 손가락으로 그려 보세요.</span></div></div>
  <aside class="side-controls" id="toolsRail" hidden><div class="side-title"><strong>도구 팔레트</strong><small>필요할 때 펼쳐서 사용하세요</small></div>
   <details class="palette-drawer" id="paletteDrawer"><summary><span>🎨 중요도 브러시</span><span class="summary-meta">3단계 · 펼치기</span></summary><div class="drawer-content"><div class="weight-palette" id="weightPalette" role="group" aria-label="중요도 선택"><button type="button" class="palette-choice" data-weight="100" aria-pressed="false"><i style="--swatch:#ed4c59"></i><strong>빨강</strong><span>+100%</span></button><button type="button" class="palette-choice selected" data-weight="0" aria-pressed="true"><i style="--swatch:#32bd8c"></i><strong>초록</strong><span>+0%</span></button><button type="button" class="palette-choice" data-weight="-100" aria-pressed="false"><i style="--swatch:#398de5"></i><strong>파랑</strong><span>−100%</span></button></div><div class="brush-controls"><div>선택: <strong id="brushWeightValue">초록 · 0%</strong></div><label for="brushSize">브러시 반경 <output id="brushSizeValue">0.6 m</output></label><input type="range" id="brushSize" min="0.2" max="2" step="0.1" value="0.6"></div><p>칠하지 않은 영역은 투명하며 <b>기본 중요도 0%</b>입니다. 초록색으로 다시 칠하면 기존 중요도를 지울 수 있습니다.</p><div class="cleanup-row"><button type="button" class="secondary exterior-clean" id="clearOutsideWeightPaletteBtn">방 밖 중요도 지우기</button><button type="button" class="text-button" id="clearBrushBtn">브러시 전체 초기화</button></div><p>벽이나 선으로 <b>완전히 닫힌 방</b>의 중요도만 유지합니다. 벽에 틈이 있으면 그 영역은 방 밖으로 간주합니다. 실행 취소할 수 있습니다.</p></div></details>
