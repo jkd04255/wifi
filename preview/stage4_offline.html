@@ -918,7 +918,7 @@ function pushUndoSnapshot(snapshot){undoStack.push(snapshot);if(undoStack.length
 function pushUndo(){pushUndoSnapshot(JSON.stringify(L))}
 function changed(reason='도면이 변경되었습니다. Apply를 눌러 재계산하세요.'){
  dirty=true;best=null;$('recommendation').hidden=true;for(const id of ['profileComparison','calibrationComparison','topThreeCandidates'])$(id).hidden=true;$('dirtyPill').textContent='● 재계산 필요';$('dirtyPill').classList.add('dirty');
- $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderRequiredStatus();
+ $('statusLine').classList.remove('error');$('statusLine').textContent=reason;syncLayout();syncSelectedRequired();renderEditor();renderHeat();renderElements();renderDoorPanels();renderRequiredStatus();
 }
 function applied(){dirty=false;$('dirtyPill').textContent='● 최신 결과';$('dirtyPill').classList.remove('dirty');syncXPStatus();}
 function resizeCanvas(canvas,ctx){const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return {w:1,h:1};const dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:rect.width,h:rect.height};}
@@ -1311,7 +1311,7 @@ editor.addEventListener('keydown',e=>{
 });
 editor.addEventListener('pointerdown',e=>{
  if(e.button!==0||(e.pointerType==='touch'&&!e.isPrimary)||pointerId!==null)return;
- const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);
+ const raw=positions(editor,e),p=['sketch','brush','erase','required','door'].includes(tool)?raw:snapped(raw);
  try{editor.setPointerCapture(e.pointerId)}catch{/* synthetic pointer-event tests may not create active native capture */ }
  pointerId=e.pointerId;
  if(tool==='required'){
@@ -1331,6 +1331,7 @@ editor.addEventListener('pointerdown',e=>{
    L.requiredPins.push(pin);selectedRequiredId=pin.id;
    changed('신호 세기 추가 · 핀 중심을 드래그해 이동하거나 목록에서 선택하세요.');return;
  }
+ if(tool==='door'){pointerId=null;putDoorAt(raw);return;}
  if(tool==='erase'){start=p;preview=p;eraseLast=p;eraseChanged=false;erasedBrushPoints=[[p.x,p.y]];eraseAt(p,p);renderEditor();return;}
  if(tool==='router'){
   let px=p.x,pz=p.y,wallId=null;
@@ -1349,13 +1350,13 @@ editor.addEventListener('pointerdown',e=>{
  if(tool==='brush')currentPath={tool:'brush',points:[[p.x,p.y]],radiusM:Number($('brushSize').value),weightPct:selectedWeight};
  renderEditor();
 });
-editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
+editor.addEventListener('pointermove',e=>{if(requiredDrag&&e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required','door'].includes(tool)?raw:snapped(raw);hoverPoint=raw;
  $('pointerLabel').textContent=`X ${fmt(p.x,2)}m · Z ${fmt(p.y,2)}m (도면 XZ)`;
  if(requiredDrag){if(e.pointerId!==pointerId)return;moveRequiredDrag(p,e);editor.style.cursor='grabbing';renderEditor();return;}
  if(tool==='erase'&&start){eraseAt(eraseLast,p);eraseLast=p;preview=p;if(erasedBrushPoints.length<1400)erasedBrushPoints.push([p.x,p.y]);renderEditor();return;}
  if(start){preview=p;if(currentPath){const pts=currentPath.points,last=pts[pts.length-1];if(pts.length<1400&&Math.hypot(p.x-last[0],p.y-last[1])>.065)pts.push([p.x,p.y]);}renderEditor();}
  else {editor.style.cursor=tool==='erase'?'crosshair':tool==='router'?'grab':tool==='required'&&hitRequiredPin(raw,e.pointerType)?'grab':'crosshair';if(tool==='brush'||tool==='erase'||tool==='required')renderEditor();}});
-function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required'].includes(tool)?raw:snapped(raw);pointerId=null;
+function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw=positions(editor,e),p=['sketch','brush','erase','required','door'].includes(tool)?raw:snapped(raw);pointerId=null;
  if(requiredDrag){
   moveRequiredDrag(raw,e);const drag=requiredDrag;requiredDrag=null;
   if(drag.moved){pushUndoSnapshot(drag.undoSnapshot);changed('신호 세기 핀 위치를 변경했습니다. Apply로 다시 계산하세요.');}
@@ -1399,7 +1400,101 @@ $('paletteToggleBtn').onclick=()=>{
  togglePalette(willOpen);
  if(willOpen&&tool==='required')$('requiredDrawer').open=true;
 };
-const XP_TOOL_LABELS={sketch:'그리기',rectangle:'직사각형',line:'선 추가',brush:'중요도',required:'신호 세기',router:'공유기',erase:'부분 지우개'};
+
+function closestDoor(x,z,maxDistance=.23){
+ let best=null;
+ for(const door of L.doors||[]){
+  const dx=door.x2-door.x1,dz=door.z2-door.z1,len=dx*dx+dz*dz;
+  const t=len?clamp(((x-door.x1)*dx+(z-door.z1)*dz)/len,0,1):0;
+  const dist=Math.hypot(x-door.x1-t*dx,z-door.z1-t*dz);
+  if(dist<=maxDistance&&(!best||dist<best.distance))best={door,distance:dist};
+ }
+ return best?.door||null;
+}
+function selectedDoor(){
+ const d=(L.doors||[]).find(x=>x.id===selectedDoorId);
+ if(!d&&L.doors?.length){selectedDoorId=L.doors[0].id;return L.doors[0];}
+ return d||null;
+}
+function renderDoorComparison(){
+ const panel=$('doorComparison');panel.replaceChildren();
+ if(!(L.doors||[]).length)return;
+ const open={...L,doors:L.doors.map(d=>({...d,state:'open'}))};
+ const closed={...L,doors:L.doors.map(d=>({...d,state:'closed'}))};
+ const a=window.WifiEngine.value(open,probe.x,probe.z),b=window.WifiEngine.value(closed,probe.x,probe.z);
+ const now=window.WifiEngine.value(L,probe.x,probe.z,undefined,true);
+ const head=document.createElement('strong');head.textContent='선택 지점에서 문 열림·닫힘 비교';
+ const text=document.createElement('p');text.textContent='모두 열림: '+fmt(qualityPoint(a),1)+'점 ('+fmt(a,1)+' dBm) · 모두 닫힘: '+fmt(qualityPoint(b),1)+'점 ('+fmt(b,1)+' dBm)';
+ const diff=document.createElement('p');diff.textContent='문 상태 차이 '+fmt(a-b,1)+' dB · 현재 경로의 닫힌 문 '+now.doors.length+'개';
+ const note=document.createElement('small');note.textContent='동일 위치·주파수에서 문 상태만 변경한 예측값입니다. 다중경로·회절은 포함되지 않습니다.';
+ panel.append(head,text,diff,note);
+}
+function renderDoorPanels(){
+ const d=selectedDoor();
+ $('doorEditorPanel').hidden=tool!=='door';
+ $('doorSelectedControls').hidden=!d;
+ $('doorEditorStatus').textContent=d?'선택한 문 · '+(d.state==='open'?'열림':'닫힘')+' · '+fmt(d.widthM,2)+'m':'벽을 클릭해 문을 설치하세요 · 기본 90cm';
+ if(d){
+  $('doorWidthInput').value=String(d.widthM);
+  $('doorPositionInput').value=String(Math.round(d.centerT*100));
+  $('doorStateBtn').textContent=d.state==='open'?'문 닫기':'문 열기';
+ }
+ const list=$('doorAnalysisList');list.replaceChildren();
+ $('doorAnalysisPanel').hidden=!(L.doors||[]).length;
+ for(const [i,door] of (L.doors||[]).entries()){
+  const row=document.createElement('div');row.className='door-analysis-row';
+  const label=document.createElement('span');
+  label.textContent='문 '+(i+1)+' · '+fmt(door.widthM,2)+'m · '+(door.state==='open'?'열림 · 추가 0dB':'닫힘 · 2.4GHz 4dB / 5GHz 6dB');
+  const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent=door.state==='open'?'닫기':'열기';
+  btn.dataset.doorId=door.id;btn.onclick=()=>toggleDoor(door.id,true);
+  row.append(label,btn);list.appendChild(row);
+ }
+ if(L.doors?.length&&result)renderDoorComparison();
+}
+function toggleDoor(id,auto=false){
+ const d=(L.doors||[]).find(x=>x.id===id);if(!d)return;
+ pushUndo();d.state=d.state==='open'?'closed':'open';selectedDoorId=id;
+ changed('나무 방문 '+(d.state==='open'?'열림':'닫힘')+' · 신호 예측 변경');
+ if(auto&&document.body.dataset.view==='analysis')void simulate(weighted);
+}
+function putDoorAt(p){
+ const hit=closestDoor(p.x,p.y);
+ if(hit){toggleDoor(hit.id);return;}
+ let nearest=null;
+ for(const wall of L.walls){
+  const dx=wall.x2-wall.x1,dz=wall.z2-wall.z1,len=dx*dx+dz*dz;
+  if(len<.81-1e-7)continue;
+  const t=clamp(((p.x-wall.x1)*dx+(p.y-wall.z1)*dz)/len,0,1);
+  const dist=Math.hypot(p.x-wall.x1-t*dx,p.y-wall.z1-t*dz);
+  if(!nearest||dist<nearest.dist)nearest={wall,t,dist};
+ }
+ if(!nearest||nearest.dist>.42){toast('문은 콘크리트 벽 위에만 설치할 수 있습니다.');return;}
+ try{
+  const shape=window.WifiEngine.createDoor(L,nearest.wall.id,nearest.t,.9);
+  pushUndo();L.doors=L.doors||[];
+  const door={id:uid('door'),type:'wood',state:'closed',...shape};
+  L.doors.push(door);selectedDoorId=door.id;
+  changed('나무문 90cm 추가 · 콘크리트 벽을 해당 구간에서 대체합니다.');
+ }catch(error){toast(error.message);}
+}
+$('doorStateBtn').onclick=()=>{const d=selectedDoor();if(d)toggleDoor(d.id);};
+$('doorDeleteBtn').onclick=()=>{
+ const d=selectedDoor();if(!d)return;pushUndo();
+ L.doors=L.doors.filter(x=>x.id!==d.id);selectedDoorId=null;changed('문 삭제 · 원래 콘크리트 벽 복원');
+};
+function modifyDoor(width=null,percent=null){
+ const d=selectedDoor();if(!d)return;
+ const wall=L.walls.find(w=>w.id===d.wallId);if(!wall)return;
+ try{
+  const shape=window.WifiEngine.createDoor(L,wall.id,
+    percent===null?d.centerT:percent/100,
+    width===null?d.widthM:width,d.id);
+  pushUndo();Object.assign(d,shape);changed('문 폭 또는 벽 위 위치 변경');
+ }catch(error){toast(error.message);renderDoorPanels();}
+}
+$('doorWidthInput').onchange=e=>modifyDoor(Number(e.target.value),null);
+$('doorPositionInput').onchange=e=>modifyDoor(null,Number(e.target.value));
+const XP_TOOL_LABELS={sketch:'그리기',rectangle:'직사각형',line:'선 추가',brush:'중요도',required:'신호 세기',router:'공유기',erase:'부분 지우개',door:'문 추가'};
 function syncXPActiveTool(){$('xpActiveTool').textContent=XP_TOOL_LABELS[tool]||tool;}
 document.querySelectorAll('[data-tool]').forEach((button,index)=>{
  button.dataset.xpKey=String(index+1);
@@ -1413,7 +1508,8 @@ for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
  if(tool==='required'&&!$('toolsRail').hidden)$('requiredDrawer').open=true;
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
- renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 기본 4칸(64점 이상) 핀이 추가됩니다. 팔레트에서 선택한 핀의 칸수를 변경할 수 있습니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.'}[tool]);
+ renderDoorPanels();
+ renderEditor();toast({sketch:'드래그로 벽을 그린 후 도면화를 누르세요.',rectangle:'시작점에서 끝점까지 드래그하면 콘크리트 벽 네 면이 생성됩니다.',line:'시작점에서 끝점으로 드래그하면 직선 벽이 생성됩니다.',brush:'중요도 색을 선택하고 칠하세요.',required:'도면을 클릭하면 기본 4칸(64점 이상) 핀이 추가됩니다. 팔레트에서 선택한 핀의 칸수를 변경할 수 있습니다.',router:'공유기 위치를 클릭해 주세요.',erase:'벽이나 선 위로 드래그하면 닿은 부분만 지워집니다.',door:'벽을 클릭해 90cm 나무문을 설치하거나 문을 다시 클릭해 열고 닫으세요.'}[tool]);
 };
 for(const button of document.querySelectorAll('.palette-choice'))button.onclick=()=>{
  selectedWeight=Number(button.dataset.weight);const color=brushInfo(selectedWeight);
@@ -1489,8 +1585,8 @@ function applyArea(){
 $('areaApplyBtn').onclick=applyArea;
 $('pyeongInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyArea();}});
 $('undoBtn').onclick=()=>{if(!undoStack.length){toast('되돌릴 작업이 없습니다.');return;}L=JSON.parse(undoStack.pop());changed();};
-$('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.sketches=[];changed()};
-$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
+$('clearBtn').onclick=()=>{if(!L.walls.length&&!(L.sketches||[]).length)return;pushUndo();L.walls=[];L.doors=[];selectedDoorId=null;L.sketches=[];changed()};
+$('resetBtn').onclick=()=>{pushUndo();L=sample();selectedDoorId=null;selectedRequiredId=null;requiredDrag=null;pointerId=null;weighted=false;result=null;best=null;probe={x:L.width*.75,z:L.depth*.75};$('heatmapEmpty').style.display='flex';resetStats();changed('빈 도면으로 초기화했습니다.');switchView('design');};
 function setRouterField(key,val,lo,hi){const n=Number(val);if(!Number.isFinite(n)||n<lo||n>hi){toast(`${lo}에서 ${hi} 사이의 값을 입력해 주세요.`);syncLayout();return;}L.router[key]=n;changed('공유기 설정이 변경되었습니다. Apply를 눌러 주세요.');}
 $('routerY').oninput=e=>{L.router.y=Number(e.target.value);changed('공유기 Y 위치가 변경되었습니다. Apply로 다시 계산하세요.')};
 $('receiverY').onchange=e=>{
@@ -2104,7 +2200,7 @@ document.querySelectorAll('.xp-menu').forEach(menu=>menu.addEventListener('toggl
  if(menu.open)document.querySelectorAll('.xp-menu').forEach(other=>{if(other!==menu)other.open=false;});
 }));
 window.addEventListener('keydown',event=>{
- if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&event.target===editor&&/^[1-7]$/.test(event.key)){
+ if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&event.target===editor&&/^[1-8]$/.test(event.key)){
   event.preventDefault();
   const button=document.querySelectorAll('[data-tool]')[Number(event.key)-1];
   if(button){button.click();editor.focus({preventScroll:true});}
