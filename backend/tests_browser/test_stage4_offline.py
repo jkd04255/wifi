@@ -325,6 +325,171 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator("#routerY").is_visible())
         self.page.locator("#infoGlossary").locator("summary").first.click()
         self.assertGreaterEqual(self.page.locator("#glossaryContent .info-entry").count(),16)
+
+    def test_wooden_door_rf_loss_24_5_open_closed_two_crossings(self):
+        fixture=self.export()
+        results=self.page.evaluate("""base=>{
+          const e=window.WifiEngine,out={};
+          for(const frequency of [2.4,5]){
+            const fixture={...base,width:10,depth:10,
+              router:{...base.router,x:1,z:5,frequency,mountMode:'furniture'},
+              walls:[{id:'left',x1:4,z1:1,x2:4,z2:9,material:'concrete'},
+                     {id:'right',x1:7,z1:1,x2:7,z2:9,material:'concrete'}],
+              doors:[]};
+            const makeDoor=(id,wallId)=>({id,type:'wood',state:'closed',
+                ...e.createDoor(fixture,wallId,.5,.9)});
+            const a=makeDoor('a','left'),b=makeDoor('b','right');
+            const noObstacles=e.value({...fixture,walls:[],doors:[]},9,5);
+            const one=e.value({...fixture,doors:[a]},9,5);
+            const oneOpen=e.value({...fixture,doors:[{...a,state:'open'}]},9,5);
+            const two=e.value({...fixture,doors:[a,b]},9,5);
+            const twoOpen=e.value({...fixture,doors:[{...a,state:'open'},{...b,state:'open'}]},9,5);
+            const mixed=e.value({...fixture,doors:[a,{...b,state:'open'}]},9,5);
+            const noCross=e.value({...fixture,doors:[a,b]},9,8);
+            const noCrossBase=e.value({...fixture,doors:[]},9,8);
+            const detail=e.value({...fixture,doors:[a,b]},9,5,undefined,true);
+            out[frequency]={noObstacles,one,oneOpen,two,twoOpen,mixed,noCross,noCrossBase,detail,
+              effectiveSegments:e.effectiveWalls({...fixture,doors:[a,b]}).length};
+          }
+          return out;
+        }""",fixture)
+        for freq,loss in [("2.4",4),("5",6)]:
+            x=results[freq]
+            # Each replaced passage must not also subtract the original wall's concrete loss.
+            self.assertAlmostEqual(x["twoOpen"],x["noObstacles"],places=4)
+            self.assertAlmostEqual(x["oneOpen"]-x["one"],loss,places=4)
+            self.assertAlmostEqual(x["twoOpen"]-x["two"],2*loss,places=4)
+            self.assertAlmostEqual(x["twoOpen"]-x["mixed"],loss,places=4)
+            self.assertAlmostEqual(x["noCross"],x["noCrossBase"],places=4)
+            self.assertEqual(x["effectiveSegments"],4)
+            self.assertEqual(len(x["detail"]["walls"]),0)
+            self.assertEqual(len(x["detail"]["doors"]),2)
+            self.assertAlmostEqual(x["detail"]["doorLossDb"],2*loss,places=3)
+            self.assertAlmostEqual(x["detail"]["wallLossDb"],0,places=3)
+            self.assertAlmostEqual(x["detail"]["totalObstacleLossDb"],2*loss,places=3)
+
+    def test_wooden_door_geometry_ends_and_overlap_prevent_double_loss(self):
+        fixture=self.export()
+        result=self.page.evaluate("""base=>{
+          const e=window.WifiEngine;
+          const wall={id:'w',x1:5,z1:2,x2:5,z2:8,material:'concrete'};
+          const l={...base,width:10,depth:10,router:{...base.router,x:1,z:5,mountMode:'furniture'},
+                   walls:[wall],doors:[]};
+          const shape=e.createDoor(l,'w',.5,.9),d={id:'d',type:'wood',state:'closed',...shape};
+          const closed={...l,doors:[d]},opened={...l,doors:[{...d,state:'open'}]};
+          const edgeZ=d.z2;
+          const edgeDetails=e.value(closed,9,edgeZ,undefined,true);
+          let overlap=false,tooWide=false;
+          try{e.createDoor(closed,'w',.5,.9);}catch(x){overlap=true;}
+          try{e.createDoor(closed,'w',.5,7);}catch(x){tooWide=true;}
+          return {edgeDetails,overlap,tooWide,
+            left:e.value(closed,9,4,undefined,true),right:e.value(opened,9,4,undefined,true)};
+        }""",fixture)
+        self.assertTrue(result["overlap"])
+        self.assertTrue(result["tooWide"])
+        self.assertLessEqual(result["edgeDetails"]["totalObstacleLossDb"],7.0)
+        self.assertAlmostEqual(result["left"]["rssiDbm"],result["right"]["rssiDbm"],delta=.11)
+
+    def test_wooden_door_editor_state_width_position_delete_undo_and_json(self):
+        data=self.export()
+        data["width"]=10;data["depth"]=10
+        data["walls"]=[{"id":"w","x1":5,"z1":1,"x2":5,"z2":9,"material":"concrete"}]
+        data["router"]["x"]=2;data["router"]["z"]=5
+        self.page.locator("#importFile").set_input_files({
+            "name":"door-wall.json","mimeType":"application/json","buffer":json.dumps(data).encode()
+        })
+        self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 1')")
+        self.page.locator('[data-tool="door"]').click()
+        self.assertTrue(self.page.locator("#doorEditorPanel").is_visible())
+        canvas=self.page.locator("#editorCanvas")
+        box=canvas.bounding_box()
+        canvas.click(position={"x":box["width"]*.5,"y":box["height"]*.5})
+        saved=self.export()
+        self.assertEqual(len(saved["doors"]),1)
+        door=saved["doors"][0]
+        self.assertEqual(door["state"],"closed")
+        self.assertAlmostEqual(door["widthM"],.9)
+        self.assertEqual(door["wallId"],"w")
+        self.assertEqual(len(self.page.evaluate("layout=>window.WifiEngine.effectiveWalls(layout)",saved)),2)
+        self.assertTrue(self.page.locator("#doorSelectedControls").is_visible())
+        self.page.locator("#doorWidthInput").fill("1.2")
+        self.page.locator("#doorWidthInput").press("Tab")
+        self.assertAlmostEqual(self.export()["doors"][0]["widthM"],1.2)
+        self.page.locator("#doorPositionInput").fill("65")
+        self.page.locator("#doorPositionInput").dispatch_event("change")
+        self.assertAlmostEqual(self.export()["doors"][0]["centerT"],.65,delta=.02)
+        self.page.locator("#doorStateBtn").click()
+        self.assertEqual(self.export()["doors"][0]["state"],"open")
+        saved=self.export()
+        self.page.locator("#importFile").set_input_files({
+            "name":"saved-doors.json","mimeType":"application/json","buffer":json.dumps(saved).encode()
+        })
+        self.page.wait_for_function("document.getElementById('toast').textContent.includes('XZ 도면을 불러왔습니다')")
+        self.assertEqual(self.export()["doors"],saved["doors"])
+        self.page.locator('[data-tool="door"]').click()
+        self.page.locator("#doorDeleteBtn").click()
+        self.assertEqual(len(self.export()["doors"]),0)
+        self.page.locator("#undoBtn").click()
+        self.assertEqual(len(self.export()["doors"]),1)
+
+    def test_wooden_door_invalid_json_rejects_without_overwriting(self):
+        data=self.export()
+        data["walls"]=[{"id":"w","x1":4,"z1":1,"x2":4,"z2":7,"material":"concrete"}]
+        self.page.locator("#importFile").set_input_files({
+            "name":"good-wall.json","mimeType":"application/json","buffer":json.dumps(data).encode()
+        })
+        self.page.wait_for_function("document.getElementById('toast').textContent.includes('XZ 도면을 불러왔습니다')")
+        before=self.export()
+        for issue in ["orphan","offwall","overlap"]:
+            bad=json.loads(json.dumps(before))
+            door={"id":"d","type":"wood","state":"closed","wallId":"w",
+                  "x1":4,"z1":3.55,"x2":4,"z2":4.45,"widthM":.9}
+            if issue=="orphan":door["wallId"]="missing"
+            if issue=="offwall":door["x1"]=5;door["x2"]=5
+            bad["doors"]=[door]
+            if issue=="overlap":bad["doors"].append({**door,"id":"d2"})
+            self.page.locator("#importFile").set_input_files({
+                "name":"bad-door-"+issue+".json","mimeType":"application/json","buffer":json.dumps(bad).encode()
+            })
+            self.page.wait_for_function(
+                "document.getElementById('toast').textContent.includes('JSON 불러오기 실패')",
+                timeout=10000
+            )
+            self.assertEqual(self.export(),before)
+
+    def test_wooden_door_comparison_live_heatmap_and_square_info(self):
+        data=self.export()
+        data["width"]=10;data["depth"]=10
+        data["router"]["x"]=1;data["router"]["z"]=5
+        data["walls"]=[{"id":"w","x1":5,"z1":1,"x2":5,"z2":9,"material":"concrete"}]
+        self.page.locator("#importFile").set_input_files({
+            "name":"door-analysis.json","mimeType":"application/json","buffer":json.dumps(data).encode()
+        })
+        self.page.wait_for_function("document.getElementById('toast').textContent.includes('XZ 도면을 불러왔습니다')")
+        self.page.locator('[data-tool="door"]').click()
+        box=self.page.locator("#editorCanvas").bounding_box()
+        self.page.locator("#editorCanvas").click(position={"x":box["width"]*.5,"y":box["height"]*.5})
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#doorAnalysisPanel").is_visible())
+        self.assertIn("모두 열림",self.page.locator("#doorComparison").inner_text())
+        panel=self.page.locator("#doorAnalysisList button")
+        self.assertEqual(panel.count(),1)
+        panel.click()
+        self.page.wait_for_function(
+            "document.getElementById('applyBtn').disabled===false && document.getElementById('doorAnalysisList').textContent.includes('열림')",
+            timeout=30000
+        )
+        self.assertEqual(self.export()["doors"][0]["state"],"open")
+        self.page.locator("#positionJudgmentBtn").click()
+        self.assertIn("왼쪽",self.page.locator("#positionJudgment").inner_text())
+        dots=self.page.locator(".info-dot")
+        self.assertGreater(dots.count(),0)
+        dims=dots.first.evaluate("(e)=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,r:getComputedStyle(e).borderRadius})")
+        self.assertLessEqual(dims["w"],24)
+        self.assertLessEqual(dims["h"],24)
+        self.assertEqual(dims["r"],"3px")
+
     def test_xp_luna_chrome_and_menus_visible(self):
         self.assertTrue(self.page.locator(".xp-caption").is_visible())
         self.assertIn("Wiplan - Wi-Fi 배치 시뮬레이터", self.page.locator(".xp-caption").inner_text())
