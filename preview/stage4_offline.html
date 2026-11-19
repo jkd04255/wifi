@@ -549,6 +549,58 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
    return {wallId,x1:+a.x.toFixed(7),z1:+a.z.toFixed(7),
      x2:+b.x.toFixed(7),z2:+b.z.toFixed(7),widthM:+widthM.toFixed(3),centerT:+t.toFixed(7)};
  }
+
+ // Coalesce a straight wall extension into its original wall instead of adding
+ // a second line. Existing door endpoints stay in XZ metres; parent wall IDs
+ // and door.centerT are remapped if several collinear walls become one.
+ function extendStraightWall(L,newWall){
+   const dx=newWall.x2-newWall.x1,dz=newWall.z2-newWall.z1;
+   const length=Math.hypot(dx,dz);
+   if(length<.10)throw Error('연장할 벽은 최소 10cm 이상이어야 합니다.');
+   const ux=dx/length,uz=dz/length;
+   const lineOffset=(x,z)=>Math.abs((x-newWall.x1)*uz-(z-newWall.z1)*ux);
+   const projection=(x,z)=>(x-newWall.x1)*ux+(z-newWall.z1)*uz;
+   const all=L.walls||[],absorbed=new Set();
+   let low=0,high=length;
+   // A newly drawn line must meet or overlap an existing endpoint within 5cm.
+   // Slight visual misalignment is allowed, but sharp corners stay separate.
+   let expanded=true;
+   while(expanded){
+     expanded=false;
+     for(const wall of all){
+       if(absorbed.has(wall.id)||wall.material!==newWall.material)continue;
+       const vx=wall.x2-wall.x1,vz=wall.z2-wall.z1,wallLength=Math.hypot(vx,vz);
+       if(wallLength<.10)continue;
+       if(Math.abs((vx/ wallLength)*uz-(vz/wallLength)*ux)>0.008)continue;
+       if(lineOffset(wall.x1,wall.z1)>.025||lineOffset(wall.x2,wall.z2)>.025)continue;
+       const u=projection(wall.x1,wall.z1),v=projection(wall.x2,wall.z2);
+       const a=Math.min(u,v),c=Math.max(u,v);
+       if(a>high+.05||c<low-.05)continue;
+       absorbed.add(wall.id);low=Math.min(low,a);high=Math.max(high,c);
+       expanded=true;
+     }
+   }
+   if(!absorbed.size)return {walls:[...all,newWall],doors:[...(L.doors||[])],merged:false,changed:true,mergedCount:0};
+   // Keep the earliest existing parent ID, preserving external references.
+   const keeper=all.find(w=>absorbed.has(w.id));
+   const newStart={x:+(newWall.x1+ux*low).toFixed(7),z:+(newWall.z1+uz*low).toFixed(7)};
+   const newEnd={x:+(newWall.x1+ux*high).toFixed(7),z:+(newWall.z1+uz*high).toFixed(7)};
+   const merged={...keeper,x1:newStart.x,z1:newStart.z,x2:newEnd.x,z2:newEnd.z};
+   const resultWalls=all.filter(w=>!absorbed.has(w.id));
+   resultWalls.splice(Math.min(all.indexOf(keeper),resultWalls.length),0,merged);
+   const resultDoors=(L.doors||[]).map(door=>{
+     if(!absorbed.has(door.wallId))return door;
+     const first=doorT(merged,door.x1,door.z1),last=doorT(merged,door.x2,door.z2);
+     return {...door,wallId:keeper.id,centerT:+((first+last)/2).toFixed(7)};
+   });
+   // Drawing on an already covered portion should not create a new wall or undo entry.
+   const changed=absorbed.size>1||
+     Math.hypot(merged.x1-keeper.x1,merged.z1-keeper.z1)>.000001||
+     Math.hypot(merged.x2-keeper.x2,merged.z2-keeper.z2)>.000001;
+   return {walls:changed?resultWalls:all,doors:changed?resultDoors:(L.doors||[]),
+      merged:true,changed,mergedCount:absorbed.size,wallId:keeper.id};
+ }
+
  function doorAttenuation(L){return WOOD_DOOR_DB[String(L.router.frequency)]??0;}
 
  function crosses(rx,rz,x,z,w){return wallFraction(rx,rz,x,z,w)!==null;}
@@ -722,7 +774,7 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
    const current=evaluate(L.router.x,L.router.z);
    return {best:{x:+best.x.toFixed(2),y:+L.router.y.toFixed(2),z:+best.z.toFixed(2)},bestStats:best.stats,currentStats:current.stats,improvementPoints:+(best.objective-current.objective).toFixed(1),criterion:'weighted RSSI quality index minus weak-area penalty (XZ plane, fixed Y)',candidates:cols*rcount+18,weightsUsed:weighted};
  }
- global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,mountCandidate,mountDirectionLoss,value,grid,optimize,weight,score,crosses,normalizeLayout,effectiveWalls,createDoor,doorAttenuation,doorT};
+ global.WifiEngine={settings,profileSettings,calibrationProfiles:CALIBRATION_24,calibrationProfileNames:CALIBRATION_PROFILE_NAMES,baselineSettings,mountCandidate,mountDirectionLoss,value,grid,optimize,weight,score,crosses,normalizeLayout,effectiveWalls,createDoor,doorAttenuation,doorT,extendStraightWall};
 })(window);
 
 </script><script>
@@ -1388,7 +1440,14 @@ function finish(e){if(pointerId===null||e.pointerId!==pointerId)return;const raw
  if(pts.length>1){pushUndo();L.sketches=L.sketches||[];L.sketches.push({id:uid('sketch'),points:pts.map(q=>q.map(v=>+v.toFixed(3))),material:currentPath.material});changed('그리기 완료! 도면화 버튼으로 벽을 직각으로 정리하세요.');}}
  else if(tool==='brush'&&currentPath){const pts=currentPath.points;pushUndo();L.importanceStrokes=L.importanceStrokes||[];L.importanceStrokes.push({id:uid('brush'),points:pts.map(q=>q.map(v=>+v.toFixed(3))),weightPct:currentPath.weightPct,radiusM:currentPath.radiusM});changed('중요도 브러시가 적용되었습니다. 중요도 반영 계산을 눌러 주세요.');}
  else if(tool==='line'){
-  if(Math.hypot(p.x-a.x,p.y-a.y)>=.10){pushUndo();L.walls.push({id:uid('wall'),x1:a.x,z1:a.y,x2:p.x,z2:p.y,material:'concrete'});changed('직선 벽을 추가했습니다. 사선은 도면화 버튼으로 직각 보정할 수 있습니다.');}
+  if(Math.hypot(p.x-a.x,p.y-a.y)>=.10){
+    const next=window.WifiEngine.extendStraightWall(L,{id:uid('wall'),x1:a.x,z1:a.y,x2:p.x,z2:p.y,material:'concrete'});
+    if(next.changed){
+      pushUndo();L.walls=next.walls;L.doors=next.doors;
+      if(L.router.mountMode==='wall')ensureWallMount();
+      changed(next.merged?'기존 벽을 한 줄로 연장했습니다.':'직선 벽을 추가했습니다. 사선은 도면화 버튼으로 직각 보정할 수 있습니다.');
+    }else toast('이미 존재하는 직선 벽 구간입니다.');
+  }
   else toast('선은 조금 더 길게 그려 주세요.');
  }
  else if(tool==='rectangle'){
