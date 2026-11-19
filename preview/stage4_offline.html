@@ -1055,9 +1055,17 @@ $('paletteToggleBtn').onclick=()=>{
  togglePalette(willOpen);
  if(willOpen&&tool==='required')$('requiredDrawer').open=true;
 };
+const XP_TOOL_LABELS={sketch:'그리기',rectangle:'직사각형',line:'선 추가',brush:'중요도',required:'신호 세기',router:'공유기',erase:'부분 지우개'};
+function syncXPActiveTool(){$('xpActiveTool').textContent=XP_TOOL_LABELS[tool]||tool;}
+document.querySelectorAll('[data-tool]').forEach((button,index)=>{
+ button.dataset.xpKey=String(index+1);
+ button.setAttribute('aria-keyshortcuts',String(index+1));
+ button.title=(button.title?button.title+' · ':'')+'도면 포커스 상태에서 '+(index+1)+'번 선택';
+});
 for(const button of document.querySelectorAll('[data-tool]'))button.onclick=()=>{
  tool=button.dataset.tool;currentPath=null;start=null;preview=null;eraseLast=null;erasedBrushPoints=[];requiredDrag=null;pointerId=null;
  document.querySelectorAll('[data-tool]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+ syncXPActiveTool();
  if(tool==='brush'){togglePalette(true);$('paletteDrawer').open=true;}
  if(tool==='required'&&!$('toolsRail').hidden)$('requiredDrawer').open=true;
  if(tool==='erase'){togglePalette(true);$('eraserDrawer').open=true;}
@@ -1068,6 +1076,7 @@ for(const button of document.querySelectorAll('.palette-choice'))button.onclick=
  document.querySelectorAll('.palette-choice').forEach(b=>{const on=b===button;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on));});
  $('brushWeightValue').textContent=`${color.label} · ${selectedWeight>=0?'+':''}${selectedWeight}%`;
  tool='brush';document.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool==='brush';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
+ syncXPActiveTool();
  renderEditor();};
 $('requiredPinSelect').onchange=e=>selectRequiredPin(e.target.value);
 $('requiredNextPin').onclick=()=>{
@@ -1460,7 +1469,7 @@ async function xpAction(action){
   case 'undo': $('undoBtn').click();break;
   case 'palette':
    switchView('design');
-   if($('toolsRail').hidden)$('paletteToggleBtn').click();
+   $('paletteToggleBtn').click();
    break;
   case 'design':switchView('design');break;
   case 'analysis':await enterAnalysis();break;
@@ -1481,7 +1490,19 @@ document.querySelectorAll('[data-xp-action]').forEach(button=>{
  });
 });
 $('xpHelpClose').onclick=()=>$('xpHelpDialog').close();
+document.addEventListener('pointerdown',event=>{
+ if(!event.target.closest('.xp-menu'))document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
+});
+document.querySelectorAll('.xp-menu').forEach(menu=>menu.addEventListener('toggle',()=>{
+ if(menu.open)document.querySelectorAll('.xp-menu').forEach(other=>{if(other!==menu)other.open=false;});
+}));
 window.addEventListener('keydown',event=>{
+ if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&event.target===editor&&/^[1-7]$/.test(event.key)){
+  event.preventDefault();
+  const button=document.querySelectorAll('[data-tool]')[Number(event.key)-1];
+  if(button){button.click();editor.focus({preventScroll:true});}
+  return;
+ }
  if(event.key==='Escape'){
   document.querySelectorAll('.xp-menu').forEach(item=>{item.open=false;});
   return;
