@@ -1251,9 +1251,14 @@ function eraseAt(a,b){
  if(touched){
   if(!eraseChanged)pushUndo();eraseChanged=true;
   L.walls=wallResult.walls;L.sketches=sketchResult.sketches;
-  L.doors=originalDoors.filter(d=>L.walls.some(w=>w.id===d.wallId&&
-    Math.abs(window.WifiEngine.doorT(w,d.x1,d.z1))<=2&&
-    Math.abs(window.WifiEngine.doorT(w,d.x2,d.z2))<=2));
+  L.doors=originalDoors.filter(d=>L.walls.some(w=>{
+    if(w.id!==d.wallId)return false;
+    const t1=window.WifiEngine.doorT(w,d.x1,d.z1),t2=window.WifiEngine.doorT(w,d.x2,d.z2);
+    if(Math.min(t1,t2)<-1e-5||Math.max(t1,t2)>1+1e-5)return false;
+    const dx=w.x2-w.x1,dz=w.z2-w.z1;
+    return Math.hypot(d.x1-(w.x1+t1*dx),d.z1-(w.z1+t1*dz))<.01&&
+       Math.hypot(d.x2-(w.x1+t2*dx),d.z2-(w.z1+t2*dz))<.01;
+  }));
   if(!L.doors.some(d=>d.id===selectedDoorId))selectedDoorId=null;
  }
  return touched;
@@ -2049,7 +2054,7 @@ async function optimizeOfflinePins(){
   return {quality:sum/sumW,objective:(sum-12*weak)/sumW};};
  const scoreAll=router=>Object.fromEntries(profiles.map(name=>[name,scoreProfile(router,name)]));
  const beforeProfiles=scoreAll(L.router),beforeWorst=Math.min(...Object.values(beforeProfiles).map(v=>v.objective));
- const valid=(x,z)=>(L.walls||[]).every(w=>{
+ const valid=(x,z)=>window.WifiEngine.effectiveWalls(L).every(w=>{
    const dx=w.x2-w.x1,dz=w.z2-w.z1,len=dx*dx+dz*dz,t=len?clamp(((x-w.x1)*dx+(z-w.z1)*dz)/len,0,1):0;return Math.hypot(x-w.x1-t*dx,z-w.z1-t*dz)>=.2;});
  let bestPoint=null,candidates=0,commonCandidates=0;
  const feasiblePool=[];
