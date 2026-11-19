@@ -138,6 +138,128 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.assertGreaterEqual(palette["y"],canvas["y"]+canvas["height"]-1)
         self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"),410)
 
+
+    def test_beginner_four_step_flow_and_height_presets(self):
+        self.page.locator("#applyFromEditorBtn").click()
+        self.assertEqual(self.page.locator("body").get_attribute("data-view"),"router")
+        self.assertTrue(self.page.locator("#routerSimpleInfo").is_visible())
+        self.page.locator('[name="wizardRouterMode"][value="advanced"]').check()
+        self.assertTrue(self.page.locator("#routerAdvancedInfo").is_visible())
+        self.page.locator("#wizardPower").fill("23")
+        self.page.locator("#wizardPower").press("Tab")
+        self.assertEqual(self.export()["router"]["txPowerDbm"],23)
+        self.page.locator("#nextWizardHeight").click()
+        self.assertEqual(self.page.locator("body").get_attribute("data-view"),"height")
+        self.page.locator('[data-height="1.6"]').click()
+        self.assertAlmostEqual(self.export()["router"]["y"],1.6)
+        self.page.locator('[name="wizardHeightMode"][value="advanced"]').check()
+        self.page.locator("#manualHeightInput").fill("15.5")
+        self.page.locator("#manualHeightInput").press("Tab")
+        self.assertAlmostEqual(self.export()["router"]["y"],15.5)
+        self.page.locator("#nextWizardAnalysis").click()
+        self.page.wait_for_function("document.body.dataset.view==='analysis' && document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.assertIn("/ 100",self.page.locator("#scoreStat").inner_text())
+        self.assertIn("/ 100",self.page.locator("#meanStat").inner_text())
+        self.assertEqual(self.page.locator("#legendLow").inner_text(),"0점")
+        self.page.locator("#expertToggle").click()
+        self.assertIn("dBm",self.page.locator("#meanStat").inner_text())
+        self.assertEqual(self.page.locator("#legendLow").inner_text(),"−90 dBm")
+
+    def test_resizable_canvas_up_and_down_keeps_coordinates(self):
+        start=self.page.locator("#editorFrame").bounding_box()["height"]
+        self.page.locator("#sizeUpBtn").click()
+        grown=self.page.locator("#editorFrame").bounding_box()["height"]
+        self.assertGreater(grown,start+40)
+        self.page.locator("#sizeDownBtn").click()
+        self.assertAlmostEqual(self.page.locator("#editorFrame").bounding_box()["height"],start,delta=3)
+        handle=self.page.locator('[data-resize-edge="bottom"]')
+        box=handle.bounding_box()
+        self.page.mouse.move(box["x"]+box["width"]/2,box["y"]+box["height"]/2)
+        self.page.mouse.down()
+        self.page.mouse.move(box["x"]+box["width"]/2,box["y"]+box["height"]/2+100,steps=6)
+        self.page.mouse.up()
+        self.assertGreater(self.page.locator("#editorFrame").bounding_box()["height"],start+70)
+        self.pin()
+        self.assertEqual(self.export()["requiredPins"][0]["signalBars"],4)
+
+    def test_wall_mount_snap_direction_json_and_wall_only_optimize(self):
+        data=self.export()
+        data["walls"]=[{"id":"vertical","x1":5,"x2":5,"z1":1,"z2":7,"material":"concrete"}]
+        data["requiredPins"]=[{"id":"p","x":6,"z":4,"signalBars":0,"minQualityScore":0}]
+        self.page.locator("#importFile").set_input_files({"name":"walls.json","mimeType":"application/json","buffer":json.dumps(data).encode()})
+        self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 1')")
+        self.page.locator("#routerTab").click()
+        self.page.locator('[name="wizardMount"][value="wall"]').check()
+        self.assertIn("벽 부착",self.page.locator("#mountStatus").inner_text())
+        self.assertAlmostEqual(self.export()["router"]["x"],5.04,places=2)
+        self.page.locator("#mountFace").select_option("left")
+        self.assertAlmostEqual(self.export()["router"]["x"],4.96,places=2)
+        self.page.locator("#mountFace").select_option("right")
+        self.assertAlmostEqual(self.export()["router"]["x"],5.04,places=2)
+        signal=self.page.evaluate("""layout=>{
+            const e=window.WifiEngine;
+            const right=e.value(layout,7,4);
+            const flipped={...layout,router:{...layout.router,mountFace:'left'}};
+            return [right,e.value(flipped,7,4),e.mountDirectionLoss(layout.router,7,4)];
+        }""",self.export())
+        self.assertGreater(signal[0],signal[1])
+        self.assertAlmostEqual(signal[2],0,places=3)
+        self.page.locator("#nextWizardHeight").click()
+        self.page.locator("#nextWizardAnalysis").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible(),self.page.locator("#statusLine").inner_text())
+        positions=self.page.locator("#topThreeRows button[data-top-rank]").evaluate_all(
+            "(els)=>els.map(el=>Number(el.dataset.candidateX))")
+        self.assertTrue(positions)
+        for x in positions:self.assertAlmostEqual(x,5.04,places=2)
+
+    def test_wall_mount_requires_actual_wall_and_rejects_invalid_json(self):
+        self.page.locator("#routerTab").click()
+        self.page.locator('[name="wizardMount"][value="wall"]').check()
+        self.page.locator("#nextWizardHeight").click()
+        self.assertEqual(self.page.locator("body").get_attribute("data-view"),"router")
+        data=self.export()
+        data["router"]["mountFace"]="sideways"
+        self.page.locator("#importFile").set_input_files({"name":"bad-mount.json","mimeType":"application/json","buffer":json.dumps(data).encode()})
+        self.page.wait_for_function("document.getElementById('toast').textContent.includes('벽 부착 방향')")
+        self.assertEqual(self.export()["router"]["mountFace"],"right")
+
+    def test_position_judgment_four_axis_walls(self):
+        data=self.export()
+        data["width"]=10
+        data["depth"]=8
+        data["router"]["x"]=5
+        data["router"]["z"]=4
+        data["walls"]=[
+            {"id":"left","x1":2,"x2":2,"z1":2,"z2":6,"material":"concrete"},
+            {"id":"right","x1":8,"x2":8,"z1":2,"z2":6,"material":"concrete"},
+            {"id":"top","x1":2,"x2":8,"z1":2,"z2":2,"material":"concrete"},
+            {"id":"bottom","x1":2,"x2":8,"z1":6,"z2":6,"material":"concrete"}]
+        self.page.locator("#importFile").set_input_files({"name":"rectangle.json","mimeType":"application/json","buffer":json.dumps(data).encode()})
+        self.page.wait_for_function("document.getElementById('numWallsChip').textContent.includes('벽 4')")
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.page.locator("#positionJudgmentBtn").click()
+        output=self.page.locator("#positionJudgment").inner_text()
+        for expected in ["왼쪽: 3.00m","오른쪽: 3.00m","위쪽: 2.00m","아래쪽: 2.00m"]:
+            self.assertIn(expected,output)
+
+    def test_context_info_glossary_and_expert_restore(self):
+        self.page.locator("#applyBottomBtn").click()
+        self.page.wait_for_function("document.getElementById('applyBtn').disabled===false",timeout=30000)
+        self.assertGreaterEqual(self.page.locator(".info-dot").count(),10)
+        self.page.locator(".stat .info-dot[data-term='중요도 반영 품질']").click()
+        self.assertTrue(self.page.locator("#infoDialog").is_visible())
+        self.assertIn("Σ",self.page.locator("#infoContent").inner_text())
+        self.page.locator("#infoClose").click()
+        self.page.locator("#expertToggle").click()
+        self.assertTrue(self.page.locator("#probeReadout").is_visible())
+        self.assertTrue(self.page.locator("#calibrationComparison").is_visible())
+        self.assertTrue(self.page.locator("#routerY").is_visible())
+        self.page.locator("#infoGlossary").locator("summary").first.click()
+        self.assertGreaterEqual(self.page.locator("#glossaryContent .info-entry").count(),16)
     def test_xp_luna_chrome_and_menus_visible(self):
         self.assertTrue(self.page.locator(".xp-caption").is_visible())
         self.assertIn("Wiplan - Wi-Fi 배치 시뮬레이터", self.page.locator(".xp-caption").inner_text())
