@@ -70,6 +70,35 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#positionJudgmentFold summary").click()
         self.assertIn("왼쪽", self.page.locator("#positionJudgment").inner_text())
 
+    def test_recommendation_folds_and_top_three_shows_model_name(self):
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function(
+            "document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_hidden())
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function(
+            "document.getElementById('recommendation').hidden===false && "
+            "document.getElementById('optimizeBtn').disabled===false", timeout=30000)
+        panel=self.page.locator("#recommendation")
+        self.assertTrue(panel.is_visible())
+        self.assertEqual(panel.evaluate("(e)=>e.tagName"),"DETAILS")
+        self.assertTrue(panel.evaluate("(e)=>e.open"))
+        self.assertIn("1순위",self.page.locator("#recommendationSummary").inner_text())
+        self.assertEqual(
+            self.page.locator("#topThreeCandidates h3").inner_text(),
+            "모델 추천 Top 3")
+        self.assertTrue(self.page.locator("#topThreeRows button[data-top-rank]").first.is_visible())
+        panel.locator("summary").click()
+        self.assertFalse(panel.evaluate("(e)=>e.open"))
+        self.assertTrue(panel.is_visible())
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_hidden())
+        self.assertTrue(self.page.locator("#useBestBtn").is_hidden())
+        panel.locator("summary").click()
+        self.assertTrue(panel.evaluate("(e)=>e.open"))
+        self.assertTrue(self.page.locator("#useBestBtn").is_visible())
+        self.assertTrue(self.page.locator("#topThreeCandidates").is_visible())
+        self.assertEqual(self.page.locator("#topThreeRows button[data-compare-rank]").count(),3)
+
     def test_signal_summary_updates_and_expanded_details_are_preserved(self):
         self.pin(150, 180)
         self.pin(290, 220)
