@@ -520,6 +520,30 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
 #recommendation:not([open])>#topThreeCandidates,
 #recommendation:not([open])>#useBestBtn{display:none!important}
 #recommendation[hidden]{display:none!important}
+/* Analysis: switch between continuous score map and seven discrete activity tiers. */
+.heatmap-mode-switch{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:4px;
+ margin-bottom:9px;padding:4px;border:1px solid #a1b9d7;border-radius:3px;background:#e8eff9}
+.heatmap-mode-switch .heatmap-mode{min-width:0;min-height:39px;padding:7px 9px;
+ border:1px solid transparent;background:transparent;color:#28527f;font-weight:700;
+ border-radius:2px;line-height:1.4;white-space:normal;word-break:keep-all}
+.heatmap-mode-switch .heatmap-mode.active{background:#fffefa;border-color:#618abd;
+ box-shadow:inset 0 1px #fff,0 1px 3px #53728f42;color:#114990}
+.heatmap-mode-switch .heatmap-mode:focus-visible{outline:2px solid #286eca;outline-offset:2px}
+#scoreLegend[hidden],#activityLegend[hidden]{display:none!important}
+.activity-legend{margin:11px 1px 13px}
+.activity-legend-scroll{overflow-x:auto;scrollbar-width:thin;max-width:100%}
+.activity-tier-strip{display:grid;grid-template-columns:repeat(7,minmax(88px,1fr));
+ min-width:616px;border:1px solid #8a9cb0;border-radius:3px;overflow:hidden}
+.activity-tier{background:var(--tier-color);padding:8px 4px 9px;min-height:66px;
+ display:flex;flex-direction:column;justify-content:center;gap:4px;text-align:center;
+ border-right:1px solid #ffffff90;color:#1b3846;font-size:10px;line-height:1.35;
+ overflow-wrap:anywhere;word-break:keep-all}
+.activity-tier:last-child{border-right:0;color:#fff}
+.activity-tier:first-child{color:#fff}
+.activity-tier strong{font-size:10px;white-space:nowrap}
+.activity-tier span{font-weight:700}
+.activity-caveat{font-size:11px;color:#4f6179;line-height:1.6;margin:7px 2px 0;overflow-wrap:anywhere}
+@media(max-width:650px){.heatmap-mode-switch .heatmap-mode{font-size:11px;min-height:46px}}
 </style></head>
 <body data-view="design"><div class="app-shell">
 <div class="xp-caption"><span class="xp-caption-label"><span class="xp-caption-symbol" aria-hidden="true">▣</span>Wiplan - Wi-Fi 배치 시뮬레이터</span><span class="xp-window-chrome" aria-hidden="true"><i>─</i><i>□</i><i>×</i></span></div>
@@ -623,11 +647,27 @@ button.info-dot,.recommendation button.info-dot,.comparison-card button.info-dot
  <div class="page-intro"><div><div class="eyebrow">STEP 04 · SIGNAL ANALYSIS</div><h1>와이파이 신호 분석</h1><p>우리 집 와이파이 예상 점수를 확인하고, 더 좋은 공유기 위치를 찾아보세요.</p></div><button class="secondary" id="backToEditorBtn">← 도면 편집으로</button></div>
  <div class="expert-toggle"><span class="wizard-note">기본 화면은 100점 만점 점수를 사용합니다.</span><button id="expertToggle" type="button" class="secondary" aria-pressed="false">고급 보기</button></div><div class="result-workarea"><div class="result-map">
 <div class="portrait-quickbar" role="group" aria-label="최적 공유기 위치 찾기"><button type="button" class="primary" id="portraitOptimizeBtn">✦ 최고의 위치 찾기</button></div>
-<div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 신호 히트맵"></canvas><div class="canvas-corner">신호 지도 · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>‘신호 분석’을 시작하면 결과가 표시됩니다.</small></div></div><div class="placement-guide" id="placementGuide" hidden aria-live="polite">
+<div class="heatmap-mode-switch" role="group" aria-label="Wi-Fi 지도 표시 방식">
+ <button type="button" id="scoreMapBtn" class="heatmap-mode active" aria-pressed="true">점수 지도</button>
+ <button type="button" id="activityMapBtn" class="heatmap-mode" aria-pressed="false">일상생활 Wi-Fi 가능지도</button>
+</div>
+<div class="canvas-frame heatmap-frame"><canvas id="heatmapCanvas" aria-label="Wi-Fi RSSI 점수 지도"></canvas><div class="canvas-corner"><span id="heatmapModeLabel">신호 지도</span> · <span id="heatmapBand">2.4 GHz</span></div><div id="heatmapEmpty" class="empty-heatmap"><span>◎</span><strong>분석 전</strong><small>‘신호 분석’을 시작하면 결과가 표시됩니다.</small></div></div><div class="placement-guide" id="placementGuide" hidden aria-live="polite">
   <div class="placement-guide-head"><strong id="placementGuideHeading">추천 위치</strong><span class="placement-key">■ 현재 공유기 <span class="placement-mark">➤</span> 추천 위치</span></div>
   <div class="placement-guide-direction" id="placementGuideDirection">위치 찾기 전</div>
   <div class="placement-guide-detail" id="placementGuideDetail">추천 위치를 비교하면 지도에 이동 화살표가 표시됩니다.</div>
-</div><div class="signal-legend"><span id="legendLow">0점</span><div class="heat-gradient"></div><span id="legendHigh">100점</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div><div class="stats-grid"><div class="stat"><span id="meanStatLabel">평균 신호 점수</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small id="goodStatExplanation">신호가 좋은 공간 비율</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small id="weakStatExplanation">신호가 약한 공간 비율</small></div></div><section class="comparison-card" id="profileComparison" aria-label="2.4 GHz 환경별 예상 RSSI" hidden><h3>신호 원활 · 중간 · 혼잡 지점별 비교</h3><div id="profileComparisonRows"></div><p class="comparison-note">모델별 예측 차이입니다. 실제 RSSI 오차나 측정값은 아닙니다.</p></section><div id="simpleProbeScore" class="beginner-only">선택 위치 신호 점수 <strong id="probeQualityValue">— / 100</strong></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body expert-only">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
+</div><div id="scoreLegend"><div class="signal-legend"><span id="legendLow">0점</span><div class="heat-gradient"></div><span id="legendHigh">100점</span></div><div class="signal-labels"><span>약함</span><span>보통</span><span>강함</span></div></div>
+<div id="activityLegend" class="activity-legend" aria-label="생활 Wi-Fi 활동별 신호 점수 범례" hidden>
+ <div class="activity-legend-scroll"><div class="activity-tier-strip" id="activityTierStrip">
+  <div class="activity-tier" data-min-score="0" style="--tier-color:#8295a6"><strong>0–26점</strong><span>사용 어려움</span></div>
+  <div class="activity-tier" data-min-score="27" style="--tier-color:#db6558"><strong>27–34점</strong><span>카톡·이메일</span></div>
+  <div class="activity-tier" data-min-score="35" style="--tier-color:#efa05c"><strong>35–41점</strong><span>웹·문서</span></div>
+  <div class="activity-tier" data-min-score="42" style="--tier-color:#f0d875"><strong>42–44점</strong><span>유튜브 1080p</span></div>
+  <div class="activity-tier" data-min-score="45" style="--tier-color:#b4dc72"><strong>45–54점</strong><span>화상회의·강의</span></div>
+  <div class="activity-tier" data-min-score="55" style="--tier-color:#5abd83"><strong>55–63점</strong><span>4K 영상·게임</span></div>
+  <div class="activity-tier" data-min-score="64" style="--tier-color:#1b905a"><strong>64–100점</strong><span>경쟁형 게임·스트리밍</span></div>
+ </div></div>
+ <p class="activity-caveat">Wiplan 예상 신호 점수에 따른 <strong>활동별 참고 구간</strong>입니다. 실제 영상 화질·속도·지연시간·게임 안정성을 보장하지 않습니다. 회선 속도·간섭·혼잡도도 영향을 줍니다.</p>
+</div><div class="stats-grid"><div class="stat"><span id="meanStatLabel">평균 신호 점수</span><strong id="meanStat">—</strong><small>전체 공간</small></div><div class="stat"><span>우수 커버리지</span><strong id="goodStat">—</strong><small id="goodStatExplanation">신호가 좋은 공간 비율</small></div><div class="stat"><span>중요도 반영 품질</span><strong id="scoreStat">—</strong><small>0–100 점 · 예측값</small></div><div class="stat"><span>취약 공간 비율</span><strong id="weakStat">—</strong><small id="weakStatExplanation">신호가 약한 공간 비율</small></div></div><section class="comparison-card" id="profileComparison" aria-label="2.4 GHz 환경별 예상 RSSI" hidden><h3>신호 원활 · 중간 · 혼잡 지점별 비교</h3><div id="profileComparisonRows"></div><p class="comparison-note">모델별 예측 차이입니다. 실제 RSSI 오차나 측정값은 아닙니다.</p></section><div id="simpleProbeScore" class="beginner-only">선택 위치 신호 점수 <strong id="probeQualityValue">— / 100</strong></div><div class="inspector"><div class="inspector-head"><strong>선택한 위치 상세</strong><small id="probeCoordinates">지도 클릭</small></div><div id="probeReadout" class="inspector-body expert-only">히트맵의 특정 위치를 클릭하면 예상 신호 세기를 볼 수 있습니다.</div></div></div>
  <aside class="result-controls"><div class="side-title"><strong id="analysisSideTitle">분석 도구</strong><small id="analysisSideDesc">필요한 기능만 선택하세요</small></div><div class="router-grid expert-only"><label>주파수 대역<select id="frequencySelect"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label><label>송신 출력 (dBm)<input id="powerInput" type="number" value="20" min="0" max="35" step="1"></label><label>안테나 이득 (dBi)<input id="gainInput" type="number" value="0" min="-10" max="20" step="0.5"></label><label>거리 감쇠 지수<input id="exponentInput" type="number" value="2.0" min="1" max="6" step="0.1" aria-describedby="calibrationHint"></label></div><div class="router-grid vertical-config expert-only"><label>공유기 높이 Y (m)<input id="routerY" type="number" min="0" step="any" value="1.2"></label><label>수신기 높이 Y (m)<input id="receiverY" type="number" min="0" step="any" value="1.0"></label></div><span id="routerYValue" hidden></span><span id="routerXValue">X·Z는 도면에서 지정</span><p class="footnote">천장·벽 높이 제한 없이 벽을 콘크리트 차단면으로 계산합니다. Y는 바닥 기준 높이입니다.</p><div class="analysis-buttons"><button class="primary" type="button" id="optimizeBtn">✦ 최고의 위치 찾기</button><button class="secondary" type="button" id="plainBtn">가중치 없이 보기</button></div>
  <details class="analysis-fold" id="positionJudgmentFold"><summary>위치 판단 · 좌/우/상/하 벽 거리 <span id="positionSummary">현재 공유기 기준</span></summary><div id="positionJudgment" aria-live="polite"></div></details>
  <details class="wood-door-panel analysis-fold" id="doorAnalysisPanel"><summary>나무 방문 열림·닫힘 <span id="doorCountSummary">방문 0개</span></summary>
@@ -1430,6 +1470,39 @@ function renderEditor(){const {w,h}=resizeCanvas(editor,eCtx);eCtx.clearRect(0,0
 }
 const stops=[[-90,[165,0,38]],[-75,[244,109,67]],[-67,[254,224,139]],[-55,[166,217,106]],[-30,[26,152,80]]];
 function rgb(v){if(v<=-90)return stops[0][1];for(let i=1;i<stops.length;i++){const a=stops[i-1],b=stops[i];if(v<=b[0]){const t=(v-a[0])/(b[0]-a[0]);return [0,1,2].map(j=>Math.round(a[1][j]*(1-t)+b[1][j]*t));}}return stops[stops.length-1][1];}
+// Activity map is a purely presentational overlay over the same Wiplan RSSI grid.
+// These thresholds are illustrative UX guidance, not measured application QoS.
+const ACTIVITY_TIERS=Object.freeze([
+ Object.freeze({min:0,rgb:[130,149,166],label:'사용 어려움'}),
+ Object.freeze({min:27,rgb:[219,101,88],label:'카톡·이메일'}),
+ Object.freeze({min:35,rgb:[239,160,92],label:'웹·문서'}),
+ Object.freeze({min:42,rgb:[240,216,117],label:'유튜브 1080p'}),
+ Object.freeze({min:45,rgb:[180,220,114],label:'화상회의·강의'}),
+ Object.freeze({min:55,rgb:[90,189,131],label:'4K 영상·게임'}),
+ Object.freeze({min:64,rgb:[27,144,90],label:'경쟁형 게임·스트리밍'})
+]);
+function scoreToActivityTier(score){
+ const value=clamp(Number(score)||0,0,100);
+ for(let i=ACTIVITY_TIERS.length-1;i>=0;i--)if(value+1e-8>=ACTIVITY_TIERS[i].min)return i;
+ return 0;
+}
+let heatmapDisplayMode='score';
+function setHeatmapDisplayMode(mode){
+ if(mode!=='score'&&mode!=='activity')return;
+ heatmapDisplayMode=mode;
+ $('scoreMapBtn').setAttribute('aria-pressed',String(mode==='score'));
+ $('activityMapBtn').setAttribute('aria-pressed',String(mode==='activity'));
+ $('scoreMapBtn').classList.toggle('active',mode==='score');
+ $('activityMapBtn').classList.toggle('active',mode==='activity');
+ $('scoreLegend').hidden=mode!=='score';
+ $('activityLegend').hidden=mode!=='activity';
+ $('heatmapModeLabel').textContent=mode==='activity'?'일상생활 Wi-Fi 가능지도':'신호 지도';
+ heat.setAttribute('aria-label',mode==='activity'?'생활 Wi-Fi 활동별 이용 가능성 예상 지도':'Wi-Fi RSSI 점수 지도');
+ renderHeat();
+}
+$('scoreMapBtn').onclick=()=>setHeatmapDisplayMode('score');
+$('activityMapBtn').onclick=()=>setHeatmapDisplayMode('activity');
+window.WiplanActivityMap=Object.freeze({scoreToActivityTier,thresholds:Object.freeze(ACTIVITY_TIERS.map(t=>t.min))});
 
 function selectedPlacement(){
  return best?.topThree?.find(candidate=>candidate.rank===selectedCompareRank)||best?.best||null;
@@ -1551,10 +1624,10 @@ function renderHeat(){const {w,h}=resizeCanvas(heat,hCtx);hCtx.clearRect(0,0,w,h
  renderPlacementGuide();
  if(!result)return;
  const off=document.createElement('canvas');off.width=result.cols;off.height=result.rows;const ctx=off.getContext('2d');const img=ctx.createImageData(result.cols,result.rows);
- for(let r=0;r<result.rows;r++)for(let c=0;c<result.cols;c++){const v=result.values[r][c],rgbv=rgb(v),i=(r*result.cols+c)*4;img.data[i]=rgbv[0];img.data[i+1]=rgbv[1];img.data[i+2]=rgbv[2];img.data[i+3]=255;}
- ctx.putImageData(img,0,0);hCtx.imageSmoothingEnabled=true;hCtx.drawImage(off,0,0,w,h);
+ for(let r=0;r<result.rows;r++)for(let c=0;c<result.cols;c++){const v=result.values[r][c],rgbv=heatmapDisplayMode==='activity'?ACTIVITY_TIERS[scoreToActivityTier(qualityPoint(v))].rgb:rgb(v),i=(r*result.cols+c)*4;img.data[i]=rgbv[0];img.data[i+1]=rgbv[1];img.data[i+2]=rgbv[2];img.data[i+3]=255;}
+ ctx.putImageData(img,0,0);hCtx.imageSmoothingEnabled=heatmapDisplayMode!=='activity';hCtx.drawImage(off,0,0,w,h);
  const sx=w/L.width,sy=h/L.depth;
- if(weighted)paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
+ if(weighted&&heatmapDisplayMode==='score')paintImportanceLayer(hCtx,L.importanceStrokes||[],w,h,sx,sy);
  if(best?.stability?.points?.length&&showStableOverlay){
   hCtx.save();hCtx.fillStyle='rgba(111,75,191,.38)';hCtx.strokeStyle='rgba(255,255,255,.78)';hCtx.lineWidth=1;
   for(const candidate of best.stability.points){
