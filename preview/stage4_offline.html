@@ -2636,7 +2636,7 @@ function renderTopThree(){
  const heading=panel.querySelector('h3');
  heading.textContent='모델 추천 Top 3';
  const note=panel.querySelector('.comparison-note');
- note.textContent=best.robust24?'세 프로파일 모두에서 핀 조건을 만족한 후보를 최대 3개 표시합니다. 후보별 최소 간격 0.5m.':'5 GHz는 CAMPUSRSSI 실측 보정이 없습니다. 기존 모델의 추천 후보입니다.';
+ note.textContent=best.robust24?'세 프로파일 모두에서 핀 조건을 만족한 후보를 최대 3개 표시합니다. 후보별 최소 간격 0.5m.':'5 GHz 미보정 · CAMPUSRSSI 실측 보정이 없습니다. 기존 모델의 추천 후보입니다.';
  for(const candidate of best.topThree){
   const row=document.createElement('div');row.className='top-candidate';
   const text=document.createElement('div'),headline=document.createElement('strong'),sub=document.createElement('small');
