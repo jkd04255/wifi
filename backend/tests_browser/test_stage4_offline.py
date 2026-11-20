@@ -47,6 +47,73 @@ class OfflineDesktopSmoke(unittest.TestCase):
         self.page.locator("#requiredDrawer").evaluate("(el) => { el.open = true; }")
         self.page.locator("#signalBarsSelect").select_option(str(bars))
 
+    def test_activity_map_tiers_switch_legend_and_restore_score(self):
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertEqual(self.page.locator("#scoreMapBtn").get_attribute("aria-pressed"),"true")
+        self.assertEqual(self.page.locator("#activityMapBtn").get_attribute("aria-pressed"),"false")
+        self.assertTrue(self.page.locator("#scoreLegend").is_visible())
+        self.assertTrue(self.page.locator("#activityLegend").is_hidden())
+        initial_png=self.page.locator("#heatmapCanvas").evaluate("(e)=>e.toDataURL('image/png')")
+        initial_stats=[self.page.locator("#"+x).inner_text()
+                       for x in ["meanStat","goodStat","scoreStat","weakStat"]]
+        actual=self.page.evaluate("""() => ({
+            thresholds:window.WiplanActivityMap.thresholds,
+            tiers:[0,26.99,27,34.99,35,41.99,42,44.99,45,54.99,55,63.99,64,100]
+              .map(x=>window.WiplanActivityMap.scoreToActivityTier(x))
+        })""")
+        self.assertEqual(actual["thresholds"],[0,27,35,42,45,55,64])
+        self.assertEqual(actual["tiers"],[0,0,1,1,2,2,3,3,4,4,5,5,6,6])
+        self.page.locator("#activityMapBtn").click()
+        self.assertEqual(self.page.locator("#activityMapBtn").get_attribute("aria-pressed"),"true")
+        self.assertEqual(self.page.locator("#scoreMapBtn").get_attribute("aria-pressed"),"false")
+        self.assertTrue(self.page.locator("#activityLegend").is_visible())
+        self.assertTrue(self.page.locator("#scoreLegend").is_hidden())
+        self.assertIn("일상생활 Wi-Fi 가능지도",self.page.locator("#heatmapModeLabel").inner_text())
+        self.assertEqual(self.page.locator("#activityTierStrip .activity-tier").count(),7)
+        self.assertEqual(
+            [x.get_attribute("data-min-score") for x in self.page.locator("#activityTierStrip .activity-tier").all()],
+            ["0","27","35","42","45","55","64"])
+        for text in ["카톡·이메일","웹·문서","유튜브 1080p","화상회의·강의",
+                     "4K 영상·게임","경쟁형 게임·스트리밍"]:
+            self.assertIn(text,self.page.locator("#activityLegend").inner_text())
+        self.assertIn("보장하지 않습니다",self.page.locator(".activity-caveat").inner_text())
+        self.assertFalse(self.page.locator("#heatmapCanvas").evaluate("(e)=>e.getContext('2d').imageSmoothingEnabled"))
+        activity_png=self.page.locator("#heatmapCanvas").evaluate("(e)=>e.toDataURL('image/png')")
+        self.assertNotEqual(initial_png,activity_png)
+        self.assertEqual(initial_stats,[self.page.locator("#"+x).inner_text()
+                       for x in ["meanStat","goodStat","scoreStat","weakStat"]])
+        self.page.locator("#scoreMapBtn").click()
+        self.assertTrue(self.page.locator("#scoreLegend").is_visible())
+        self.assertTrue(self.page.locator("#activityLegend").is_hidden())
+        self.assertTrue(self.page.locator("#heatmapCanvas").evaluate("(e)=>e.getContext('2d').imageSmoothingEnabled"))
+        self.assertEqual(initial_png,self.page.locator("#heatmapCanvas").evaluate("(e)=>e.toDataURL('image/png')"))
+
+    def test_activity_map_persists_for_5ghz_and_does_not_change_optimization(self):
+        self.pin(210,155)
+        self.page.locator("#analysisTab").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        original_pin_summary=self.page.locator("#requiredSummary").inner_text()
+        self.page.locator("#activityMapBtn").click()
+        self.page.locator("#expertToggle").click()
+        self.page.locator("#frequencySelect").select_option("5")
+        self.page.wait_for_function(
+            "document.getElementById('heatmapBand').textContent.includes('5 GHz') && "
+            "document.getElementById('dirtyPill').textContent.includes('최신 결과') && "
+            "document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#activityLegend").is_visible())
+        self.assertIn("5 GHz",self.page.locator("#heatmapBand").inner_text())
+        self.assertIn("신호 세기 1:",self.page.locator("#requiredSummary").inner_text())
+        self.page.locator("#optimizeBtn").click()
+        self.page.wait_for_function("document.getElementById('optimizeBtn').disabled===false",timeout=30000)
+        self.assertTrue(self.page.locator("#recommendation").is_visible())
+        recommendation_summary=self.page.locator("#recommendationSummary").inner_text()
+        self.page.locator("#scoreMapBtn").click()
+        self.assertEqual(recommendation_summary,self.page.locator("#recommendationSummary").inner_text())
+        self.assertTrue(self.page.locator("#recommendation").is_visible())
+        self.page.locator("#activityMapBtn").click()
+        self.assertTrue(self.page.locator("#activityLegend").is_visible())
+
     def test_compact_analysis_fold_and_live_recompute_without_apply(self):
         self.assertEqual(self.page.locator("#applyBtn").count(), 0)
         self.assertEqual(self.page.locator("#weightBtn").count(), 0)
